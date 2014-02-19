@@ -17,15 +17,13 @@
 				<a class="navbar-brand" href="/dataverse.xhtml?id=#{dataverse.id}">#{dataverse.name} Dataverse</a>
 			  </div>
 			<div class="collapse navbar-collapse" id="topNavBar">
-				<ul class="nav navbar-nav">
-					<li>
-						<h:outputLink value="/guides/index.html" target="_blank">
-                            User Guides
-                        </h:outputLink>
-					</li>
-				</ul>
 				
 				<ul class="nav navbar-nav navbar-right">
+                                    <li>
+                                        <h:outputLink value="/guides/index.html" target="_blank">
+                                            User Guides
+                                        </h:outputLink>
+                                    </li>
 					<ui:fragment rendered="#{dataverseSession.user.guest}">
 						<li>
 							<h:outputLink value="/dataverseuser.xhtml?editMode=CREATE">
