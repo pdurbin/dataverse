@@ -2,7 +2,8 @@
      xmlns:h="http://java.sun.com/jsf/html"
      xmlns:f="http://java.sun.com/jsf/core"
      xmlns:ui="http://java.sun.com/jsf/facelets"
-     xmlns:p="http://primefaces.org/ui">
+     xmlns:p="http://primefaces.org/ui"
+	 xmlns:iqbs="http://xmlns.jcp.org/jsf/composite/iqbs">
 
     <!-- Header Panel -->
 	<nav class="navbar navbar-default" role="navigation">
@@ -104,15 +105,7 @@
     <!-- Message Panel -->
 	<ui:fragment rendered="#{showMessagePanel}">
 		<div class="container">
-			<ui:repeat value="#{facesContext.messageList}" var="msg">
-				<div class="alert alert-dismissable #{msg.severity eq 'INFO 0' ? 'alert-info' : ''}">
-					<button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-					#{msg.summary}
-					<ui:fragment rendered="#{not empty msg.detail}">
-						<small>#{msg.detail}</small>
-					</ui:fragment>
-				</div>
-			</ui:repeat>
+			<iqbs:messages collapsible="false" />
 		</div>
 	</ui:fragment>
 
