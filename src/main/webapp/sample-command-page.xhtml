@@ -17,7 +17,7 @@
     <h:body>
 
         <ui:composition template="/dataverse_template.xhtml">
-            <ui:param name="pageTitle" value="Login Page"/>
+            <ui:param name="pageTitle" value="Sample Command Page"/>
             <ui:param name="showMessagePanel" value="#{true}"/> 
             <ui:define name="body">
 				<p:panel rendered="#{sampleCommandPage.setupNeeded}">
@@ -29,7 +29,23 @@
 						</h:form>
 					</div>
 				</p:panel>
-
+				
+				<h3>Some icons, to test the fonts</h3>
+				<div class="row">
+					<div class="col-xs-3">
+						<span class="glyphicon glyphicon-bell"></span>
+					</div>
+					<div class="col-xs-3">
+						<span class="glyphicon glyphicon-download-alt"></span>
+					</div>
+					<div class="col-xs-3">
+						<span class="glyphicon glyphicon-tree-conifer"></span>
+					</div>
+					<div class="col-xs-3">
+						<span class="glyphicon glyphicon-tree-deciduous"></span>
+					</div>
+				</div>
+				
 				<p:panel rendered="#{!sampleCommandPage.setupNeeded}">
 					<h:form>
 						User: 

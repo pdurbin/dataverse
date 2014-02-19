@@ -15,4 +15,4 @@ Bootstrap Migration Tips
 	</h:inputText>
 
 * More on html5 and JSF 2.2 at http://jsflive.wordpress.com/2013/08/08/jsf22-html5/
-
+* We have a bootstrap component lib, `iqbs`.
