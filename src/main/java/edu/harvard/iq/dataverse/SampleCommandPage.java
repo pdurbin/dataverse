@@ -75,6 +75,12 @@ public class SampleCommandPage {
 				selectedDvObjectId = objects.get(0).getId();
 			}
 		}
+		
+		JH.addMessage(FacesMessage.SEVERITY_FATAL, "Alas! An FATAL has occured", "Such useful details! Oh My!");
+		JH.addMessage(FacesMessage.SEVERITY_ERROR, "Alas! An error has occured", "Such useful details! Oh My!");
+		JH.addMessage(FacesMessage.SEVERITY_WARN,  "This is just a warning", "Such useful details! Oh My!");
+		JH.addMessage(FacesMessage.SEVERITY_INFO,  "Informational message, for your info", "Such useful details! Oh My!");
+		
 	}
 	
 	public void actionSave( ActionEvent e ) {
