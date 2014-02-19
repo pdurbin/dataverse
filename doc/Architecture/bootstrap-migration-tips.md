@@ -16,3 +16,10 @@ Bootstrap Migration Tips
 
 * More on html5 and JSF 2.2 at http://jsflive.wordpress.com/2013/08/08/jsf22-html5/
 * We have a bootstrap component lib, `iqbs`.
+* Need to manually convert the font references to JSF compliant:
+	* from `url('../fonts/glyphicons-halflings-regular.eot');'
+	* to `url("#{resource['bs/fonts/glyphicons-halflings-regular.eot']}");`
+	* from `url('../fonts/glyphicons-halflings-regular.eot?SomeThings');' (note the parameter at the end)
+	* to `url("#{resource['bs/fonts/glyphicons-halflings-regular.eot']}?someThings");`
+	* same for `?` parameters at the end.
+	
