@@ -349,8 +349,8 @@ public class DatasetPage implements java.io.Serializable {
                     } else if (ingestService.fileMetadataExtractable(dFile)) {
 
                         try {
-                            metadataExtracted = ingestService.extractIndexableMetadata(tempFileLocation, dFile);
                             dFile.setContentType("application/fits");
+			    metadataExtracted = ingestService.extractIndexableMetadata(tempFileLocation, dFile, editVersion);
                         } catch (IOException mex) {
                             Logger.getLogger(DatasetPage.class.getName()).log(Level.SEVERE, "Caught exception trying to extract indexable metadata from file " + dFile.getName(), mex);
                         }
