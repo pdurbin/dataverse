@@ -77,6 +77,13 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import org.primefaces.model.UploadedFile;
+import javax.jms.Queue;
+import javax.jms.QueueConnectionFactory;
+import javax.annotation.Resource;
+import javax.jms.JMSException;
+import javax.jms.QueueConnection;
+import javax.jms.QueueSender;
+import javax.jms.QueueSession;
 
 /**
  *
@@ -95,6 +102,12 @@ public class IngestServiceBean {
     DatasetServiceBean datasetService;
     @EJB
     DatasetFieldServiceBean fieldService;
+    /*
+    @Resource(mappedName = "jms/DataverseIngest")
+    Queue queue;
+    @Resource(mappedName = "jms/IngestQueueConnectionFactory")
+    QueueConnectionFactory factory;
+    */
     
     // TODO: this constant should be provided by the Ingest Service Provder Registry;
     private static final String METADATA_SUMMARY = "FILE_METADATA_SUMMARY_INFO";
@@ -112,6 +125,41 @@ public class IngestServiceBean {
         calculateContinuousSummaryStatistics(dataFile, variableVectors);
 
     }
+    /*
+    public boolean asyncIngestAsTabular(String tempFileLocation, DataFile dataFile) throws IOException {
+        boolean ingestSuccessful = false;
+
+        QueueConnection conn = null;
+        QueueSession session = null;
+        QueueSender sender = null;
+        try {
+            conn = factory.createQueueConnection();
+            session = conn.createQueueSession(false, 0);
+            sender = session.createSender(queue);
+            
+            
+            
+        } catch (JMSException ex) {
+            ex.printStackTrace();
+        } finally {
+            try {
+
+                if (sender != null) {
+                    sender.close();
+                }
+                if (session != null) {
+                    session.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (JMSException ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        return ingestSuccessful;
+    }*/
     
     public boolean ingestAsTabular(String tempFileLocation, DataFile dataFile) throws IOException {
         boolean ingestSuccessful = false;
@@ -288,41 +336,113 @@ public class IngestServiceBean {
         for (MetadataBlock mdb : editVersion.getDataset().getOwner().getMetadataBlocks()) {  
             if (mdb.getName().equals(fileMetadataIngest.getMetadataBlockName())) {
                 logger.fine("Ingest Service: dataset version has "+mdb.getName()+" metadata block enabled.");
-                List<DatasetFieldValue> existingValues = editVersion.getDatasetFieldValues();
+                List<DatasetFieldValue> existingValues; 
+                if (editVersion.getDataset().getId() != null) { // if this is an existing study, that had been saved before...
+                    existingValues = editVersion.getDatasetFieldValues();
+                } else {
+                    existingValues = new ArrayList();
+                }
                 Map<String, Set<String>> fileMetadataMap = fileMetadataIngest.getMetadataMap();
                 for (DatasetField dsf : mdb.getDatasetFields()) {
                     String dsName = dsf.getName();
                     if (fileMetadataMap.get(dsName) != null && !fileMetadataMap.get(dsName).isEmpty()) {
                         logger.fine("Ingest Service: found extracted metadata for field "+dsName);
-                        Set<String> mValues = fileMetadataMap.get(dsName);
-                        for (String fValue : mValues) {
-                            // Need to only add the values not yet present!
-                            // (the method below may be inefficient - ?)
-                            boolean valueExists = false; 
-                            for (DatasetFieldValue dsfv : existingValues) {
+                        if (!dsf.isControlledVocabulary()) {
+                            Set<String> mValues = fileMetadataMap.get(dsName);
+                            for (String fValue : mValues) {
+                                // Need to only add the values not yet present!
+                                // (the method below may be inefficient - ?)
+                                boolean valueExists = false; 
+                                for (DatasetFieldValue dsfv : existingValues) {
                                     if (dsf.equals(dsfv.getDatasetField())
                                             && fValue.equals(dsfv.getStrValue())) {
                                         valueExists = true;
                                         break;
                                     }
                                 }
-                            if (!valueExists) {
-                                DatasetFieldValue newDsfv = new DatasetFieldValue();
+                                if (!valueExists) {
+                                    DatasetFieldValue newDsfv = new DatasetFieldValue();
                         
-                                newDsfv.setDatasetField(dsf);
-                                if (dsf.isControlledVocabulary()) {
+                                    newDsfv.setDatasetField(dsf);
+                                    newDsfv.setStrValue(fValue);
+                                    newDsfv.setDatasetVersion(editVersion);
+                                    //dsf.getDatasetFieldValues().add(newDsfv);
+                                    editVersion.getDatasetFieldValues().add(newDsfv);
+                                    
+                                    if (dsf.isHasParent()) {
+                                        DatasetField parentField = dsf.getParentDatasetField();
+                                        boolean parentExists = false;
+                                        DatasetFieldValue parentFieldValue = null;
+                                        for (DatasetFieldValue dsfv : existingValues) {
+                                            if (parentField.equals(dsfv.getDatasetField())) {
+                                                parentExists = true;
+                                                parentFieldValue = dsfv;
+                                                break;
+                                            }
+                                        }
+                                        if (!parentExists) {
+                                            parentFieldValue = new DatasetFieldValue();
+                                            parentFieldValue.setDatasetField(parentField);
+                                            parentFieldValue.setDatasetVersion(editVersion);
+                                            editVersion.getDatasetFieldValues().add(parentFieldValue);
+                                        }
+                                        
+                                        parentFieldValue.getChildDatasetFieldValues().add(newDsfv);
+                                        newDsfv.setParentDatasetFieldValue(parentFieldValue);
+                                    }
+                                    
+                                    
+                                }
+                            }
+                        } else { // controlled vocabulary
+                            // First, check if the dataset already has this field populated: 
+                            Set<String> mValues = fileMetadataMap.get(dsName);
+                            boolean addNew = true; 
+                            for (DatasetFieldValue dsfv : existingValues) {
+                                if(dsf.equals(dsfv.getDatasetField())) {
+                                    // add the new values, unless already exist:
                                     Collection<ControlledVocabularyValue> cvValues = dsf.getControlledVocabularyValues();
-                                    for (ControlledVocabularyValue cvv : cvValues) {
-                                        if (fValue.equals(cvv.getStrValue())) {
-                                            newDsfv.setSingleControlledVocabularyValue(cvv);
-                                            //newDsfv.getControlledVocabularyValues().add(cvv);
+                                    for (String fValue : mValues) {
+                                        // is this a legit controlled vocab. entry?
+
+                                        for (ControlledVocabularyValue cvv : cvValues) {
+                                            if (fValue.equals(cvv.getStrValue())) {
+                                                // yes, it is;
+                                                boolean valueExists = false;
+                                                for (ControlledVocabularyValue exCvv : dsfv.getControlledVocabularyValues()) {
+                                                    if (exCvv.getStrValue().equals(fValue)) {
+                                                        valueExists = true;
+                                                    }
+                                                }
+                                                if (!valueExists) {
+                                                    dsfv.getControlledVocabularyValues().add(cvv);
+                                                }
+                                            }
                                         }
                                     }
-                                } else {
-                                    newDsfv.setStrValue(fValue);
+                                    addNew = false; 
+                                    break; 
                                 }
+                            }
+                            
+                            if (addNew) {
+                                DatasetFieldValue newDsfv = new DatasetFieldValue();
+                                newDsfv.setDatasetField(dsf);
                                 newDsfv.setDatasetVersion(editVersion);
-                                dsf.getDatasetFieldValues().add(newDsfv);
+                                //dsf.getDatasetFieldValues().add(newDsfv);
+                                editVersion.getDatasetFieldValues().add(newDsfv);
+                                
+                                // Populate the fields, if matching controlled 
+                                // vocab. fields actually exist:
+                                
+                                Collection<ControlledVocabularyValue> cvValues = dsf.getControlledVocabularyValues();
+                                for (String fValue : mValues) {
+                                    for (ControlledVocabularyValue cvv : cvValues) {
+                                        if (fValue.equals(cvv.getStrValue())) {
+                                            newDsfv.getControlledVocabularyValues().add(cvv);
+                                        }
+                                    }
+                                } 
                             }
                         }
                     }

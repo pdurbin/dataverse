@@ -244,40 +244,7 @@ public class DatasetPage implements java.io.Serializable {
         dataset.setIdentifier("5555");
         //Todo pre populate deposit date
 
-        //Trim spaces from any input values
-        //add any blank records to a "to Remove" list"
-        List<Integer> toRemoveIndex = new ArrayList();
-        int index = 0;
-        for (DatasetFieldValue dsfv : editVersion.getDatasetFieldValues()) {
-            if (dsfv.getStrValue() != null) {
-                dsfv.setStrValue(dsfv.getStrValue().trim());
-            }
-            
-            //Single recs and child recs (with no controlled vocab)
-            if ((!dsfv.getDatasetField().isHasChildren() && !dsfv.getDatasetField().isControlledVocabulary()) && (dsfv.getStrValue() == null || dsfv.getStrValue().trim().isEmpty())) {
-                toRemoveIndex.add(index);
-            }
-            //parent recs where all kids are empty.
-            if (dsfv.getDatasetField().isHasChildren() && dsfv.isChildEmpty()) {
-                toRemoveIndex.add(index);
-            }
-            //controlled vocab recs where all kids are empty.
-            if (dsfv.getDatasetField().isControlledVocabulary() && (dsfv.getControlledVocabularyValues() == null || dsfv.getControlledVocabularyValues().isEmpty())) {
-                toRemoveIndex.add(index);
-            }
-
-            index++;
-        }
-        //Actually do the remove here
-        // the adjustment takes into account the prior 
-        //blank fields which have been removed.
-        int adjustment = 0;
-        if (!toRemoveIndex.isEmpty()) {
-            for (Integer dsfvRI : toRemoveIndex) {
-                editVersion.getDatasetFieldValues().remove(dsfvRI.intValue() - adjustment);
-                adjustment++;
-            }
-        }
+        
         // need to save multi select CVs
         /*
          for (String subjectVal: datasetVersionUI.getSubjects()){
@@ -389,6 +356,41 @@ public class DatasetPage implements java.io.Serializable {
             }
         }
 
+        //Trim spaces from any input values
+        //add any blank records to a "to Remove" list"
+        List<Integer> toRemoveIndex = new ArrayList();
+        int index = 0;
+        for (DatasetFieldValue dsfv : editVersion.getDatasetFieldValues()) {
+            if (dsfv.getStrValue() != null) {
+                dsfv.setStrValue(dsfv.getStrValue().trim());
+            }
+            
+            //Single recs and child recs (with no controlled vocab)
+            if ((!dsfv.getDatasetField().isHasChildren() && !dsfv.getDatasetField().isControlledVocabulary()) && (dsfv.getStrValue() == null || dsfv.getStrValue().trim().isEmpty())) {
+                toRemoveIndex.add(index);
+            }
+            //parent recs where all kids are empty.
+            if (dsfv.getDatasetField().isHasChildren() && dsfv.isChildEmpty()) {
+                toRemoveIndex.add(index);
+            }
+            //controlled vocab recs where all kids are empty.
+            if (dsfv.getDatasetField().isControlledVocabulary() && (dsfv.getControlledVocabularyValues() == null || dsfv.getControlledVocabularyValues().isEmpty())) {
+                toRemoveIndex.add(index);
+            }
+
+            index++;
+        }
+        //Actually do the remove here
+        // the adjustment takes into account the prior 
+        //blank fields which have been removed.
+        int adjustment = 0;
+        if (!toRemoveIndex.isEmpty()) {
+            for (Integer dsfvRI : toRemoveIndex) {
+                editVersion.getDatasetFieldValues().remove(dsfvRI.intValue() - adjustment);
+                adjustment++;
+            }
+        }
+        
         try {
             datasetService.removeRecs(dataset, deleteRecords);
             dataset = datasetService.save(dataset);
