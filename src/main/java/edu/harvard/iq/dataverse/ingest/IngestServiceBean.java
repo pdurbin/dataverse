@@ -24,6 +24,7 @@ import edu.harvard.iq.dataverse.ControlledVocabularyValue;
 import edu.harvard.iq.dataverse.datavariable.VariableServiceBean;
 import edu.harvard.iq.dataverse.DatasetServiceBean;
 import edu.harvard.iq.dataverse.DataFile;
+import edu.harvard.iq.dataverse.DataFileServiceBean;
 import edu.harvard.iq.dataverse.DatasetField;
 import edu.harvard.iq.dataverse.DatasetFieldServiceBean;
 import edu.harvard.iq.dataverse.DatasetFieldValue;
@@ -84,6 +85,11 @@ import javax.jms.JMSException;
 import javax.jms.QueueConnection;
 import javax.jms.QueueSender;
 import javax.jms.QueueSession;
+import javax.jms.Message;
+import javax.faces.bean.ManagedBean;
+import org.primefaces.push.PushContext;
+import org.primefaces.push.PushContextFactory;
+import javax.faces.application.FacesMessage;
 
 /**
  *
@@ -92,6 +98,7 @@ import javax.jms.QueueSession;
  * New service for handling ingest tasks
  * 
  */
+@ManagedBean
 @Stateless
 @Named
 public class IngestServiceBean {
@@ -102,12 +109,14 @@ public class IngestServiceBean {
     DatasetServiceBean datasetService;
     @EJB
     DatasetFieldServiceBean fieldService;
-    /*
+    @EJB
+    DataFileServiceBean fileService; 
+
     @Resource(mappedName = "jms/DataverseIngest")
     Queue queue;
     @Resource(mappedName = "jms/IngestQueueConnectionFactory")
     QueueConnectionFactory factory;
-    */
+    
     
     // TODO: this constant should be provided by the Ingest Service Provder Registry;
     private static final String METADATA_SUMMARY = "FILE_METADATA_SUMMARY_INFO";
@@ -125,9 +134,9 @@ public class IngestServiceBean {
         calculateContinuousSummaryStatistics(dataFile, variableVectors);
 
     }
-    /*
-    public boolean asyncIngestAsTabular(String tempFileLocation, DataFile dataFile) throws IOException {
-        boolean ingestSuccessful = false;
+    
+    public boolean asyncIngestAsTabular(DataFile dataFile) {
+        boolean ingestSuccessful = true;
 
         QueueConnection conn = null;
         QueueSession session = null;
@@ -136,10 +145,22 @@ public class IngestServiceBean {
             conn = factory.createQueueConnection();
             session = conn.createQueueSession(false, 0);
             sender = session.createSender(queue);
-            
-            
-            
+
+            IngestMessage ingestMessage = new IngestMessage(IngestMessage.INGEST_MESAGE_LEVEL_INFO);
+            //ingestMessage.addFile(new File(tempFileLocation));
+            ingestMessage.addFile(dataFile);
+
+            Message message = session.createObjectMessage(ingestMessage);
+
+            try {
+                sender.send(message);
+            } catch (Exception ex) {
+                ingestSuccessful = false; 
+                ex.printStackTrace();
+            }
+
         } catch (JMSException ex) {
+            ingestSuccessful = false;
             ex.printStackTrace();
         } finally {
             try {
@@ -154,12 +175,17 @@ public class IngestServiceBean {
                     conn.close();
                 }
             } catch (JMSException ex) {
+                ingestSuccessful = false;
                 ex.printStackTrace();
             }
         }
 
         return ingestSuccessful;
-    }*/
+    }
+    
+    public boolean ingestAsTabular(DataFile dataFile) throws IOException {
+        return ingestAsTabular(dataFile.getFileSystemLocation().toString(), dataFile); 
+    }
     
     public boolean ingestAsTabular(String tempFileLocation, DataFile dataFile) throws IOException {
         boolean ingestSuccessful = false;
@@ -197,26 +223,29 @@ public class IngestServiceBean {
                 Logger.getLogger(DatasetPage.class.getName()).log(Level.INFO, "Tab-delimited file produced: " + tabFile.getAbsolutePath());
 
                 tabDataIngest.getDataTable().setOriginalFileFormat(determineMimeType(dataFile));
-
-                dataFile.setName(dataFile.getName().replaceAll("\\.dta$", ".tab"));
-                dataFile.setName(dataFile.getName().replaceAll("\\.RData", ".tab"));
-                dataFile.setName(dataFile.getName().replaceAll("\\.csv", ".tab"));
-                dataFile.setName(dataFile.getName().replaceAll("\\.xlsx", ".tab"));
-                // A safety check, if through some sorcery the file exists already: 
-                while (Files.exists(dataFile.getFileSystemLocation())) {
-                    datasetService.generateFileSystemName(dataFile);
-                }
-                Files.copy(Paths.get(tabFile.getAbsolutePath()), dataFile.getFileSystemLocation(), StandardCopyOption.REPLACE_EXISTING);
-
-                // And we want to save the original of the ingested file: 
+                
+                // and we want to save the original of the ingested file: 
                 try {
                     saveIngestedOriginal(dataFile, new FileInputStream(new File(tempFileLocation)));
                 } catch (IOException iox) {
                     Logger.getLogger(DatasetPage.class.getName()).log(Level.INFO, "Failed to save the ingested original! " + iox.getMessage());
                 }
+                
+                Files.copy(Paths.get(tabFile.getAbsolutePath()), dataFile.getFileSystemLocation(), StandardCopyOption.REPLACE_EXISTING);
+                
+                dataFile.setContentType("text/tab-separated-values");
+                
+                dataFile.setName(dataFile.getName().replaceAll("\\.dta$", ".tab"));
+                dataFile.setName(dataFile.getName().replaceAll("\\.RData", ".tab"));
+                dataFile.setName(dataFile.getName().replaceAll("\\.csv", ".tab"));
+                dataFile.setName(dataFile.getName().replaceAll("\\.xlsx", ".tab"));
+                
 
                 dataFile.setDataTable(tabDataIngest.getDataTable());
                 tabDataIngest.getDataTable().setDataFile(dataFile);
+                
+                dataFile.setIngestDone();
+                dataFile = fileService.save(dataFile);
                 
                 try {
                     produceSummaryStatistics(dataFile);
@@ -225,6 +254,21 @@ public class IngestServiceBean {
                 }
                 
                 ingestSuccessful = true;
+                PushContext pushContext = PushContextFactory.getDefault().getPushContext();
+                if (pushContext != null ) {
+                     Logger.getLogger(DatasetPage.class.getName()).log(Level.FINE, "Ingest: Obtained push context "
+                        + pushContext.toString());
+                } else {
+                    Logger.getLogger(DatasetPage.class.getName()).log(Level.SEVERE, "Warning! Could not obtain push context.");
+                }
+        
+        
+        
+                
+                FacesMessage facesMessage = new FacesMessage("ingest done");
+                pushContext.push("/ingest"+dataFile.getOwner().getId(), facesMessage);
+                Logger.getLogger(DatasetPage.class.getName()).log(Level.INFO, "Ingest: Sent push notification to the page.");
+
             }
         }
         return ingestSuccessful;
