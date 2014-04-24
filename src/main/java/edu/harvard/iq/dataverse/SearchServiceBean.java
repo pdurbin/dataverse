@@ -89,8 +89,10 @@ public class SearchServiceBean {
          * 
          * 4. Multiple cards
          * 
-         * Using the "group by" solution was an attempt at the complete solution, option 1. The various parameters are documented here: https://cwiki.apache.org/confluence/display/solr/Result+Grouping
-         * 
+         * Using the "group by" solution was an attempt at the complete
+         * solution, option 1. The various parameters are documented here:
+         * https://cwiki.apache.org/confluence/display/solr/Result+Grouping
+         *
          * We're pushing this code to a separate branch in case we'd like to
          * pick it up again.
          * 
@@ -106,6 +108,25 @@ public class SearchServiceBean {
          * after reading about it at
          * http://stackoverflow.com/questions/16103868/solr-how-to-get-total-number-of-results-for-grouped-query-using-the-java-api
          *
+         * KNOWN BUG: Depending on how indexing was run, we saw strange behavior
+         * for a user with permission to see multiple Solr documents for the
+         * same dataset. If you run "index all" the user would see a card build
+         * from the published version of the dataset. If you then indexed the
+         * dataset individually and refreshed the page, the user would see the
+         * unpushed (post 1.0 draft) of the dataset. Very strange. We want to be
+         * more in control over which Solr document gets returned. We asked
+         * about this in IRC (but didn't get answer as of this writing) at
+         * http://colabti.org/irclogger/irclogger_log/lucene-dev?date=2014-04-24
+         *
+         * pdurbin: hmm, I'm playing around with
+         * https://cwiki.apache.org/confluence/display/solr/Result+Grouping for
+         * the first time and it's awesome but I don't feel very in control of
+         * which Solr document gets shown. If my q=* then it seems to show the
+         * more recently indexed version?
+         *
+         * pdurbin; what I'd like during a q=* search is to prefer the Solr
+         * document that has an id that ends in "_draft"
+         * 
          */
         solrQuery.setParam("group", true);
         solrQuery.setParam("group.field", SearchFields.ENTITY_ID);
