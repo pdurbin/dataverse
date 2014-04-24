@@ -27,7 +27,7 @@
                     </h:outputLink>
 
             <!--PUBLISHED/UNPUBLISHED TOGGLE-->
-            <ui:fragment rendered="#{SearchIncludeFragment.userLoggedIn()}">
+            <ui:fragment rendered="#{false and SearchIncludeFragment.userLoggedIn()}">
                 <p:spacer width="10"/>
                 <h:outputLink>
                     <h:outputText value="#{SearchIncludeFragment.PUBLISHED}" styleClass="btn #{SearchIncludeFragment.showUnpublished == false ? 'btn-primary' : 'btn-default'}"/>
@@ -249,8 +249,13 @@
                 <ui:fragment rendered="#{SearchIncludeFragment.debug}">
                     <div style="background-color: lightgray">
                         <tt>
-                            <h:outputText value="showUnpublished:#{SearchIncludeFragment.showUnpublished} "/>
-                            <h:outputText value="mode:#{SearchIncludeFragment.mode} "/>
+                            <h:outputText value="searchResultsCount:#{SearchIncludeFragment.searchResultsCount}"/><br/>
+                            <h:outputText value="totalPages:#{SearchIncludeFragment.totalPages}"/><br/>
+                            <h:outputText value="paginationGuiRows:#{SearchIncludeFragment.paginationGuiRows}"/><br/>
+                            <h:outputText value="paginationGuiStart:#{SearchIncludeFragment.paginationGuiStart}"/><br/>
+                            <h:outputText value="paginationGuiEnd:#{SearchIncludeFragment.paginationGuiEnd}"/><br/>
+                            <h:outputText value="showUnpublished:#{SearchIncludeFragment.showUnpublished} "/><br/>
+                            <h:outputText value="mode:#{SearchIncludeFragment.mode} "/><br/>
                             <h:outputText value="sort=#{SearchIncludeFragment.sortField}:#{SearchIncludeFragment.sortOrder}"/><br/>
                             <h:outputText value="#{SearchIncludeFragment.filterQueriesDebug}"/><br/>
                         </tt>

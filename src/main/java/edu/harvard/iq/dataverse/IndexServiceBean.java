@@ -135,7 +135,7 @@ public class IndexServiceBean {
         solrInputDocument.addField(SearchFields.NAME, dataverse.getName());
         solrInputDocument.addField(SearchFields.NAME_SORT, dataverse.getName());
         if (dataverse.isReleased()) {
-            solrInputDocument.addField(SearchFields.PUBLICATION_STATUS, PUBLISHED_STRING);
+//            solrInputDocument.addField(SearchFields.PUBLICATION_STATUS, PUBLISHED_STRING);
             solrInputDocument.addField(SearchFields.RELEASE_OR_CREATE_DATE, dataverse.getPublicationDate());
             solrInputDocument.addField(SearchFields.PERMS, publicGroupString);
         } else if (dataverse.getCreator() != null) {
@@ -348,7 +348,7 @@ public class IndexServiceBean {
         solrInputDocument.addField(SearchFields.RELEASE_OR_CREATE_DATE, sortByDate);
 
         if (state.equals(indexableDataset.getDatasetState().PUBLISHED)) {
-            solrInputDocument.addField(SearchFields.PUBLICATION_STATUS, PUBLISHED_STRING);
+//            solrInputDocument.addField(SearchFields.PUBLICATION_STATUS, PUBLISHED_STRING);
 //            solrInputDocument.addField(SearchFields.RELEASE_OR_CREATE_DATE, dataset.getPublicationDate());
             solrInputDocument.addField(SearchFields.PERMS, publicGroupString);
         } else if (state.equals(indexableDataset.getDatasetState().WORKING_COPY)) {
@@ -556,7 +556,7 @@ public class IndexServiceBean {
             datafileSolrInputDocument.addField(SearchFields.NAME_SORT, dataFile.getName());
             datafileSolrInputDocument.addField(SearchFields.RELEASE_OR_CREATE_DATE, sortByDate);
             if (indexableDataset.getDatasetState().equals(indexableDataset.getDatasetState().PUBLISHED)) {
-                datafileSolrInputDocument.addField(SearchFields.PUBLICATION_STATUS, PUBLISHED_STRING);
+//                datafileSolrInputDocument.addField(SearchFields.PUBLICATION_STATUS, PUBLISHED_STRING);
                 datafileSolrInputDocument.addField(SearchFields.PERMS, publicGroupString);
             } else if (indexableDataset.getDatasetState().equals(indexableDataset.getDatasetState().WORKING_COPY)) {
                 datafileSolrInputDocument.addField(SearchFields.PUBLICATION_STATUS, UNPUBLISHED_STRING);

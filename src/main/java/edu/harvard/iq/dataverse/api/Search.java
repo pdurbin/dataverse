@@ -129,7 +129,8 @@ public class Search extends AbstractApiBean {
                     .add("fq_provided", filterQueries.toString())
                     .add("fq_actual", filterQueriesActual.toString())
                     .add("total_count", solrQueryResponse.getNumResultsFound())
-                    .add("start", solrQueryResponse.getResultsStart())
+                    // this isn't used in the GUI... do we need it? We were getting an NPE when we tried to switch to the Solr "group by" feature
+//                    .add("start", solrQueryResponse.getResultsStart())
                     .add("count_in_response", solrSearchResults.size())
                     .add("items", solrSearchResults.toString());
             if (showRelevance) {

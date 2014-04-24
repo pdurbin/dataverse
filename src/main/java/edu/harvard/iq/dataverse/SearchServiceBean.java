@@ -26,6 +26,9 @@ import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.FacetField;
+import org.apache.solr.client.solrj.response.Group;
+import org.apache.solr.client.solrj.response.GroupCommand;
+import org.apache.solr.client.solrj.response.GroupResponse;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.RangeFacet;
 import org.apache.solr.client.solrj.response.SpellCheckResponse;
@@ -60,15 +63,53 @@ public class SearchServiceBean {
 
     public SolrQueryResponse search(DataverseUser dataverseUser, Dataverse dataverse, String query, List<String> filterQueries, String sortField, String sortOrder, int paginationStart, PublishedToggle publishedToggle) {
         if (publishedToggle.equals(PublishedToggle.PUBLISHED)) {
-            filterQueries.add(SearchFields.PUBLICATION_STATUS + ":" + IndexServiceBean.getPUBLISHED_STRING());
+//            filterQueries.add(SearchFields.PUBLICATION_STATUS + ":" + IndexServiceBean.getPUBLISHED_STRING());
         } else {
-            filterQueries.add(SearchFields.PUBLICATION_STATUS + ":" + IndexServiceBean.getUNPUBLISHED_STRING());
+//            filterQueries.add(SearchFields.PUBLICATION_STATUS + ":" + IndexServiceBean.getUNPUBLISHED_STRING());
         }
         /**
          * @todo make "localhost" and port number a config option
          */
         SolrServer solrServer = new HttpSolrServer("http://localhost:8983/solr");
         SolrQuery solrQuery = new SolrQuery();
+        /**
+         * After a demo of this "group by" feature of Solr on 2014-04-24 it was
+         * decided that while combining Solr documents was interesting and even
+         * somewhat compelling that we would rather try multiple cards instead,
+         * which is called option 4 in
+         * https://docs.google.com/a/harvard.edu/document/d/1clGJKOmrH8zhQyG_8vQHui5L4fszdqRjM4t3U6NFJXg/edit?usp=sharing
+         *
+         * For reference, here are the four options
+         * 
+         * 1. Complete solution
+         * 
+         * 2. Toggle solution
+         * 
+         * 3. Non-toggle solution
+         * 
+         * 4. Multiple cards
+         * 
+         * Using the "group by" solution was an attempt at the complete solution, option 1. The various parameters are documented here: https://cwiki.apache.org/confluence/display/solr/Result+Grouping
+         * 
+         * We're pushing this code to a separate branch in case we'd like to
+         * pick it up again.
+         * 
+         * KNOWN BUG: If we do pick it up again, please note that there is a
+         * known bug that affects users who have access to more than one Solr
+         * document for a dataset (i.e. a published version and a later draft),
+         * a discrepancy between the number of datasets that are seen in the
+         * Datasets facet and the number of results in the count above the
+         * results. For example, the Datasets facets said 3 but above the
+         * results we saw 1 of 5 even though there were only 3 cards shown. The
+         * bug has something to do with how we had to change how we get the
+         * total result count. We had tried using groupCommand.getMatches()
+         * after reading about it at
+         * http://stackoverflow.com/questions/16103868/solr-how-to-get-total-number-of-results-for-grouped-query-using-the-java-api
+         *
+         */
+        solrQuery.setParam("group", true);
+        solrQuery.setParam("group.field", SearchFields.ENTITY_ID);
+        solrQuery.setParam("group.facet", true);
         solrQuery.setQuery(query);
 //        SortClause foo = new SortClause("name", SolrQuery.ORDER.desc);
 //        if (query.equals("*") || query.equals("*:*")) {
@@ -114,7 +155,7 @@ public class SearchServiceBean {
             if (dataverseUser.isGuest()) {
                 permissionFilterQuery = publicOnly;
             } else {
-//                solrQuery.addFacetField(SearchFields.PUBLICATION_STATUS);
+                solrQuery.addFacetField(SearchFields.PUBLICATION_STATUS);
                 /**
                  * Non-guests might get more than public stuff with an OR or
                  * two.
@@ -218,7 +259,23 @@ public class SearchServiceBean {
         } catch (SolrServerException ex) {
             throw new RuntimeException("Is the Solr server down?");
         }
-        SolrDocumentList docs = queryResponse.getResults();
+//        SolrDocumentList docs = queryResponse.getResults();
+        SolrDocumentList docs = new SolrDocumentList();
+        GroupResponse groupResponse = queryResponse.getGroupResponse();
+        List<GroupCommand> groupCommands = groupResponse.getValues();
+//        long totalNumFound = 0;
+        int totalNumFoundInt = 0;
+        for (GroupCommand groupCommand : groupCommands) {
+            int matches = groupCommand.getMatches();
+            totalNumFoundInt += matches;
+            List<Group> groups = groupCommand.getValues();
+            for (Group group : groups) {
+                SolrDocumentList solrDocumentList = group.getResult();
+//                long numFound = solrDocumentList.getNumFound();
+//                totalNumFound += numFound;
+                docs.addAll(solrDocumentList);
+            }
+        }
         Iterator<SolrDocument> iter = docs.iterator();
         List<SolrSearchResult> solrSearchResults = new ArrayList<>();
 
@@ -453,8 +510,10 @@ public class SearchServiceBean {
         solrQueryResponse.setSpellingSuggestionsByToken(spellingSuggestionsByToken);
         solrQueryResponse.setFacetCategoryList(facetCategoryList);
         solrQueryResponse.setTypeFacetCategories(typeFacetCategories);
-        solrQueryResponse.setNumResultsFound(queryResponse.getResults().getNumFound());
-        solrQueryResponse.setResultsStart(queryResponse.getResults().getStart());
+//        solrQueryResponse.setNumResultsFound(queryResponse.getResults().getNumFound());
+//        solrQueryResponse.setNumResultsFound(totalNumFound);
+        solrQueryResponse.setNumResultsFound(Long.valueOf(totalNumFoundInt));
+//        solrQueryResponse.setResultsStart(queryResponse.getResults().getStart());
         solrQueryResponse.setDatasetfieldFriendlyNamesBySolrField(datasetfieldFriendlyNamesBySolrField);
         solrQueryResponse.setStaticSolrFieldFriendlyNamesBySolrField(staticSolrFieldFriendlyNamesBySolrField);
         solrQueryResponse.setFilterQueriesActual(Arrays.asList(solrQuery.getFilterQueries()));
