@@ -139,7 +139,10 @@ public class Dataverses extends AbstractApiBean {
         
         Dataset ds = new Dataset();
         ds.setOwner(owner);
-        ds.setIdentifier( json.getString("identifier"));
+        if (json.getJsonString("identifier") != null) {
+            // if this doesn't get set CreateDatasetCommand will surface the ConstraintViolationException
+            ds.setIdentifier(json.getJsonString("identifier").getString());
+        }
         ds.setAuthority(  json.getString("authority"));
         ds.setProtocol(   json.getString("protocol"));
         JsonObject jsonVersion = json.getJsonObject("initialVersion");
@@ -176,6 +179,13 @@ public class Dataverses extends AbstractApiBean {
             
         } catch (CommandException ex) {
             String incidentId = UUID.randomUUID().toString();
+            /**
+             * @todo In the case of ConstraintViolationException(s), rather than
+             * only showing the API user only an incidentId, we could surface
+             * the exception(s) such as: Invalid value: "null" for "identifier"
+             * at [Dataset id:null ] - Please enter an identifier for your
+             * dataset.
+             */
             logger.log(Level.SEVERE, "Error creating new dataset: " + ex.getMessage() + " incidentId:" + incidentId, ex);
             return errorResponse(Status.INTERNAL_SERVER_ERROR, "Error executing command. More data in the server logs. Incident id is " + incidentId);
         }

@@ -19,6 +19,8 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
 
 /**
  * Creates a {@link Dataset} in the passed {@link CommandContext}.
@@ -59,7 +61,20 @@ public class CreateDatasetCommand extends AbstractCommand<Dataset> {
             dataFile.setCreateDate(theDataset.getCreateDate());
         }
               
-        Dataset savedDataset = ctxt.em().merge(theDataset);
+        Dataset savedDataset = null;
+        try {
+            savedDataset = ctxt.em().merge(theDataset);
+        } catch (ConstraintViolationException ex) {
+            StringBuilder sb = new StringBuilder();
+            ConstraintViolationException constraintViolationException = (ConstraintViolationException) ex;
+            for (ConstraintViolation<?> violation : constraintViolationException.getConstraintViolations()) {
+                sb.append(" Invalid value: \"").append(violation.getInvalidValue()).append("\" for ")
+                        .append("\"" + violation.getPropertyPath()).append("\" at ")
+                        .append(violation.getLeafBean()).append(" - ")
+                        .append(violation.getMessage());
+            }
+            throw new CommandException("Couldn't save/merge dataset due to contraint violation: " + sb.toString(), this);
+        }
                 
         DataverseRole manager = new DataverseRole();
         manager.addPermissions(EnumSet.allOf(Permission.class));

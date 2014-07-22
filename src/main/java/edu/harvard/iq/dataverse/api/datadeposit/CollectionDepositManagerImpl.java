@@ -124,31 +124,12 @@ public class CollectionDepositManagerImpl implements CollectionDepositManager {
                         Dataset createdDataset = null;
                         try {
                             createdDataset = engineSvc.submit(new CreateDatasetCommand(dataset, dataverseUser));
-                        } catch (EJBException | CommandException ex) {
+                        } catch (CommandException ex) {
                             Throwable cause = ex;
                             StringBuilder sb = new StringBuilder();
                             sb.append(ex.getLocalizedMessage());
                             while (cause.getCause() != null) {
                                 cause = cause.getCause();
-                                /**
-                                 * @todo move this ConstraintViolationException
-                                 * check to CreateDatasetCommand. Can be
-                                 * triggered if you don't call
-                                 * dataset.setIdentifier() or if you feed it
-                                 * date format we don't like. Once this is done
-                                 * we should be able to drop EJBException from
-                                 * the catch above and only catch
-                                 * CommandException
-                                 */
-                                if (cause instanceof ConstraintViolationException) {
-                                    ConstraintViolationException constraintViolationException = (ConstraintViolationException) cause;
-                                    for (ConstraintViolation<?> violation : constraintViolationException.getConstraintViolations()) {
-                                        sb.append(" Invalid value: '").append(violation.getInvalidValue()).append("' for ")
-                                                .append(violation.getPropertyPath()).append(" at ")
-                                                .append(violation.getLeafBean()).append(" - ")
-                                                .append(violation.getMessage());
-                                    }
-                                }
                             }
                             logger.info(sb.toString());
                             throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "Couldn't create dataset: " + sb.toString());
