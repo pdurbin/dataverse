@@ -19,7 +19,10 @@ import javax.inject.Named;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
+<<<<<<< HEAD
 //import javax.persistence.SequenceGenerator;
+=======
+>>>>>>> origin
 
 /**
  *
@@ -27,7 +30,6 @@ import javax.persistence.Query;
  */
 @Stateless
 @Named
-//@SequenceGenerator(name="EMP_SEQ", allocationSize=25)
 public class DatasetServiceBean {
 
     private static final Logger logger = Logger.getLogger(DatasetServiceBean.class.getCanonicalName());
@@ -67,13 +69,6 @@ public class DatasetServiceBean {
 
     public List<Dataset> findAll() {
         return em.createQuery("select object(o) from Dataset as o order by o.id").getResultList();
-    }
-
-    public void generateFileSystemName(DataFile dataFile) {
-        String fileSystemName = null;
-        Long result = (Long) em.createNativeQuery("select nextval('filesystemname_seq')").getSingleResult();
-        dataFile.setFileSystemName(result.toString());
-
     }
 
     /**

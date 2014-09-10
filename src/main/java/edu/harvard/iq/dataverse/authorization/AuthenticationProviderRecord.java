@@ -23,7 +23,7 @@ class AuthenticationProviderRecord implements java.io.Serializable {
     private String factoryName;
     
     @Lob
-    private String data;
+    private String implementationData;
     
     @Column( length = 256 )
     private String info;
@@ -52,20 +52,20 @@ class AuthenticationProviderRecord implements java.io.Serializable {
         this.factoryName = factoryName;
     }
 
-    public String getData() {
-        return data;
-    }
-
-    public void setData(String data) {
-        this.data = data;
-    }
-
     public String getInfo() {
         return info;
     }
 
     public void setInfo(String info) {
         this.info = info;
+    }
+
+    public String getImplementationData() {
+        return implementationData;
+    }
+
+    public void setImplementationData(String implementationData) {
+        this.implementationData = implementationData;
     }
 
     @Override

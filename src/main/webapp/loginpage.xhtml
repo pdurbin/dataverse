@@ -13,7 +13,7 @@
             <f:viewAction action="#{LoginPage.init}"/>
         </f:metadata>
         <ui:composition template="/dataverse_template.xhtml">
-            <ui:param name="pageTitle" value="Login Page"/>
+            <ui:param name="pageTitle" value="Log In - Dataverse"/>
             <ui:param name="showDataverseHeader" value="false"/>
             <ui:param name="showBreadcrumbs" value="false"/>
             <ui:param name="showMessagePanel" value="#{true}"/>
@@ -21,6 +21,7 @@
                 <div class="row" style="margin-top:3em;">
 					<h:form id="loginForm" styleClass="form-horizontal">
                         <p:focus context="loginForm"/>
+<<<<<<< HEAD
 						<div class="form-group">
                             <p:outputLabel value="Login System" for="loginSystemSelect" styleClass="col-sm-2 control-label"/>
 							<h:selectOneMenu id="loginSystemSelect" value="#{LoginPage.credentialsAuthProviderId}">
@@ -41,6 +42,40 @@
 							</div>
 						</ui:repeat>
 						<div class="form-group">
+=======
+                        <div class="form-group">
+                            <p:outputLabel value="Username" for="userName" styleClass="col-sm-2 control-label"/>
+                            <div class="col-sm-9">
+                                <div class="form-group">
+                                    <div class="col-sm-5">
+                                        <h:inputText id="userName" size="40" style="width:auto;" value="#{LoginPage.userName}" styleClass="form-control"/>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <p:message for="userName"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <p:outputLabel value="Password" for="password" styleClass="col-sm-2 control-label"/>
+                            <div class="col-sm-9">
+                                <div class="form-group">
+                                    <div class="col-sm-5">
+                                        <h:inputSecret id="password" size="40" style="width:auto;" value="#{LoginPage.password}" styleClass="form-control"/>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <p:message for="password"/>
+                                    </div>
+                                </div>
+                                <div style="margin-top:.5em;">
+                                    <a href="passwordreset.xhtml">
+                                        Forgot your password?
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+>>>>>>> origin
                             <div class="col-sm-offset-2 col-sm-9">
                                 <p:commandButton id="login" value="Log In" action="#{LoginPage.login}"/>
                                 <p:button value="Cancel" style="margin-left:1em;" outcome="/dataverse.xhtml"/>
