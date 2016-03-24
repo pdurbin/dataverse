@@ -6,6 +6,8 @@ import java.util.logging.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.AfterClass;
+import com.jayway.restassured.path.json.JsonPath;
+import org.junit.Ignore;
 import static com.jayway.restassured.RestAssured.given;
 import static junit.framework.Assert.assertEquals;
 
@@ -22,6 +24,7 @@ public class DatasetsIT {
         RestAssured.baseURI = UtilIT.getRestAssuredBaseUri();
     }
 
+    @Ignore
     @Test
     public void testCreateDataset() {
 
@@ -40,6 +43,82 @@ public class DatasetsIT {
 
     }
 
+    @Test
+    public void testAnonLink() {
+
+        Response createUser = UtilIT.createRandomUser();
+//        createUser.prettyPrint();
+        String username = UtilIT.getUsernameFromResponse(createUser);
+        String apiToken = UtilIT.getApiTokenFromResponse(createUser);
+
+        Response createDataverseResponse = UtilIT.createRandomDataverse(apiToken);
+        createDataverseResponse.prettyPrint();
+        String dataverseAlias = UtilIT.getAliasFromResponse(createDataverseResponse);
+
+        Response createDatasetResponse = UtilIT.createRandomDatasetViaNativeApi(dataverseAlias, apiToken);
+        createDatasetResponse.prettyPrint();
+        Integer datasetId = JsonPath.from(createDatasetResponse.body().asString()).getInt("data.id");
+        System.out.println("dataset id: " + datasetId);
+
+        /**
+         * @todo Upload a file.
+         */
+        Response getDatasetJson = UtilIT.nativeGet(datasetId, apiToken);
+        getDatasetJson.prettyPrint();
+        Response badApiKeyEmptyString = UtilIT.anonLinkGet(datasetId, "");
+        badApiKeyEmptyString.prettyPrint();
+        Response badApiKeyDoesNotExist = UtilIT.anonLinkGet(datasetId, "junk");
+        badApiKeyDoesNotExist.prettyPrint();
+        Response badDatasetId = UtilIT.anonLinkGet(Integer.MAX_VALUE, apiToken);
+        badDatasetId.prettyPrint();
+        Response pristine = UtilIT.anonLinkGet(datasetId, apiToken);
+        pristine.prettyPrint();
+
+        Response createAnonLink = UtilIT.anonLinkRegenerate(datasetId, apiToken);
+        createAnonLink.prettyPrint();
+
+        /**
+         * @todo Not just anyone should be able to get the token! You need to be
+         * able to create datasets, not just have a valid Dataverse account.
+         */
+        Response shouldExist = UtilIT.anonLinkGet(datasetId, apiToken);
+        shouldExist.prettyPrint();
+
+        /**
+         * @todo Rename from "get" to "token" or something.
+         */
+        String anonLinkToken = JsonPath.from(shouldExist.body().asString()).getString("data.get");
+        logger.info("anonLinkToken: " + anonLinkToken);
+
+        Response badAnonLinkTokenEmptyString = UtilIT.nativeGetAnon(datasetId, "");
+        badAnonLinkTokenEmptyString.prettyPrint();
+        assertEquals(401, badAnonLinkTokenEmptyString.getStatusCode());
+
+        Response badAnonLinkTokenDoesNotExist = UtilIT.nativeGetAnon(datasetId, "junk");
+        badAnonLinkTokenDoesNotExist.prettyPrint();
+        assertEquals(401, badAnonLinkTokenDoesNotExist.getStatusCode());
+
+        Response getWithAnonToken = UtilIT.nativeGetAnon(datasetId, anonLinkToken);
+//        getWithAnonToken.prettyPrint();
+        assertEquals(200, getWithAnonToken.getStatusCode());
+
+        /**
+         * @todo Test that you can download the file with the anonLinkToken.
+         * Probably it won't work...
+         */
+        /**
+         * @todo Revoke token.
+         */
+        boolean deltingDatasetRemovesAnonLinkButNotViceVersa = false;
+        if (deltingDatasetRemovesAnonLinkButNotViceVersa) {
+            Response deleteDatasetResponse = UtilIT.deleteDatasetViaNativeApi(datasetId, apiToken);
+            deleteDatasetResponse.prettyPrint();
+            assertEquals(200, deleteDatasetResponse.getStatusCode());
+        }
+
+    }
+
+    @Ignore
     @Test
     public void testGetDdi() {
         String persistentIdentifier = "FIXME";
@@ -69,7 +148,7 @@ public class DatasetsIT {
 
     @AfterClass
     public static void tearDownClass() {
-        boolean disabled = false;
+        boolean disabled = true;
 
         if (disabled) {
             return;

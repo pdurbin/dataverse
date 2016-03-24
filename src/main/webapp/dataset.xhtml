@@ -31,6 +31,7 @@
                     <f:viewParam name="persistentId" value="#{DatasetPage.persistentId}"/>
                     <f:viewParam name="fileSortField" value="#{DatasetPage.fileSortField}"/>
                     <f:viewParam name="fileSortOrder" value="#{DatasetPage.fileSortOrder}"/>
+                    <f:viewParam name="reviewToken" value="#{DatasetPage.anonLinkToken}"/>
                     <f:viewAction action="#{DatasetPage.init}" rendered="true"/>
                     <f:viewAction action="#{dataverseHeaderFragment.initBreadcrumbs(DatasetPage.dataset)}"/>
                     <f:viewAction action="#{EditDatafilesPage.initCreateMode(DatasetPage.editMode, DatasetPage.workingVersion, DatasetPage.newFiles, DatasetPage.selectedFiles)}"/>
@@ -84,6 +85,14 @@
                                                     </h:link>
                                                 </li>
                                             </ul>
+                                        </li>
+                                    </ui:fragment>
+                                    <ui:fragment rendered="#{permissionsWrapper.canManagePermissions(DatasetPage.dataset)}">
+                                        <li class="divider"></li>
+                                        <li>
+                                            <p:commandLink id="privateUrl" onclick="PF('privateUrlConfirmation').show()">
+                                                <h:outputText value="#{bundle['dataset.editBtn.itemLabel.privateUrl']}" />
+                                            </p:commandLink>
                                         </li>
                                     </ui:fragment>
                                     <ui:fragment rendered="#{!DatasetPage.dataset.released and DatasetPage.dataset.latestVersion.versionState=='DRAFT' and permissionsWrapper.canIssueDeleteDatasetCommand(DatasetPage.dataset)}">
@@ -645,6 +654,21 @@
                     
                     
                     
+                    <p:dialog styleClass="smallPopUp" header="#{bundle['dataset.anonlink.header']}" widgetVar="privateUrlConfirmation" modal="true">
+                        <p class="help-block">#{bundle['dataset.anonlink.tip']}</p>
+                        <div class="col-sm-offset-1">
+                            <p><a href="#{DatasetPage.anonLink}">#{DatasetPage.anonLink}</a></p>
+                            <!--FIXME: get rid off all this authenticatedUsersContributorRole stuff-->
+                            <p:selectOneRadio id="anonLinkState" value="#{DatasetPage.anonLinkState}" layout="grid" columns="1">
+                                <f:selectItem itemLabel="#{bundle['dataset.anonlink.enable']}" itemValue="#{DatasetPage.anonLinkStateEnableString}" />
+                                <f:selectItem itemLabel="#{bundle['dataset.anonlink.disable']}" itemValue="#{DatasetPage.anonLinkStateDisableString}" />
+                            </p:selectOneRadio>            
+                        </div>
+                        <div class="button-block">
+                            <p:commandButton value="#{bundle.saveChanges}" onclick="PF('privateUrlConfirmation').hide()" action="#{DatasetPage.saveChangesAnonLink()}" />
+                            <p:commandButton value="#{bundle.cancel}" onclick="PF('privateUrlConfirmation').hide();PF('blockDatasetForm').hide();" type="button" />
+                        </div>
+                    </p:dialog>
                     <p:dialog styleClass="smallPopUp" header="#{bundle['file.deleteDialog.header']}" widgetVar="deleteConfirmation" modal="true">
                         <p class="text-danger"><span class="glyphicon glyphicon-warning-sign"/> #{bundle['file.deleteDialog.tip']}</p>
                         <div class="button-block">

@@ -5,6 +5,7 @@
  */
 package edu.harvard.iq.dataverse;
 
+import edu.harvard.iq.dataverse.anonlink.AnonLink;
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ejb.EJB;
@@ -30,6 +32,8 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.inject.Named;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -625,4 +629,71 @@ public class DatasetServiceBean implements java.io.Serializable {
         
         return false;
     }
+
+    public AnonLink getAnonLink(Long datasetId) {
+        if (datasetId == null) {
+            return null;
+        }
+        TypedQuery<AnonLink> typedQuery = em.createQuery("SELECT OBJECT(o) FROM AnonLink o WHERE o.dataset.id = :id", AnonLink.class);
+        typedQuery.setParameter("id", datasetId);
+        try {
+            AnonLink anonLink = typedQuery.getSingleResult();
+            return anonLink;
+        } catch (NoResultException | NonUniqueResultException ex) {
+            return null;
+        }
+    }
+
+    public DatasetVersion getDraftDatasetVersionFromAnonLinkToken(String anonLinkToken) {
+        if (anonLinkToken == null) {
+            return null;
+        }
+        TypedQuery<AnonLink> typedQuery = em.createQuery("SELECT OBJECT(o) FROM AnonLink o WHERE o.token = :token", AnonLink.class);
+        typedQuery.setParameter("token", anonLinkToken);
+        try {
+            AnonLink anonLink = typedQuery.getSingleResult();
+            return anonLink.getDataset().getDraftVersionWithoutCreatingNewVersion();
+        } catch (NoResultException | NonUniqueResultException ex) {
+            return null;
+        }
+    }
+
+    public AnonLink regenerateAnonLink(Long datasetId, String newToken) {
+        Dataset dataset = find(datasetId);
+        if (dataset != null) {
+            /**
+             * @todo Don't just keep adding AnonLinks. How can we enforce a
+             * OneToOne relationship anyway?
+             * 
+             * 
+             */
+            if (newToken == null || newToken.isEmpty()) {
+                newToken = UUID.randomUUID().toString();
+            }
+            AnonLink existingAnonLink = getAnonLink(datasetId);
+            if (existingAnonLink == null) {
+                AnonLink newAnonLink = new AnonLink(dataset, newToken);
+                em.persist(newAnonLink);
+                em.flush();
+                logger.info("returning " + newAnonLink.getToken());
+                return newAnonLink;
+            } else {
+                existingAnonLink.setToken(newToken);
+                em.merge(existingAnonLink);
+                em.flush();
+                logger.info("returning " + existingAnonLink.getToken());
+                return existingAnonLink;
+            }
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * @todo Implement this.
+     */
+    public boolean deleteAnonLink(Long datasetId) {
+        return false;
+    }
+
 }

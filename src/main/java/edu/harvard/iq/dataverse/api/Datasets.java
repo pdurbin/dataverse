@@ -9,6 +9,7 @@ import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.Dataverse;
 import edu.harvard.iq.dataverse.DataverseServiceBean;
 import edu.harvard.iq.dataverse.MetadataBlock;
+import edu.harvard.iq.dataverse.anonlink.AnonLink;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.engine.command.Command;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
@@ -378,6 +379,91 @@ public class Datasets extends AbstractApiBean {
         }
     }
 
+    @GET
+    @Path("{id}/anonlink")
+    public Response getAnonLink(@PathParam("id") String idSupplied) {
+        try {
+            User u = findUserOrDie();
+            /**
+             * @todo Only allow people who have permission to add a dataset
+             * access to get the token.
+             */
+            Dataset dataset = findDatasetOrDie(idSupplied);
+
+            long datasetId = dataset.getId();
+            AnonLink anonLink = datasetService.getAnonLink(datasetId);
+            JsonObjectBuilder response = Json.createObjectBuilder();
+            response.add("datasetIdSupplied", datasetId);
+            if (anonLink != null) {
+                response.add("get", anonLink.getToken());
+                DatasetVersion draft = datasetService.getDraftDatasetVersionFromAnonLinkToken(anonLink.getToken());
+                response.add("draft", draft.getId());                
+            } else {
+                response.add("get", "nothing found");
+            }
+            return okResponse(response);
+        } catch (WrappedResponse wr) {
+            return wr.getResponse();
+        }
+    }
+
+    @PUT
+    @Path("{id}/anonlink")
+    public Response regenerateAnonLink(@PathParam("id") String idSupplied) {
+        try {
+            User u = findUserOrDie();
+            Dataset dataset = findDatasetOrDie(idSupplied);
+
+            long datasetId = dataset.getId();
+            JsonObjectBuilder response = Json.createObjectBuilder();
+            response.add("datasetId", datasetId);
+            String newToken = null;
+            AnonLink generated = datasetService.regenerateAnonLink(datasetId, newToken);
+            if (generated != null) {
+                response.add("generated", generated.getToken());
+            }
+            return okResponse(response);
+        } catch (WrappedResponse wr) {
+            return wr.getResponse();
+        }
+    }
+
+    /**
+     * @todo Implement this.
+     */
+    @DELETE
+    @Path("{id}/anonlink")
+    public Response deleteAnonLink(@PathParam("id") String idSupplied) {
+        return errorResponse(Response.Status.NOT_IMPLEMENTED);
+    }
+
+    @GET
+    @Path("{id}/versions/anon")
+    public Response getVersionUsingAnonLinkToken(@PathParam("id") String idSupplied) {
+        String anonLinkToken = getRequestAnonLinkToken();
+        if (anonLinkToken == null) {
+            return errorResponse(Response.Status.BAD_REQUEST, "You must supply this header: " + ANONLINK_TOKEN_HTTP_HEADER);
+        }
+        Dataset dataset;
+        try {
+            dataset = findDatasetOrDie(idSupplied);
+        } catch (WrappedResponse wr) {
+            return wr.getResponse();
+        }
+        AnonLink anonLink = datasetService.getAnonLink(dataset.getId());
+        if (anonLink == null) {
+            return errorResponse(Response.Status.BAD_REQUEST, "Anonymous access to drafts has not been enabled for dataset " + dataset.getId() + " (" + dataset.getGlobalId() + ").");
+        }
+        if (!anonLink.getToken().equals(anonLinkToken)) {
+            return errorResponse(Response.Status.UNAUTHORIZED, "Wrong token for dataset " + dataset.getId() + " (" + dataset.getGlobalId() + ").");
+        }
+        DatasetVersion dsv = dataset.getDraftVersionWithoutCreatingNewVersion();
+        if (dsv != null) {
+            return okResponse(json(dsv));
+        } else {
+            return errorResponse(Response.Status.BAD_REQUEST, "A draft is not available for dataset " + dataset.getId() + " (" + dataset.getGlobalId() + ").");
+        }
+    }
 
     private <T> T handleVersion( String versionId, DsVersionHandler<T> hdl )
         throws WrappedResponse {

@@ -60,7 +60,8 @@ public abstract class AbstractApiBean {
     
     private static final Logger logger = Logger.getLogger(AbstractApiBean.class.getName());
     private static final String DATAVERSE_KEY_HEADER_NAME = "X-Dataverse-key";
-    
+    public static final String ANONLINK_TOKEN_HTTP_HEADER = "X-Dataverse-anonlink";
+
     /**
      * Utility class to convey a proper error response using Java's exceptions.
      */
@@ -219,7 +220,12 @@ public abstract class AbstractApiBean {
         String queryParamApiKey = httpRequest.getParameter("key");
         return headerParamApiKey!=null ? headerParamApiKey : queryParamApiKey;
     }
-    
+
+    protected String getRequestAnonLinkToken() {
+        String headerParamAnonLinkToken = httpRequest.getHeader(ANONLINK_TOKEN_HTTP_HEADER);
+        return headerParamAnonLinkToken != null ? headerParamAnonLinkToken : null;
+    }
+
     /**
      * Returns the user of pointed by the API key, or the guest user
      * @return a user, may be a guest user.

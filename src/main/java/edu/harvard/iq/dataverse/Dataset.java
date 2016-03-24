@@ -299,6 +299,20 @@ public class Dataset extends DvObjectContainer {
         }
     }
 
+    /**
+     * Unlike getEditVersion, this method will never create a new draft.
+     *
+     * @return A draft, if available or null.
+     */
+    public DatasetVersion getDraftVersionWithoutCreatingNewVersion() {
+        DatasetVersion latestVersion = this.getLatestVersion();
+        if (!latestVersion.isWorkingCopy()) {
+            return null;
+        } else {
+            return latestVersion;
+        }
+    }
+
  public DatasetVersion getCreateVersion() {
         DatasetVersion dsv = new DatasetVersion();
         dsv.setVersionState(DatasetVersion.VersionState.DRAFT);

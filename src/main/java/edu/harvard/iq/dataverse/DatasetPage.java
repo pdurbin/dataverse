@@ -1,5 +1,6 @@
 package edu.harvard.iq.dataverse;
 
+import edu.harvard.iq.dataverse.anonlink.AnonLink;
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUserServiceBean;
@@ -65,6 +66,7 @@ import org.primefaces.context.RequestContext;
 import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.UUID;
 import javax.faces.model.SelectItem;
 import java.util.logging.Level;
 import javax.faces.component.UIComponent;
@@ -206,6 +208,38 @@ public class DatasetPage implements java.io.Serializable {
     private Long maxFileUploadSizeInBytes = null;
     
     private String dataverseSiteUrl = ""; 
+
+    /**
+     * Dataset creators create this token and embed it in a link that they share
+     * will reviewers to give them feedback on a draft dataset.
+     */
+    private String anonLinkToken;
+    private String token;
+    private String anonLinkState;
+
+    public String getAnonLinkToken() {
+        return anonLinkToken;
+    }
+
+    public void setAnonLinkToken(String anonLinkToken) {
+        this.anonLinkToken = anonLinkToken;
+    }
+
+    public String getAnonLinkState() {
+        return anonLinkState;
+    }
+
+    public void setAnonLinkState(String anonLinkState) {
+        this.anonLinkState = anonLinkState;
+    }
+
+    public String getAnonLinkStateEnableString() {
+        return "anonLinkEnable";
+    }
+
+    public String getAnonLinkStateDisableString() {
+        return "anonLinkDisable";
+    }
     
     private boolean removeUnusedTags;
 
@@ -1371,6 +1405,14 @@ public class DatasetPage implements java.io.Serializable {
     private boolean metadataExportEnabled;
 
     public String init() {
+        DatasetVersion datasetVersionFromAnonLink = datasetService.getDraftDatasetVersionFromAnonLinkToken(anonLinkToken);
+        if (datasetVersionFromAnonLink != null) {
+            logger.fine("found a draft dataset via anon link!");
+            dataset.setId(datasetVersionFromAnonLink.getDataset().getId());
+            this.workingVersion = datasetVersionFromAnonLink;
+        } else {
+            logger.fine("no draft dataset found by anon link");
+        }
         //System.out.println("_YE_OLDE_QUERY_COUNTER_");  // for debug purposes
         
         String nonNullDefaultIfKeyNotFound = "";
@@ -1428,6 +1470,7 @@ public class DatasetPage implements java.io.Serializable {
             } 
 
             if (retrieveDatasetVersionResponse == null) {
+                logger.fine("retrieveDatasetVersionResponse is null");
                 return "/404.xhtml";
             }
 
@@ -1439,6 +1482,7 @@ public class DatasetPage implements java.io.Serializable {
             // Is the DatasetVersion or Dataset null?
             //
             if (workingVersion == null || this.dataset == null) {
+                logger.fine("workingVersion == null || this.dataset == null");
                 return "/404.xhtml";
             }
 
@@ -1470,8 +1514,22 @@ public class DatasetPage implements java.io.Serializable {
             //if (!(workingVersion.isReleased() || workingVersion.isDeaccessioned()) && !permissionService.on(dataset).has(Permission.ViewUnpublishedDataset)) {
             if (!(workingVersion.isReleased() || workingVersion.isDeaccessioned()) && !this.canViewUnpublishedDataset()) {
                 if (!isSessionUserAuthenticated()) {
-                    return "/loginpage.xhtml" + DataverseHeaderFragment.getRedirectPage();
+                    /**
+                     * Here is where we are bypassing the normal "go log in"
+                     * logic if a valid anon link has been provided but we've
+                     * got problems.
+                     *
+                     * @todo Files cannot be downloaded.
+                     *
+                     * @todo No preview of file images such as PNG, probably for
+                     * the same reason that files cannot be downloaded.
+                     */
+                    if (datasetVersionFromAnonLink == null) {
+                        logger.fine("return \"/loginpage.xhtml\" + DataverseHeaderFragment.getRedirectPage();");
+                        return "/loginpage.xhtml" + DataverseHeaderFragment.getRedirectPage();
+                    }
                 } else {
+                    logger.fine("return \"/403.xhtml\"; //SEK need a new landing page if user is already logged in but lacks permission");
                     return "/403.xhtml"; //SEK need a new landing page if user is already logged in but lacks permission
                 }
             }
@@ -1555,6 +1613,12 @@ public class DatasetPage implements java.io.Serializable {
             return "/404.xhtml";
         }
 
+
+//        if (datasetService.getAnonLink(dataset.getId()) != null){
+//            anonLinkState = getAnonLinkStateEnableString();
+//        } else {
+//            anonLinkState = getAnonLinkStateDisableString();            
+//        }
         return null;
     }
     
@@ -2162,7 +2226,40 @@ public class DatasetPage implements java.io.Serializable {
             JsfHelper.addSuccessMessage(JH.localize("dataset.message.deleteSuccess"));
         return "/dataverse.xhtml?alias=" + dataset.getOwner().getAlias() + "&faces-redirect=true";
     }
-    
+
+    public String getAnonLink() {
+        AnonLink existingAnonLink = datasetService.getAnonLink(dataset.getId());
+        String tokenToShow;
+        if (existingAnonLink != null) {
+            tokenToShow = existingAnonLink.getToken();
+        } else {
+            tokenToShow = "TBD";
+        }
+        logger.fine("in getAnonLink method... state is " + getAnonLinkState());
+        return systemConfig.getDataverseSiteUrl() + "/dataset.xhtml?reviewToken=" + tokenToShow;
+    }
+
+    public String saveChangesAnonLink() {
+//        String token = "FIXME: Should this token be a field on this class? Probably!";
+        /**
+         * @todo Actually create/set the token.
+         */
+        logger.info("in saveChangesAnonLink method... state is " + getAnonLinkState() + " and token is " + token);
+        if (anonLinkState.equals(getAnonLinkStateEnableString())) {
+            JsfHelper.addSuccessMessage(BundleUtil.getStringFromBundle("FIXME") + "... Do we want a success message?");
+            AnonLink anonLink = datasetService.regenerateAnonLink(dataset.getId(), token);
+        } else if (anonLinkState.equals(getAnonLinkStateDisableString())) {
+            datasetService.deleteAnonLink(dataset.getId());
+        } else {
+            // no-op
+        }
+        /**
+         * @todo Do we want a success message?
+         */
+//        return "/dataverse.xhtml?alias=" + dataset.getOwner().getAlias() + "&faces-redirect=true";
+        return null;
+    }
+
     public String editFileMetadata(){
         // If there are no files selected, return an empty string - which 
         // means, do nothing, don't redirect anywhere, stay on this page. 

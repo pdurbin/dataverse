@@ -19,6 +19,7 @@ import com.jayway.restassured.path.xml.XmlPath;
 import org.junit.Test;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.path.xml.XmlPath.from;
+import static edu.harvard.iq.dataverse.api.AbstractApiBean.ANONLINK_TOKEN_HTTP_HEADER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -347,6 +348,41 @@ public class UtilIT {
         return given()
                 .header(API_TOKEN_HTTP_HEADER, apiToken)
                 .delete("/api/datasets/" + datasetId + "/destroy");
+    }
+
+    static Response nativeGet(Integer datasetId, String apiToken) {
+        Response response = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .get("/api/datasets/" + datasetId);
+        return response;
+    }
+
+    static Response anonLinkGet(Integer datasetId, String apiToken) {
+        Response response = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .get("/api/datasets/" + datasetId + "/anonlink");
+        return response;
+    }
+
+    static Response anonLinkRegenerate(Integer datasetId, String apiToken) {
+        Response response = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .put("/api/datasets/" + datasetId + "/anonlink");
+        return response;
+    }
+
+    static Response anonLinkDelete(Integer datasetId, String apiToken) {
+        Response response = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .delete("/api/datasets/" + datasetId + "/anonlink");
+        return response;
+    }
+
+    static Response nativeGetAnon(Integer datasetId, String anonLinkToken) {
+        Response response = given()
+                .header(ANONLINK_TOKEN_HTTP_HEADER, anonLinkToken)
+                .get("/api/datasets/" + datasetId + "/versions/anon");
+        return response;
     }
 
     static Response deleteFile(Integer fileId, String apiToken) {
