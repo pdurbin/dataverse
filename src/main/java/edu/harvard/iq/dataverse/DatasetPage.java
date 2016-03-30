@@ -1,6 +1,7 @@
 package edu.harvard.iq.dataverse;
 
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
+import edu.harvard.iq.dataverse.authorization.DataverseRole;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUserServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.ApiToken;
@@ -9,6 +10,7 @@ import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.datavariable.VariableServiceBean;
 import edu.harvard.iq.dataverse.engine.command.Command;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
+import edu.harvard.iq.dataverse.engine.command.impl.AssignRoleCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.CreateDatasetCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.CreateGuestbookResponseCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.DeaccessionDatasetVersionCommand;
@@ -21,6 +23,8 @@ import edu.harvard.iq.dataverse.engine.command.impl.UpdateDatasetCommand;
 import edu.harvard.iq.dataverse.ingest.IngestRequest;
 import edu.harvard.iq.dataverse.ingest.IngestServiceBean;
 import edu.harvard.iq.dataverse.metadataimport.ForeignMetadataImportServiceBean;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
+import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import edu.harvard.iq.dataverse.search.SearchFilesServiceBean;
 import edu.harvard.iq.dataverse.search.SortBy;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
@@ -86,6 +90,7 @@ import org.primefaces.event.TabChangeEvent;
 public class DatasetPage implements java.io.Serializable {
 
     private static final Logger logger = Logger.getLogger(DatasetPage.class.getCanonicalName());
+    private PrivateUrl privateUrl;
 
     public enum EditMode {
 
@@ -142,6 +147,10 @@ public class DatasetPage implements java.io.Serializable {
     DatasetLinkingServiceBean dsLinkingService;
     @EJB
     SearchFilesServiceBean searchFilesService;
+    @EJB
+    DataverseRoleServiceBean rolesSvc;
+    @EJB
+    IndexServiceBean indexService;
     @Inject
     DataverseRequestServiceBean dvRequestService;
     @Inject
@@ -1555,6 +1564,7 @@ public class DatasetPage implements java.io.Serializable {
             return "/404.xhtml";
         }
 
+        privateUrl = datasetService.getPrivateUrl(dataset.getId());
         return null;
     }
     
@@ -4282,4 +4292,65 @@ public class DatasetPage implements java.io.Serializable {
         return SortBy.DESCENDING;
     }
 
+    public String saveChangesPrivateUrl() {
+        logger.info("privateUrlChangeSelection: " + privateUrlChangeSelection);
+        if (privateUrlChangeSelection.equals(getPrivateUrlEnableString())) {
+            String newToken = null;
+            privateUrl = datasetService.regeneratePrivateUrl(dataset.getId(), newToken);
+            DataverseRole memberRole = rolesSvc.findBuiltinRoleByAlias(DataverseRole.MEMBER);
+            try {
+                commandEngine.submit(new AssignRoleCommand(privateUrl.getAuthenticatedUser(), memberRole, dataset, dvRequestService.getDataverseRequest()));
+            } catch (CommandException ex) {
+                Logger.getLogger(DatasetPage.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else if (privateUrlChangeSelection.equals(getPrivateUrlDisableString())) {
+            /**
+             * @todo What should happen when you disable a Private URL?
+             *
+             * - Revoke role from temporary user
+             *
+             * - Delete any data associated with temporary user:
+             * https://github.com/IQSS/dataverse/issues/2825
+             *
+             * - Delete temporary user
+             *
+             * - Delete PrivateUrl object/entity. Should this be renamed to
+             * PrivateUrlData?
+             *
+             * Since we want this to be callable from both the UI and the API we
+             * should probably create a DisablePrivateUrlCommand (and perhaps a
+             * EnablePrivateUrl command as well).
+             */
+            PrivateUrl privateUrl = datasetService.getPrivateUrl(dataset.getId());
+            if (privateUrl != null) {
+                AuthenticatedUser user = privateUrl.getAuthenticatedUser();
+                if (user != null) {
+                    authService.deleteAuthenticatedUser(user.getId());
+                }
+            }
+        }
+        return null;
+    }
+
+    public PrivateUrl getPrivateUrl() {
+        return privateUrl;
+    }
+
+    private String privateUrlChangeSelection;
+
+    public String getPrivateUrlChangeSelection() {
+        return privateUrlChangeSelection;
+    }
+
+    public void setPrivateUrlChangeSelection(String privateUrlChangeSelection) {
+        this.privateUrlChangeSelection = privateUrlChangeSelection;
+    }
+
+    public String getPrivateUrlEnableString() {
+        return "privateUrlEnable";
+    }
+
+    public String getPrivateUrlDisableString() {
+        return "privateUrlDisable";
+    }
 }

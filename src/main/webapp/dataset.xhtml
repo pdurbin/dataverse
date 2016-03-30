@@ -86,7 +86,14 @@
                                             </ul>
                                         </li>
                                     </ui:fragment>
-                                    <ui:fragment rendered="#{!DatasetPage.dataset.released and DatasetPage.dataset.latestVersion.versionState=='DRAFT' and permissionsWrapper.canIssueDeleteDatasetCommand(DatasetPage.dataset)}">
+                                    <ui:fragment rendered="#{permissionsWrapper.canManagePermissions(DatasetPage.dataset)}">
+                                        <li class="divider"></li>
+                                        <li>
+                                            <p:commandLink id="privateUrl" onclick="PF('privateUrlConfirmation').show()">
+                                                <h:outputText value="#{bundle['dataset.editBtn.itemLabel.privateUrl']}" />
+                                            </p:commandLink>
+                                        </li>
+                                    </ui:fragment>                                    <ui:fragment rendered="#{!DatasetPage.dataset.released and DatasetPage.dataset.latestVersion.versionState=='DRAFT' and permissionsWrapper.canIssueDeleteDatasetCommand(DatasetPage.dataset)}">
                                         <li class="divider"></li>
                                         <li>
                                             <p:commandLink id="deleteDataset" onclick="PF('deleteConfirmation').show()">
@@ -662,6 +669,26 @@
                         <div class="button-block">
                             <p:commandButton value="#{bundle.continue}" onclick="PF('deleteVersionConfirmation').hide()" action="#{DatasetPage.deleteDatasetVersion()}" />
                             <p:commandButton value="#{bundle.cancel}" onclick="PF('deleteVersionConfirmation').hide();PF('blockDatasetForm').hide();" type="button" />
+                        </div>
+                    </p:dialog>
+                    <p:dialog styleClass="smallPopUp" header="#{bundle['dataset.privateurl.header']}" widgetVar="privateUrlConfirmation" modal="true">
+                        <p class="help-block">#{bundle['dataset.privateurl.tip']}</p>
+                        <div class="col-sm-offset-1">
+                            <div jsf:rendered="#{empty(DatasetPage.privateUrl)}">
+                                <p>#{bundle['dataset.privateurl.absent']}</p>
+                            </div>
+                            <div jsf:rendered="#{!empty(DatasetPage.privateUrl)}">
+                                <ui:param name="privateUrlLink" value="#{systemConfig.dataverseSiteUrl}/privateurl.xhtml?token=#{DatasetPage.privateUrl.token}" />
+                                <p>#{bundle['dataset.privateurl.header']}: <a href="#{privateUrlLink}">#{privateUrlLink}</a></p>
+                            </div>
+                            <p:selectOneRadio id="privateUrlChangeSelection" value="#{DatasetPage.privateUrlChangeSelection}" layout="grid" columns="1">
+                                <f:selectItem itemLabel="#{bundle['dataset.privateurl.enable']}" itemValue="#{DatasetPage.privateUrlEnableString}" />
+                                <f:selectItem itemLabel="#{bundle['dataset.privateurl.disable']}" itemValue="#{DatasetPage.privateUrlDisableString}" />
+                            </p:selectOneRadio>            
+                        </div>
+                        <div class="button-block">
+                            <p:commandButton value="#{bundle.saveChanges}" onclick="PF('privateUrlConfirmation').hide()" action="#{DatasetPage.saveChangesPrivateUrl()}" />
+                            <p:commandButton value="#{bundle.cancel}" onclick="PF('privateUrlConfirmation').hide();PF('blockDatasetForm').hide();" type="button" />
                         </div>
                     </p:dialog>
                     <p:dialog styleClass="smallPopUp" header="#{bundle['file.deleteFileDialog.header']}" widgetVar="deleteFileConfirmation" modal="true">

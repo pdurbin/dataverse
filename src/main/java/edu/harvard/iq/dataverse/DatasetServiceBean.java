@@ -7,20 +7,30 @@ package edu.harvard.iq.dataverse;
 
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
 import edu.harvard.iq.dataverse.authorization.Permission;
+import edu.harvard.iq.dataverse.authorization.UserRecordIdentifier;
+import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinAuthenticationProvider;
+import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUser;
+import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUserServiceBean;
+import edu.harvard.iq.dataverse.authorization.users.ApiToken;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.dataaccess.ImageThumbConverter;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ejb.EJB;
@@ -30,9 +40,15 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.inject.Named;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -68,6 +84,11 @@ public class DatasetServiceBean implements java.io.Serializable {
     
     @EJB
     PermissionServiceBean permissionService;
+
+    @EJB
+    AuthenticationServiceBean authSvc;
+    @EJB
+    BuiltinUserServiceBean builtinUserSvc;
 
     @PersistenceContext(unitName = "VDCNet-ejbPU")
     private EntityManager em;
@@ -655,4 +676,135 @@ public class DatasetServiceBean implements java.io.Serializable {
         
         return false;
     }
+
+    public PrivateUrl getPrivateUrl(Long datasetId) {
+        if (datasetId == null) {
+            return null;
+        }
+        TypedQuery<PrivateUrl> typedQuery = em.createQuery("SELECT OBJECT(o) FROM PrivateUrl o WHERE o.dataset.id = :id", PrivateUrl.class);
+        typedQuery.setParameter("id", datasetId);
+        try {
+            PrivateUrl privateUrl = typedQuery.getSingleResult();
+            return privateUrl;
+        } catch (NoResultException | NonUniqueResultException ex) {
+            return null;
+        }
+    }
+
+    public AuthenticatedUser getUserFromPrivateUrlToken(String anonLinkToken) {
+        if (anonLinkToken == null) {
+            return null;
+        }
+        TypedQuery<PrivateUrl> typedQuery = em.createQuery("SELECT OBJECT(o) FROM PrivateUrl o WHERE o.token = :token", PrivateUrl.class);
+        typedQuery.setParameter("token", anonLinkToken);
+        try {
+            PrivateUrl privateUrl = typedQuery.getSingleResult();
+            return privateUrl.getAuthenticatedUser();
+        } catch (NoResultException | NonUniqueResultException ex) {
+            return null;
+        }
+    }
+
+    public DatasetVersion getDraftDatasetVersionFromAnonLinkToken(String anonLinkToken) {
+        if (anonLinkToken == null) {
+            return null;
+        }
+        TypedQuery<PrivateUrl> typedQuery = em.createQuery("SELECT OBJECT(o) FROM PrivateUrl o WHERE o.token = :token", PrivateUrl.class);
+        typedQuery.setParameter("token", anonLinkToken);
+        try {
+            PrivateUrl anonLink = typedQuery.getSingleResult();
+            Dataset dataset = anonLink.getDataset();
+            if (dataset != null) {
+                DatasetVersion latestVersion = dataset.getLatestVersion();
+                if (latestVersion.isDraft()) {
+                    return latestVersion;
+                }
+            }
+        } catch (NoResultException | NonUniqueResultException ex) {
+        }
+        return null;
+    }
+
+    public PrivateUrl regeneratePrivateUrl(Long datasetId, String newToken) {
+        logger.info("regeneratePrivateUrl");
+        Dataset dataset = find(datasetId);
+        if (dataset != null) {
+            /**
+             * @todo Don't just keep adding AnonLinks. How can we enforce a
+             * OneToOne relationship anyway?
+             *
+             *
+             */
+            if (newToken == null || newToken.isEmpty()) {
+                newToken = UUID.randomUUID().toString();
+            }
+            PrivateUrl existingAnonLink = getPrivateUrl(datasetId);
+            if (existingAnonLink == null) {
+                PrivateUrl privateUrl = new PrivateUrl(dataset, newToken);
+                BuiltinUser builtinUser = new BuiltinUser();
+                String randomString = UUID.randomUUID().toString().substring(0, 8);
+                builtinUser.setUserName(randomString);
+                builtinUser.setEmail(randomString + "@mailinator.com");
+                builtinUser.setFirstName(randomString);
+                builtinUser.setLastName(randomString);
+                ValidatorFactory vf = Validation.buildDefaultValidatorFactory();
+                Validator validator = vf.getValidator();
+                Set<ConstraintViolation<BuiltinUser>> violations = validator.validate(builtinUser);
+                if (!violations.isEmpty()) {
+                    StringBuilder sb = new StringBuilder();
+                    for (Iterator<ConstraintViolation<BuiltinUser>> iterator = violations.iterator(); iterator.hasNext();) {
+                        ConstraintViolation<BuiltinUser> violation = iterator.next();
+                        sb.append("(invalid value: <<<").append(violation.getInvalidValue()).append(">>> for ").append(violation.getPropertyPath()).append(" at ").append(violation.getLeafBean()).append(" - ").append(violation.getMessage()).append(")");
+                    }
+                    throw new EJBException(sb.toString());
+                }
+                BuiltinUser user = builtinUserSvc.save(builtinUser);
+                AuthenticatedUser au = authSvc.createAuthenticatedUser(
+                        new UserRecordIdentifier(BuiltinAuthenticationProvider.PROVIDER_ID, user.getUserName()),
+                        user.getUserName(),
+                        user.getDisplayInfo(),
+                        false);
+
+                /**
+                 * @todo Only create this token during API testing, not in
+                 * production. Of course, the person clicking the link could
+                 * always click the "generate API token" button...
+                 */
+                boolean createPrivateUrlApiToken = true;
+                if (createPrivateUrlApiToken) {
+                    ApiToken token = new ApiToken();
+
+                    token.setTokenString(java.util.UUID.randomUUID().toString());
+                    token.setAuthenticatedUser(au);
+
+                    Calendar c = Calendar.getInstance();
+                    token.setCreateTime(new Timestamp(c.getTimeInMillis()));
+                    c.roll(Calendar.YEAR, 1);
+                    token.setExpireTime(new Timestamp(c.getTimeInMillis()));
+                    authSvc.save(token);
+                }
+
+                privateUrl.setAuthenticatedUser(au);
+                em.persist(privateUrl);
+                em.flush();
+                logger.info("returning " + privateUrl.getToken());
+                return privateUrl;
+            } else {
+                /**
+                 * @todo Implement the case where a PrivateUrl already exists.
+                 * At minimum we should scramble the token to a new one.
+                 */
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @todo Implement this. See note about DisablePrivateUrlCommand in
+     * DatasetPage.java.
+     */
+    public boolean deletePrivateUrl(Long datasetId) {
+        return false;
+    }
+
 }

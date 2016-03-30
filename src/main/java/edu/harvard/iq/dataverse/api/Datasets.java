@@ -9,9 +9,13 @@ import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.Dataverse;
 import edu.harvard.iq.dataverse.DataverseServiceBean;
 import edu.harvard.iq.dataverse.MetadataBlock;
+import edu.harvard.iq.dataverse.authorization.DataverseRole;
+import edu.harvard.iq.dataverse.authorization.users.ApiToken;
+import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.engine.command.Command;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
+import edu.harvard.iq.dataverse.engine.command.impl.AssignRoleCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.CreateDatasetVersionCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.DeleteDatasetCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.DeleteDatasetVersionCommand;
@@ -28,6 +32,8 @@ import edu.harvard.iq.dataverse.engine.command.impl.UpdateDatasetTargetURLComman
 import edu.harvard.iq.dataverse.engine.command.impl.UpdateDatasetVersionCommand;
 import edu.harvard.iq.dataverse.export.DDIExportServiceBean;
 import edu.harvard.iq.dataverse.export.ddi.DdiExportUtil;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
+import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import edu.harvard.iq.dataverse.util.SystemConfig;
 import edu.harvard.iq.dataverse.util.json.JsonParseException;
 import static edu.harvard.iq.dataverse.util.json.JsonPrinter.*;
@@ -39,6 +45,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ejb.EJB;
+import javax.ejb.EJBException;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
@@ -74,6 +81,9 @@ public class Datasets extends AbstractApiBean {
 
     @EJB
     SystemConfig systemConfig;
+
+    @EJB
+    IndexServiceBean indexService;
 
     /**
      * Used to consolidate the way we parse and handle dataset versions.
@@ -511,6 +521,96 @@ public class Datasets extends AbstractApiBean {
         } catch (WrappedResponse wr) {
             return wr.getResponse();
         }
+    }
+
+    @GET
+    @Path("{id}/privateUrl")
+    public Response getAnonLink(@PathParam("id") String idSupplied) {
+        try {
+            User u = findUserOrDie();
+            /**
+             * @todo Only allow people who have permission to add a dataset
+             * access to get the token.
+             */
+            Dataset dataset = findDatasetOrDie(idSupplied);
+
+            long datasetId = dataset.getId();
+            PrivateUrl privateUrl = datasetService.getPrivateUrl(datasetId);
+            JsonObjectBuilder response = Json.createObjectBuilder();
+            response.add("datasetIdSupplied", datasetId);
+            if (privateUrl != null) {
+                response.add("get", privateUrl.getToken());
+                DatasetVersion draft = datasetService.getDraftDatasetVersionFromAnonLinkToken(privateUrl.getToken());
+                response.add("draftId", draft.getId());
+                response.add("generated", privateUrl.getToken());
+                AuthenticatedUser au = privateUrl.getAuthenticatedUser();
+                if (au != null) {
+                    ApiToken apiTokenForTempUserObject = authSvc.findApiTokenByUser(au);
+                    if (apiTokenForTempUserObject != null) {
+                        String apiTokenForTempUser = apiTokenForTempUserObject.getTokenString();
+                        if (apiTokenForTempUser != null) {
+                            response.add("apiTokenForTempUser", apiTokenForTempUser);
+                        }
+                    }
+                }
+            } else {
+                response.add("get", "nothing found");
+            }
+            return okResponse(response);
+        } catch (WrappedResponse wr) {
+            return wr.getResponse();
+        }
+    }
+
+    @PUT
+    @Path("{id}/privateUrl")
+    public Response regeneratePrivateUrl(@PathParam("id") String idSupplied) {
+        try {
+            User user = findUserOrDie();
+            Dataset dataset = findDatasetOrDie(idSupplied);
+
+            long datasetId = dataset.getId();
+            JsonObjectBuilder response = Json.createObjectBuilder();
+            response.add("datasetId", datasetId);
+            String newToken = null;
+            PrivateUrl generated = null;
+            try {
+                generated = datasetService.regeneratePrivateUrl(datasetId, newToken);
+            } catch (EJBException ex) {
+                return errorResponse(Response.Status.INTERNAL_SERVER_ERROR, ex.getMessage());
+            }
+            if (generated != null) {
+                response.add("generated", generated.getToken());
+                AuthenticatedUser assignee = generated.getAuthenticatedUser();
+                if (assignee != null) {
+                    ApiToken apiTokenForTempUserObject = authSvc.findApiTokenByUser(assignee);
+                    if (apiTokenForTempUserObject != null) {
+                        String apiTokenForTempUser = apiTokenForTempUserObject.getTokenString();
+                        if (apiTokenForTempUser != null) {
+                            response.add("apiTokenForTempUser", apiTokenForTempUser);
+                        }
+                    }
+                    DataverseRole memberRole = rolesSvc.findBuiltinRoleByAlias(DataverseRole.MEMBER);
+                    execCommand(new AssignRoleCommand(assignee, memberRole, dataset, createDataverseRequest(user)));
+                }
+            } else {
+                response.add("huh", "generated was null");
+            }
+            return okResponse(response);
+        } catch (WrappedResponse wr) {
+            return wr.getResponse();
+        }
+    }
+
+    /**
+     * @todo Implement this. See note about DisablePrivateUrlCommand in
+     * DatasetPage.java.
+     */
+    @DELETE
+    @Path("{id}/privateUrl")
+    public Response deleteAnonLink(@PathParam("id") Long idSupplied) {
+        datasetService.deletePrivateUrl(idSupplied);
+        return errorResponse(Response.Status.NOT_IMPLEMENTED);
     }
 
 }
