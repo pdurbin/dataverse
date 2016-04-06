@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import edu.harvard.iq.dataverse.api.datadeposit.SwordConfigurationImpl;
 import com.jayway.restassured.path.xml.XmlPath;
 import org.junit.Test;
+import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.path.xml.XmlPath.from;
 import static org.junit.Assert.assertEquals;
@@ -379,6 +380,67 @@ public class UtilIT {
         Response response = given()
                 .get("/api/admin/index/dataset?persistentId=" + persistentId);
         return response;
+    }
+
+    static Response nativeGet(Integer datasetId, String apiToken) {
+        Response response = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .get("/api/datasets/" + datasetId);
+        return response;
+    }
+
+    static Response privateUrlGet(Integer datasetId, String apiToken) {
+        Response response = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .get("/api/datasets/" + datasetId + "/privateUrl");
+        return response;
+    }
+
+    static Response privateUrlRegenerate(Integer datasetId, String apiToken) {
+        Response response = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .put("/api/datasets/" + datasetId + "/privateUrl");
+        return response;
+    }
+
+    static Response privateUrlDelete(Integer datasetId, String apiToken) {
+        Response response = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .delete("/api/datasets/" + datasetId + "/privateUrl");
+        return response;
+    }
+
+    static Response search(String query, String apiToken) {
+        return given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .get("/api/search?q=" + query);
+    }
+
+    static Response indexClear() {
+        return given()
+                .get("/api/admin/index/clear");
+    }
+
+    static Response index() {
+        return given()
+                .get("/api/admin/index");
+    }
+
+    static Response enableSetting(SettingsServiceBean.Key settingKey) {
+        Response response = given().body("true").when().put("/api/admin/settings/" + settingKey);
+        return response;
+    }
+
+    static Response deleteSetting(SettingsServiceBean.Key settingKey) {
+        Response response = given().when().delete("/api/admin/settings/" + settingKey);
+        return response;
+    }
+
+    static Response grantRoleOnDataset(String definitionPoint, String role, String roleAssignee, String apiToken) {
+        logger.info("Granting role on dataset \"" + definitionPoint + "\": " + role);
+        return given()
+                .body("@" + roleAssignee)
+                .post("api/datasets/" + definitionPoint + "/assignments?key=" + apiToken);
     }
 
     @Test

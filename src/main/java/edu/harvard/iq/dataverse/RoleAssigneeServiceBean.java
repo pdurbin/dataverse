@@ -10,6 +10,7 @@ import edu.harvard.iq.dataverse.authorization.groups.impl.builtin.AuthenticatedU
 import edu.harvard.iq.dataverse.authorization.groups.impl.explicit.ExplicitGroup;
 import edu.harvard.iq.dataverse.authorization.groups.impl.explicit.ExplicitGroupServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
+import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
 import edu.harvard.iq.dataverse.authorization.users.GuestUser;
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +64,21 @@ public class RoleAssigneeServiceBean {
     public RoleAssignee getRoleAssignee(String identifier) {
         switch (identifier.charAt(0)) {
             case ':':
-                return predefinedRoleAssignees.get(identifier);
+                if (identifier.startsWith(":guestOfDataset")) {
+                    /**
+                     * @todo Lots more error checking! Also, refactor
+                     * ":guestOfDataset" into a static String we can use all
+                     * over.
+                     */
+                    String[] parts = identifier.split(":guestOfDataset");
+                    long datasetId = new Long(parts[1]);
+                    GuestOfDataset guestOfDataset = new GuestOfDataset(datasetId);
+                    Map<String, RoleAssignee> datasetGuests = new TreeMap<>();
+                    datasetGuests.put(guestOfDataset.getIdentifier(), guestOfDataset);
+                    return datasetGuests.get(guestOfDataset.getIdentifier());
+                } else {
+                    return predefinedRoleAssignees.get(identifier);
+                }
             case '@':
                 return authSvc.getAuthenticatedUser(identifier.substring(1));
             case '&':

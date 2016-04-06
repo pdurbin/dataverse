@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:jsf="http://xmlns.jcp.org/jsf"
+      xmlns:p="http://primefaces.org/ui">
+
+    <h:head>
+    </h:head>
+
+    <h:body>
+        <ui:composition template="/dataverse_template.xhtml">
+            <!--FIXME: Do we really need breadcrumbs here? This page only exists to log the temporary user in and redirect to the draft of the dataset.-->
+            <ui:param name="pageTitle" value="#{bundle['dataset.privateurl.header']} - #{dataverseServiceBean.findRootDataverse().name} #{bundle.dataverse}"/>
+            <ui:param name="showDataverseHeader" value="false"/>
+            <ui:define name="body">
+                <!--FIXME: Don't let this page be accessed without a token per https://github.com/IQSS/dataverse/issues/2841 -->
+                <f:metadata>
+                    <!--FIXME: Do we really need breadcrumbs here? This page only exists to log the temporary user in and redirect to the draft of the dataset.-->
+                    <f:viewAction action="#{dataverseHeaderFragment.initBreadcrumbs(dataverseServiceBean.findRootDataverse(), bundle['dataset.privateurl.header'])}"/>
+                    <f:viewParam name="token" value="#{PrivateUrlPage.token}"/>
+                    <f:viewAction action="#{PrivateUrlPage.init}" />
+                </f:metadata>
+            </ui:define>
+        </ui:composition>
+    </h:body>
+</html>

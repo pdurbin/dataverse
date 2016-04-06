@@ -9,9 +9,11 @@ import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.Dataverse;
 import edu.harvard.iq.dataverse.DataverseServiceBean;
 import edu.harvard.iq.dataverse.MetadataBlock;
+import edu.harvard.iq.dataverse.RoleAssignment;
 import static edu.harvard.iq.dataverse.api.AbstractApiBean.errorResponse;
 import edu.harvard.iq.dataverse.authorization.DataverseRole;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
+import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.engine.command.Command;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
@@ -32,6 +34,7 @@ import edu.harvard.iq.dataverse.engine.command.impl.UpdateDatasetTargetURLComman
 import edu.harvard.iq.dataverse.engine.command.impl.UpdateDatasetVersionCommand;
 import edu.harvard.iq.dataverse.export.DDIExportServiceBean;
 import edu.harvard.iq.dataverse.export.ddi.DdiExportUtil;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import edu.harvard.iq.dataverse.util.SystemConfig;
 import edu.harvard.iq.dataverse.util.json.JsonParseException;
 import static edu.harvard.iq.dataverse.util.json.JsonPrinter.*;
@@ -43,6 +46,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ejb.EJB;
+import javax.ejb.EJBException;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
@@ -543,6 +547,82 @@ public class Datasets extends AbstractApiBean {
             LOGGER.log(Level.WARNING, "Can''t create assignment: {0}", ex.getMessage());
             return ex.getResponse();
         }
+    }
+
+    @GET
+    @Path("{id}/privateUrl")
+    public Response getPrivateUrlData(@PathParam("id") String idSupplied) {
+        try {
+            User u = findUserOrDie();
+            /**
+             * @todo Only allow people who have permission to add a dataset
+             * access to get the token.
+             */
+            Dataset dataset = findDatasetOrDie(idSupplied);
+
+            long datasetId = dataset.getId();
+            PrivateUrl privateUrl = datasetService.getPrivateUrl(datasetId);
+            JsonObjectBuilder response = Json.createObjectBuilder();
+            response.add("datasetIdSupplied", datasetId);
+            if (privateUrl != null) {
+                response.add("get", privateUrl.getToken());
+                DatasetVersion draft = datasetService.getDraftDatasetVersionFromPrivateUrlToken(privateUrl.getToken());
+                response.add("draftId", draft.getId());
+                response.add("generated", privateUrl.getToken());
+            } else {
+                response.add("get", "nothing found");
+            }
+            return okResponse(response);
+        } catch (WrappedResponse wr) {
+            return wr.getResponse();
+        }
+    }
+
+    /**
+     * @todo DRY! GUI and API logic is repeated! Centralize!
+     */
+    @PUT
+    @Path("{id}/privateUrl")
+    public Response regeneratePrivateUrl(@PathParam("id") String idSupplied) {
+        try {
+            User user = findUserOrDie();
+            Dataset dataset = findDatasetOrDie(idSupplied);
+
+            long datasetId = dataset.getId();
+            JsonObjectBuilder response = Json.createObjectBuilder();
+            response.add("datasetId", datasetId);
+            String newToken = null;
+            PrivateUrl generated = null;
+            try {
+                generated = datasetService.regeneratePrivateUrl(datasetId, newToken);
+            } catch (EJBException ex) {
+                return errorResponse(Response.Status.INTERNAL_SERVER_ERROR, ex.getMessage());
+            }
+            if (generated != null) {
+                response.add("generated", generated.getToken());
+
+                DataverseRole memberRole = rolesSvc.findBuiltinRoleByAlias(DataverseRole.MEMBER);
+                GuestOfDataset guestOfDataset = new GuestOfDataset(dataset.getId());
+                RoleAssignment roleAssignment = execCommand(new AssignRoleCommand(guestOfDataset, memberRole, dataset, createDataverseRequest(user)));
+                response.add("roleAssignment", json(roleAssignment));
+            } else {
+                response.add("huh", "generated was null");
+            }
+            return okResponse(response);
+        } catch (WrappedResponse wr) {
+            return wr.getResponse();
+        }
+    }
+
+    /**
+     * @todo Implement this. See note about DisablePrivateUrlCommand in
+     * DatasetPage.java.
+     */
+    @DELETE
+    @Path("{id}/privateUrl")
+    public Response deletePrivateUrl(@PathParam("id") Long idSupplied) {
+        datasetService.deletePrivateUrl(idSupplied);
+        return errorResponse(Response.Status.NOT_IMPLEMENTED);
     }
 
 }

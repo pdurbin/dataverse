@@ -1,14 +1,17 @@
 package edu.harvard.iq.dataverse;
 
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
+import edu.harvard.iq.dataverse.authorization.DataverseRole;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUserServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.ApiToken;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
+import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
 import edu.harvard.iq.dataverse.datavariable.VariableServiceBean;
 import edu.harvard.iq.dataverse.engine.command.Command;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
+import edu.harvard.iq.dataverse.engine.command.impl.AssignRoleCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.CreateDatasetCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.CreateGuestbookResponseCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.DeaccessionDatasetVersionCommand;
@@ -17,10 +20,12 @@ import edu.harvard.iq.dataverse.engine.command.impl.DestroyDatasetCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.LinkDatasetCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.PublishDatasetCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.PublishDataverseCommand;
+import edu.harvard.iq.dataverse.engine.command.impl.RevokeRoleCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.UpdateDatasetCommand;
 import edu.harvard.iq.dataverse.ingest.IngestRequest;
 import edu.harvard.iq.dataverse.ingest.IngestServiceBean;
 import edu.harvard.iq.dataverse.metadataimport.ForeignMetadataImportServiceBean;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import edu.harvard.iq.dataverse.search.SearchFilesServiceBean;
 import edu.harvard.iq.dataverse.search.SortBy;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
@@ -142,6 +147,8 @@ public class DatasetPage implements java.io.Serializable {
     DatasetLinkingServiceBean dsLinkingService;
     @EJB
     SearchFilesServiceBean searchFilesService;
+    @EJB
+    DataverseRoleServiceBean dataverseRoleService;
     @Inject
     DataverseRequestServiceBean dvRequestService;
     @Inject
@@ -1555,6 +1562,7 @@ public class DatasetPage implements java.io.Serializable {
             return "/404.xhtml";
         }
 
+        privateUrl = datasetService.getPrivateUrl(dataset.getId());
         return null;
     }
     
@@ -4280,6 +4288,55 @@ public class DatasetPage implements java.io.Serializable {
 
     public String getSortByDescending() {
         return SortBy.DESCENDING;
+    }
+
+    PrivateUrl privateUrl;
+
+    public PrivateUrl getPrivateUrl() {
+        return privateUrl;
+    }
+
+    public void setPrivateUrl(PrivateUrl privateUrl) {
+        this.privateUrl = privateUrl;
+    }
+
+    /**
+     * @todo DRY! GUI and API logic is repeated! Centralize!
+     */
+    public void createPrivateUrl() {
+        PrivateUrl regenerated = datasetService.regeneratePrivateUrl(dataset.getId(), null);
+        privateUrl = regenerated;
+        DataverseRole memberRole = dataverseRoleService.findBuiltinRoleByAlias(DataverseRole.MEMBER);
+        GuestOfDataset guestOfDataset = new GuestOfDataset(dataset.getId());
+        try {
+            RoleAssignment roleAssignment = commandEngine.submit(new AssignRoleCommand(guestOfDataset, memberRole, dataset, dvRequestService.getDataverseRequest()));
+        } catch (CommandException ex) {
+            Logger.getLogger(DatasetPage.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void recreatePrivateUrl() {
+        disablePrivateUrl();
+        createPrivateUrl();
+    }
+
+    /**
+     * @todo DRY! GUI and API logic is repeated! Centralize!
+     */
+    public void disablePrivateUrl() {
+        GuestOfDataset guestOfDataset = new GuestOfDataset(dataset.getId());
+        List<RoleAssignment> roleAssignments = dataverseRoleService.directRoleAssignments(guestOfDataset, dataset);
+        for (RoleAssignment roleAssignment : roleAssignments) {
+            try {
+                commandEngine.submit(new RevokeRoleCommand(roleAssignment, dvRequestService.getDataverseRequest()));
+            } catch (CommandException ex) {
+                Logger.getLogger(DatasetPage.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        boolean deleted = datasetService.deletePrivateUrl(dataset.getId());
+        if (deleted) {
+            privateUrl = null;
+        }
     }
 
 }

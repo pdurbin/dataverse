@@ -6,6 +6,8 @@ import java.util.logging.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.AfterClass;
+import com.jayway.restassured.path.json.JsonPath;
+import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import static com.jayway.restassured.RestAssured.given;
 import static junit.framework.Assert.assertEquals;
 
@@ -65,6 +67,111 @@ public class DatasetsIT {
                 .header(UtilIT.API_TOKEN_HTTP_HEADER, apiToken)
                 .get("/api/datasets/ddi?persistentId=" + persistentIdentifier + "&dto=true");
         return response;
+    }
+
+    @Test
+    public void testPrivateUrl() {
+
+        Response createUser = UtilIT.createRandomUser();
+//        createUser.prettyPrint();
+        String username = UtilIT.getUsernameFromResponse(createUser);
+        String apiToken = UtilIT.getApiTokenFromResponse(createUser);
+
+        Response createDataverseResponse = UtilIT.createRandomDataverse(apiToken);
+        createDataverseResponse.prettyPrint();
+        String dataverseAlias = UtilIT.getAliasFromResponse(createDataverseResponse);
+
+        Response createDatasetResponse = UtilIT.createRandomDatasetViaNativeApi(dataverseAlias, apiToken);
+        createDatasetResponse.prettyPrint();
+        Integer datasetId = JsonPath.from(createDatasetResponse.body().asString()).getInt("data.id");
+        System.out.println("dataset id: " + datasetId);
+
+        /**
+         * @todo Upload a file.
+         */
+        Response getDatasetJson = UtilIT.nativeGet(datasetId, apiToken);
+        getDatasetJson.prettyPrint();
+        Response badApiKeyEmptyString = UtilIT.privateUrlGet(datasetId, "");
+        badApiKeyEmptyString.prettyPrint();
+        assertEquals(401, badApiKeyEmptyString.getStatusCode());
+        Response badApiKeyDoesNotExist = UtilIT.privateUrlGet(datasetId, "junk");
+        badApiKeyDoesNotExist.prettyPrint();
+        assertEquals(401, badApiKeyDoesNotExist.getStatusCode());
+        Response badDatasetId = UtilIT.privateUrlGet(Integer.MAX_VALUE, apiToken);
+        badDatasetId.prettyPrint();
+        assertEquals(404, badDatasetId.getStatusCode());
+        Response pristine = UtilIT.privateUrlGet(datasetId, apiToken);
+        pristine.prettyPrint();
+        assertEquals(200, pristine.getStatusCode());
+
+        Response createPrivateUrl = UtilIT.privateUrlRegenerate(datasetId, apiToken);
+        createPrivateUrl.prettyPrint();
+        assertEquals(200, createPrivateUrl.getStatusCode());
+
+        Response createUser2 = UtilIT.createRandomUser();
+        String apiToken2 = UtilIT.getApiTokenFromResponse(createUser2);
+        Response unAuth = UtilIT.privateUrlGet(datasetId, apiToken2);
+        unAuth.prettyPrint();
+        boolean securityBugFixed = false;
+        if (securityBugFixed) {
+            /**
+             * @todo Not just anyone should be able to get the token! You need
+             * to be able to create datasets, not just have a valid Dataverse
+             * account.
+             */
+            assertEquals(401, unAuth.getStatusCode());
+        }
+        Response shouldExist = UtilIT.privateUrlGet(datasetId, apiToken);
+        shouldExist.prettyPrint();
+        assertEquals(200, shouldExist.getStatusCode());
+
+        String tokenForGuestOfDataset = JsonPath.from(shouldExist.body().asString()).getString("data.generated");
+        logger.info("privateUrlToken: " + tokenForGuestOfDataset);
+
+//        Response badAnonLinkTokenEmptyString = UtilIT.nativeGet(datasetId, "");
+//        badAnonLinkTokenEmptyString.prettyPrint();
+//        assertEquals(401, badAnonLinkTokenEmptyString.getStatusCode());
+//        if (true) {
+//            return;
+//        }
+//
+//        Response badAnonLinkTokenDoesNotExist = UtilIT.nativeGetAnon(datasetId, "junk");
+//        badAnonLinkTokenDoesNotExist.prettyPrint();
+//        assertEquals(401, badAnonLinkTokenDoesNotExist.getStatusCode());
+//
+        Response getWithPrivateUrlToken = UtilIT.nativeGet(datasetId, tokenForGuestOfDataset);
+        assertEquals(200, getWithPrivateUrlToken.getStatusCode());
+        getWithPrivateUrlToken.prettyPrint();
+        logger.info("http://localhost:8080/privateurl.xhtml?token=" + tokenForGuestOfDataset);
+        if (true) {
+            return;
+        }
+        String protocol = JsonPath.from(getWithPrivateUrlToken.getBody().asString()).getString("data.protocol");
+        String authority = JsonPath.from(getWithPrivateUrlToken.getBody().asString()).getString("data.authority");
+        String identifier = JsonPath.from(getWithPrivateUrlToken.getBody().asString()).getString("data.identifier");
+
+        UtilIT.enableSetting(SettingsServiceBean.Key.SearchApiNonPublicAllowed);
+
+        Response searchResponse = UtilIT.search("*", tokenForGuestOfDataset);
+        searchResponse.prettyPrint();
+        String globalIdFromSearch = JsonPath.from(searchResponse.getBody().asString()).getString("data.items[0].global_id");
+        logger.info("globalIdFromSearch: " + globalIdFromSearch);
+        assertEquals(globalIdFromSearch, protocol + ":" + authority + "/" + identifier);
+        UtilIT.deleteSetting(SettingsServiceBean.Key.SearchApiNonPublicAllowed);
+        /**
+         * @todo Test that you can download the file with the anonLinkToken.
+         * Probably it won't work...
+         */
+        /**
+         * @todo Revoke token.
+         */
+        boolean deltingDatasetRemovesAnonLinkButNotViceVersa = false;
+        if (deltingDatasetRemovesAnonLinkButNotViceVersa) {
+            Response deleteDatasetResponse = UtilIT.deleteDatasetViaNativeApi(datasetId, apiToken);
+            deleteDatasetResponse.prettyPrint();
+            assertEquals(200, deleteDatasetResponse.getStatusCode());
+        }
+
     }
 
     @AfterClass

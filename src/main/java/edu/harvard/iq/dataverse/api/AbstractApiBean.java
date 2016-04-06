@@ -227,6 +227,14 @@ public abstract class AbstractApiBean {
      */
     protected User findUserOrDie() throws WrappedResponse {
         final String requestApiKey = getRequestApiKey();
+        /**
+         * @todo Rewrite this to check for more common cases first: Guest or
+         * AuthenticatedUser.
+         */
+        User guestOfDataset = datasetSvc.getUserFromPrivateUrlToken(requestApiKey);
+        if (guestOfDataset != null) {
+            return guestOfDataset;
+        }
         return ( requestApiKey == null )
                 ? GuestUser.get()
                 : findAuthenticatedUserOrDie(requestApiKey);

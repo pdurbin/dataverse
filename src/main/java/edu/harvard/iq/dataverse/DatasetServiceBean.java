@@ -8,8 +8,12 @@ package edu.harvard.iq.dataverse;
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
+import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.dataaccess.ImageThumbConverter;
+import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
+import edu.harvard.iq.dataverse.engine.command.impl.RevokeRoleCommand;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import java.io.ByteArrayOutputStream;
@@ -21,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ejb.EJB;
@@ -30,6 +35,8 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.inject.Named;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -655,4 +662,97 @@ public class DatasetServiceBean implements java.io.Serializable {
         
         return false;
     }
+
+    public PrivateUrl getPrivateUrl(Long datasetId) {
+        if (datasetId == null) {
+            return null;
+        }
+        TypedQuery<PrivateUrl> typedQuery = em.createQuery("SELECT OBJECT(o) FROM PrivateUrl o WHERE o.dataset.id = :id", PrivateUrl.class);
+        typedQuery.setParameter("id", datasetId);
+        try {
+            PrivateUrl privateUrl = typedQuery.getSingleResult();
+            return privateUrl;
+        } catch (NoResultException | NonUniqueResultException ex) {
+            return null;
+        }
+    }
+
+    public GuestOfDataset getUserFromPrivateUrlToken(String privateUrlToken) {
+        if (privateUrlToken == null) {
+            return null;
+        }
+        TypedQuery<PrivateUrl> typedQuery = em.createQuery("SELECT OBJECT(o) FROM PrivateUrl o WHERE o.token = :token", PrivateUrl.class);
+        typedQuery.setParameter("token", privateUrlToken);
+        try {
+            PrivateUrl privateUrl = typedQuery.getSingleResult();
+            Dataset dataset = privateUrl.getDataset();
+            if (dataset != null) {
+                return new GuestOfDataset(dataset.getId());
+            }
+        } catch (NoResultException | NonUniqueResultException ex) {
+        }
+        return null;
+    }
+
+    public DatasetVersion getDraftDatasetVersionFromPrivateUrlToken(String privateUrlToken) {
+        if (privateUrlToken == null) {
+            return null;
+        }
+        TypedQuery<PrivateUrl> typedQuery = em.createQuery("SELECT OBJECT(o) FROM PrivateUrl o WHERE o.token = :token", PrivateUrl.class);
+        typedQuery.setParameter("token", privateUrlToken);
+        try {
+            PrivateUrl privateUrl = typedQuery.getSingleResult();
+            Dataset dataset = privateUrl.getDataset();
+            if (dataset != null) {
+                DatasetVersion latestVersion = dataset.getLatestVersion();
+                if (latestVersion.isDraft()) {
+                    return latestVersion;
+                }
+            }
+        } catch (NoResultException | NonUniqueResultException ex) {
+        }
+        return null;
+    }
+
+    public PrivateUrl regeneratePrivateUrl(Long datasetId, String newToken) {
+        logger.info("regeneratePrivateUrl");
+        Dataset dataset = find(datasetId);
+        if (dataset != null) {
+            /**
+             * @todo Don't just keep adding.
+             */
+            if (newToken == null || newToken.isEmpty()) {
+                newToken = UUID.randomUUID().toString();
+            }
+            PrivateUrl existing = getPrivateUrl(datasetId);
+            if (existing == null) {
+                PrivateUrl privateUrl = new PrivateUrl(dataset, newToken);
+                em.persist(privateUrl);
+                em.flush();
+                logger.info("returning " + privateUrl.getToken());
+                return privateUrl;
+            } else {
+                /**
+                 * @todo Implement the case where a PrivateUrl already exists.
+                 * At minimum we should scramble the token to a new one.
+                 */
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @todo Implement this properly. DisablePrivateUrlCommand?
+     */
+    public boolean deletePrivateUrl(Long datasetId) {
+        PrivateUrl doomed = getPrivateUrl(datasetId);
+        if (doomed != null) {
+            em.remove(doomed);
+            return true;
+        } else {
+            logger.info("Couldn't find a Private URL to delete based on dataset id " + datasetId);
+            return false;
+        }
+    }
+
 }
