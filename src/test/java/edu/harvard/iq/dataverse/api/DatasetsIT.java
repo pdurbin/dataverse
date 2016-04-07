@@ -9,6 +9,9 @@ import org.junit.AfterClass;
 import com.jayway.restassured.path.json.JsonPath;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import static com.jayway.restassured.RestAssured.given;
+import static javax.ws.rs.core.Response.Status.CREATED;
+import static javax.ws.rs.core.Response.Status.FORBIDDEN;
+import static javax.ws.rs.core.Response.Status.OK;
 import static junit.framework.Assert.assertEquals;
 
 public class DatasetsIT {
@@ -86,11 +89,17 @@ public class DatasetsIT {
         Integer datasetId = JsonPath.from(createDatasetResponse.body().asString()).getInt("data.id");
         System.out.println("dataset id: " + datasetId);
 
-        /**
-         * @todo Upload a file.
-         */
         Response getDatasetJson = UtilIT.nativeGet(datasetId, apiToken);
         getDatasetJson.prettyPrint();
+        String protocol1 = JsonPath.from(getDatasetJson.getBody().asString()).getString("data.protocol");
+        String authority1 = JsonPath.from(getDatasetJson.getBody().asString()).getString("data.authority");
+        String identifier1 = JsonPath.from(getDatasetJson.getBody().asString()).getString("data.identifier");
+        String dataset1PersistentId = protocol1 + ":" + authority1 + "/" + identifier1;
+
+        Response uploadFileResponse = UtilIT.uploadRandomFile(dataset1PersistentId, apiToken);
+        uploadFileResponse.prettyPrint();
+        assertEquals(CREATED.getStatusCode(), uploadFileResponse.getStatusCode());
+
         Response badApiKeyEmptyString = UtilIT.privateUrlGet(datasetId, "");
         badApiKeyEmptyString.prettyPrint();
         assertEquals(401, badApiKeyEmptyString.getStatusCode());
@@ -143,6 +152,13 @@ public class DatasetsIT {
         assertEquals(200, getWithPrivateUrlToken.getStatusCode());
         getWithPrivateUrlToken.prettyPrint();
         logger.info("http://localhost:8080/privateurl.xhtml?token=" + tokenForGuestOfDataset);
+        Response swordStatement = UtilIT.getSwordStatement(dataset1PersistentId, apiToken);
+        assertEquals(OK.getStatusCode(), swordStatement.getStatusCode());
+        Integer fileId = UtilIT.getFileIdFromSwordStatementResponse(swordStatement);
+        Response downloadFile = UtilIT.downloadFile(fileId, tokenForGuestOfDataset);
+        assertEquals(OK.getStatusCode(), downloadFile.getStatusCode());
+        Response downloadFileBadToken = UtilIT.downloadFile(fileId, "junk");
+        assertEquals(FORBIDDEN.getStatusCode(), downloadFileBadToken.getStatusCode());
         if (true) {
             return;
         }
@@ -158,10 +174,6 @@ public class DatasetsIT {
         logger.info("globalIdFromSearch: " + globalIdFromSearch);
         assertEquals(globalIdFromSearch, protocol + ":" + authority + "/" + identifier);
         UtilIT.deleteSetting(SettingsServiceBean.Key.SearchApiNonPublicAllowed);
-        /**
-         * @todo Test that you can download the file with the anonLinkToken.
-         * Probably it won't work...
-         */
         /**
          * @todo Revoke token.
          */
