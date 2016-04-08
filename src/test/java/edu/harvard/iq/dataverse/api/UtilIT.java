@@ -436,11 +436,25 @@ public class UtilIT {
         return response;
     }
 
+    static Response getRoleAssignmentsOnDataset(String datasetId, String persistentId, String apiToken) {
+        String url = "/api/datasets/" + datasetId + "/assignments";
+        System.out.println("URL: " + url);
+        return given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .get(url);
+    }
+
     static Response grantRoleOnDataset(String definitionPoint, String role, String roleAssignee, String apiToken) {
         logger.info("Granting role on dataset \"" + definitionPoint + "\": " + role);
         return given()
                 .body("@" + roleAssignee)
                 .post("api/datasets/" + definitionPoint + "/assignments?key=" + apiToken);
+    }
+
+    static Response revokeRole(String definitionPoint, long doomed, String apiToken) {
+        return given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .delete("api/dataverses/" + definitionPoint + "/assignments/" + doomed);
     }
 
     @Test

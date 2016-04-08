@@ -27,6 +27,7 @@ import edu.harvard.iq.dataverse.engine.command.impl.GetSpecificPublishedDatasetV
 import edu.harvard.iq.dataverse.engine.command.impl.GetDraftDatasetVersionCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.GetLatestAccessibleDatasetVersionCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.GetLatestPublishedDatasetVersionCommand;
+import edu.harvard.iq.dataverse.engine.command.impl.ListRoleAssignments;
 import edu.harvard.iq.dataverse.engine.command.impl.ListVersionsCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.PublishDatasetCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.SetDatasetCitationDateCommand;
@@ -545,6 +546,29 @@ public class Datasets extends AbstractApiBean {
                     json(execCommand(new AssignRoleCommand(assignee, theRole, dataset, createDataverseRequest(findUserOrDie())))));
         } catch (WrappedResponse ex) {
             LOGGER.log(Level.WARNING, "Can''t create assignment: {0}", ex.getMessage());
+            return ex.getResponse();
+        }
+    }
+
+    /**
+     * @todo Make this real. Currently only used for API testing. Copied from
+     * the equivalent API endpoint for dataverses.
+     */
+    @GET
+    @Path("{identifier}/assignments")
+    public Response getAssignments(@PathParam("identifier") String id) {
+        boolean apiTestingOnly = true;
+        if (apiTestingOnly) {
+            return errorResponse(Response.Status.FORBIDDEN, "This is only for API tests.");
+        }
+        try {
+            JsonArrayBuilder jab = Json.createArrayBuilder();
+            for (RoleAssignment ra : execCommand(new ListRoleAssignments(createDataverseRequest(findUserOrDie()), findDatasetOrDie(id)))) {
+                jab.add(json(ra));
+            }
+            return okResponse(jab);
+        } catch (WrappedResponse ex) {
+            LOGGER.log(Level.WARNING, "Can't list assignments: {0}", ex.getMessage());
             return ex.getResponse();
         }
     }

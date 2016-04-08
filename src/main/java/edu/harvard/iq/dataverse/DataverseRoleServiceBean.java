@@ -38,6 +38,7 @@ public class DataverseRoleServiceBean implements java.io.Serializable {
     @EJB IndexServiceBean indexService;   
     @EJB SolrIndexServiceBean solrIndexService;
     @EJB IndexAsync indexAsync;
+    @EJB DatasetServiceBean datasetService;
 
 	public DataverseRole save( DataverseRole aRole ) {
 		if ( aRole.getId() == null ) {
@@ -132,6 +133,17 @@ public class DataverseRoleServiceBean implements java.io.Serializable {
 			ra = em.merge(ra);
 		}
 		em.remove(ra);
+            /**
+             * @todo Clean all this ":guestOfDataset" code up assuming it gets
+             * approved.
+             */
+            if (ra.getAssigneeIdentifier().startsWith(":guestOfDataset")) {
+                logger.info("starts with... " + ra.getAssigneeIdentifier());
+                String[] parts = ra.getAssigneeIdentifier().split(":guestOfDataset");
+                long datasetId = new Long(parts[1]);
+                boolean status = datasetService.deletePrivateUrl(datasetId);
+                logger.info("status of deleting PrivateUrl: " + status);
+            }
             /**
              * @todo update permissionModificationTime here.
              */

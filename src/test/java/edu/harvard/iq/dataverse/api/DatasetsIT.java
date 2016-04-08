@@ -9,10 +9,17 @@ import org.junit.AfterClass;
 import com.jayway.restassured.path.json.JsonPath;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import static com.jayway.restassured.RestAssured.given;
+import static com.jayway.restassured.path.json.JsonPath.with;
+
+import java.util.List;
+import java.util.Map;
+import javax.json.JsonObject;
 import static javax.ws.rs.core.Response.Status.CREATED;
 import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.OK;
+import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
 import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class DatasetsIT {
 
@@ -136,6 +143,8 @@ public class DatasetsIT {
 
         String tokenForGuestOfDataset = JsonPath.from(shouldExist.body().asString()).getString("data.generated");
         logger.info("privateUrlToken: " + tokenForGuestOfDataset);
+        long roleAssignmentIdFromCreate = JsonPath.from(createPrivateUrl.body().asString()).getLong("data.roleAssignment.id");
+        logger.info("roleAssignmentIdFromCreate: " + roleAssignmentIdFromCreate);
 
 //        Response badAnonLinkTokenEmptyString = UtilIT.nativeGet(datasetId, "");
 //        badAnonLinkTokenEmptyString.prettyPrint();
@@ -150,7 +159,7 @@ public class DatasetsIT {
 //
         Response getWithPrivateUrlToken = UtilIT.nativeGet(datasetId, tokenForGuestOfDataset);
         assertEquals(200, getWithPrivateUrlToken.getStatusCode());
-        getWithPrivateUrlToken.prettyPrint();
+//        getWithPrivateUrlToken.prettyPrint();
         logger.info("http://localhost:8080/privateurl.xhtml?token=" + tokenForGuestOfDataset);
         Response swordStatement = UtilIT.getSwordStatement(dataset1PersistentId, apiToken);
         assertEquals(OK.getStatusCode(), swordStatement.getStatusCode());
@@ -159,7 +168,38 @@ public class DatasetsIT {
         assertEquals(OK.getStatusCode(), downloadFile.getStatusCode());
         Response downloadFileBadToken = UtilIT.downloadFile(fileId, "junk");
         assertEquals(FORBIDDEN.getStatusCode(), downloadFileBadToken.getStatusCode());
+        boolean canGetRoleAssignmentsOnDatasets = false;
+        Response notPermittedToListRoleAssignment = UtilIT.getRoleAssignmentsOnDataset(datasetId.toString(), null, apiToken2);
+        if (canGetRoleAssignmentsOnDatasets) {
+            Response roleAssignments = UtilIT.getRoleAssignmentsOnDataset(datasetId.toString(), null, apiToken);
+            roleAssignments.prettyPrint();
+            assertEquals(OK.getStatusCode(), roleAssignments.getStatusCode());
+            List<JsonObject> assignments = with(roleAssignments.body().asString()).param("member", "member").getJsonObject("data.findAll { data -> data._roleAlias == member }");
+            assertEquals(1, assignments.size());
+            Map roleAssignment = assignments.get(0);
+            int roleAssignmentId = (int) roleAssignment.get("id");
+            logger.info("role assignment id: " + roleAssignmentId);
+//        Response revoke = UtilIT.revokeRole(dataverseAlias, roleAssignmentId, apiToken);
+            assertEquals(UNAUTHORIZED.getStatusCode(), notPermittedToListRoleAssignment.getStatusCode());
+        } else {
+            assertEquals(FORBIDDEN.getStatusCode(), notPermittedToListRoleAssignment.getStatusCode());
+        }
+        Response revoke = UtilIT.revokeRole(dataverseAlias, roleAssignmentIdFromCreate, apiToken);
+        revoke.prettyPrint();
+        assertEquals(OK.getStatusCode(), revoke.getStatusCode());
+
+        Response shouldNoLongerExist = UtilIT.privateUrlGet(datasetId, apiToken);
+        shouldNoLongerExist.prettyPrint();
+        assertEquals(200, shouldNoLongerExist.getStatusCode());
+
+        String noMoreToken = JsonPath.from(shouldNoLongerExist.body().asString()).getString("data.generated");
+        logger.info("tokenForGue: " + tokenForGuestOfDataset);
+        logger.info("noMoreToken: " + noMoreToken);
+        String msg = "Expected tokenForGuestOfDataset<" + tokenForGuestOfDataset + "> to not be equal to noMoreToken <" + noMoreToken + ">";
+        assertFalse(msg, tokenForGuestOfDataset.equals(noMoreToken));
+
         if (true) {
+            logger.info("Done with Private URL testing.");
             return;
         }
         String protocol = JsonPath.from(getWithPrivateUrlToken.getBody().asString()).getString("data.protocol");
