@@ -11,14 +11,10 @@
 
     <h:body>
         <ui:composition template="/dataverse_template.xhtml">
-            <!--FIXME: Do we really need breadcrumbs here? This page only exists to log the temporary user in and redirect to the draft of the dataset.-->
-            <ui:param name="pageTitle" value="#{bundle['dataset.privateurl.header']} - #{dataverseServiceBean.findRootDataverse().name} #{bundle.dataverse}"/>
+            <ui:param name="pageTitle" value="#{bundle['dataset.privateurl.header']}"/>
             <ui:param name="showDataverseHeader" value="false"/>
             <ui:define name="body">
-                <!--FIXME: Don't let this page be accessed without a token per https://github.com/IQSS/dataverse/issues/2841 -->
                 <f:metadata>
-                    <!--FIXME: Do we really need breadcrumbs here? This page only exists to log the temporary user in and redirect to the draft of the dataset.-->
-                    <f:viewAction action="#{dataverseHeaderFragment.initBreadcrumbs(dataverseServiceBean.findRootDataverse(), bundle['dataset.privateurl.header'])}"/>
                     <f:viewParam name="token" value="#{PrivateUrlPage.token}"/>
                     <f:viewAction action="#{PrivateUrlPage.init}" />
                 </f:metadata>

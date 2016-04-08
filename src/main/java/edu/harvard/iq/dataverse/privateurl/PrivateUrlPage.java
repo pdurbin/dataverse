@@ -1,17 +1,14 @@
 package edu.harvard.iq.dataverse.privateurl;
 
+import edu.harvard.iq.dataverse.Dataset;
 import edu.harvard.iq.dataverse.DatasetServiceBean;
 import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.DataverseSession;
-import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
-import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.util.SystemConfig;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.logging.Logger;
 import javax.ejb.EJB;
-import javax.faces.context.FacesContext;
 import javax.faces.view.ViewScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -35,24 +32,25 @@ public class PrivateUrlPage implements Serializable {
      */
     String token;
 
-    public void init() {
+    public String init() {
         GuestOfDataset guestOfDataset = datasetService.getUserFromPrivateUrlToken(token);
         if (guestOfDataset != null) {
             session.setUser(guestOfDataset);
-        }
-        DatasetVersion dsv = datasetService.getDraftDatasetVersionFromPrivateUrlToken(token);
-        if (dsv != null) {
-            logger.info("redirecting to dataset");
-            String url = systemConfig.getDataverseSiteUrl() + "/dataset.xhtml?persistentId=" + dsv.getDataset().getGlobalId() + "&version=DRAFT" + "&faces-redirect=true";
-            try {
-                FacesContext.getCurrentInstance().getExternalContext().redirect(url);
-            } catch (IOException ex) {
-                logger.info("Couldn't redirect: " + ex);
+            DatasetVersion draft = datasetService.getDraftDatasetVersionFromPrivateUrlToken(token);
+            if (draft != null) {
+                Dataset dataset = draft.getDataset();
+                if (dataset != null) {
+                    String persistentId = dataset.getGlobalId();
+                    if (persistentId != null) {
+                        String relativeUrl = "/dataset.xhtml?persistentId=" + persistentId + "&version=DRAFT" + "&faces-redirect=true";
+                        logger.fine("Redirecting " + guestOfDataset.getIdentifier() + " to " + relativeUrl);
+                        return relativeUrl;
+                    }
+                }
             }
-        } else {
-            logger.info("Not redirecting. Couldn't find dataset based on token: " + token);
         }
-
+        logger.info("Not redirecting. Couldn't find draft dataset version based on token: " + token);
+        return "/404.xhtml";
     }
 
     public String getToken() {
