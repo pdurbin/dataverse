@@ -8,6 +8,7 @@ import edu.harvard.iq.dataverse.authorization.users.ApiToken;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import edu.harvard.iq.dataverse.authorization.users.GuestUser;
 import edu.harvard.iq.dataverse.datavariable.VariableServiceBean;
 import edu.harvard.iq.dataverse.engine.command.Command;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
@@ -493,10 +494,19 @@ public class DatasetPage implements java.io.Serializable {
         // --------------------------------------------------------------------
         
         // --------------------------------------------------------------------
-        // (2) Is user authenticated?
-        // No?  Then no button...
+        // (2) In Dataverse 4.3 and earlier we required that users be authenticated
+        // to download files, but in developing the Private URL feature, we have
+        // added a new subclass of "User" called "GuestOfDataset" that returns false
+        // for isAuthenticated but that should be able to download restricted files
+        // when given the Member role (which includes the DownloadFile permission).
+        // This is consistent with how Builtin and Shib users (both are
+        // AuthenticatedUsers) can download restricted files when they are granted
+        // the Member role. For this reason condition 2 has been changed. Previously,
+        // we required isSessionUserAuthenticated to return true. Now we require
+        // that the User is not an instance of GuestUser, which is similar in
+        // spirit to the previous check.
         // --------------------------------------------------------------------
-        if (!(isSessionUserAuthenticated())){
+        if (session.getUser() instanceof GuestUser){
             this.fileDownloadPermissionMap.put(fid, false);
             return false;
         }
