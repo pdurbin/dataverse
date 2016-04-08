@@ -4343,9 +4343,17 @@ public class DatasetPage implements java.io.Serializable {
                 Logger.getLogger(DatasetPage.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-        boolean deleted = datasetService.deletePrivateUrl(dataset.getId());
-        if (deleted) {
+        PrivateUrl privateUrlShouldBeNull = datasetService.getPrivateUrl(dataset.getId());
+        if (privateUrlShouldBeNull == null) {
             privateUrl = null;
+        } else {
+            logger.info("Private URL id " + privateUrlShouldBeNull.getId() + " should have been deleted by RevokeRoleCommand. Attempting to delete it directly...");
+            boolean deleted = datasetService.deletePrivateUrl(dataset.getId());
+            if (deleted) {
+                privateUrl = null;
+            } else {
+                logger.info("Unable to delete Private URL id " + privateUrlShouldBeNull.getId());
+            }
         }
     }
 
