@@ -16,6 +16,7 @@ import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.UserNotification;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
+import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
 import edu.harvard.iq.dataverse.engine.command.AbstractCommand;
 import edu.harvard.iq.dataverse.engine.command.CommandContext;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
@@ -29,6 +30,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.logging.Logger;
 
 /**
  *
@@ -36,6 +38,8 @@ import java.util.ResourceBundle;
  */
 @RequiredPermissions(Permission.PublishDataset)
 public class PublishDatasetCommand extends AbstractCommand<Dataset> {
+
+    private static final Logger logger = Logger.getLogger(PublishDatasetCommand.class.getCanonicalName());
 
     boolean minorRelease = false;
     Dataset theDataset;
@@ -226,6 +230,18 @@ public class PublishDatasetCommand extends AbstractCommand<Dataset> {
                 }
                 throw new CommandException(ResourceBundle.getBundle("Bundle").getString("dataset.publish.error.datacite"), this);
             }
+        }
+
+        Long datasetId = savedDataset.getId();
+        if (datasetId != null) {
+            GuestOfDataset guestOfDataset = new GuestOfDataset(datasetId);
+            logger.fine("Deleting Private URL for dataset id " + datasetId + " by revoking role assignments for " + guestOfDataset.getIdentifier());
+            List<RoleAssignment> roleAssignments = ctxt.roles().directRoleAssignments(guestOfDataset, savedDataset);
+            for (RoleAssignment roleAssignment : roleAssignments) {
+                ctxt.engine().submit(new RevokeRoleCommand(roleAssignment, getRequest()));
+            }
+        } else {
+            logger.info("Unable to deleting Private URL for dataset because id was null.");
         }
 
         /*

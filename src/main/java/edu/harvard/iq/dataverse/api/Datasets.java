@@ -551,16 +551,12 @@ public class Datasets extends AbstractApiBean {
     }
 
     /**
-     * @todo Make this real. Currently only used for API testing. Copied from
-     * the equivalent API endpoint for dataverses.
+     * @todo Document this in the API Guide. Copied from the equivalent API
+     * endpoint for dataverses.
      */
     @GET
     @Path("{identifier}/assignments")
     public Response getAssignments(@PathParam("identifier") String id) {
-        boolean apiTestingOnly = true;
-        if (apiTestingOnly) {
-            return errorResponse(Response.Status.FORBIDDEN, "This is only for API tests.");
-        }
         try {
             JsonArrayBuilder jab = Json.createArrayBuilder();
             for (RoleAssignment ra : execCommand(new ListRoleAssignments(createDataverseRequest(findUserOrDie()), findDatasetOrDie(id)))) {
@@ -589,14 +585,17 @@ public class Datasets extends AbstractApiBean {
             JsonObjectBuilder response = Json.createObjectBuilder();
             response.add("datasetIdSupplied", datasetId);
             if (privateUrl != null) {
-                response.add("get", privateUrl.getToken());
-                DatasetVersion draft = datasetService.getDraftDatasetVersionFromPrivateUrlToken(privateUrl.getToken());
-                response.add("draftId", draft.getId());
                 response.add("generated", privateUrl.getToken());
+                DatasetVersion draft = datasetService.getDraftDatasetVersionFromPrivateUrlToken(privateUrl.getToken());
+                if (draft != null) {
+                    response.add("draftId", draft.getId());
+                    return okResponse(response);
+                } else {
+                    return errorResponse(Response.Status.INTERNAL_SERVER_ERROR, "Private URL exists for dataset that isn't in draft. It should have been deleted when the dataset was published.");
+                }
             } else {
-                response.add("get", "nothing found");
+                return errorResponse(Response.Status.NOT_FOUND, "No Private URL found for dataset " + datasetId + ".");
             }
-            return okResponse(response);
         } catch (WrappedResponse wr) {
             return wr.getResponse();
         }
