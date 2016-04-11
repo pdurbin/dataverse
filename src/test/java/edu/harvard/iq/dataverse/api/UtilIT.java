@@ -396,7 +396,7 @@ public class UtilIT {
         return response;
     }
 
-    static Response privateUrlRegenerate(Integer datasetId, String apiToken) {
+    static Response privateUrlCreate(Integer datasetId, String apiToken) {
         Response response = given()
                 .header(API_TOKEN_HTTP_HEADER, apiToken)
                 .put("/api/datasets/" + datasetId + "/privateUrl");

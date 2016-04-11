@@ -714,13 +714,10 @@ public class DatasetServiceBean implements java.io.Serializable {
         return null;
     }
 
-    public PrivateUrl regeneratePrivateUrl(Long datasetId, String newToken) {
-        logger.info("regeneratePrivateUrl");
+    public PrivateUrl createPrivateUrl(Long datasetId, String newToken) {
+        logger.fine("createPrivateUrl");
         Dataset dataset = find(datasetId);
         if (dataset != null) {
-            /**
-             * @todo Don't just keep adding.
-             */
             if (newToken == null || newToken.isEmpty()) {
                 newToken = UUID.randomUUID().toString();
             }
@@ -729,13 +726,8 @@ public class DatasetServiceBean implements java.io.Serializable {
                 PrivateUrl privateUrl = new PrivateUrl(dataset, newToken);
                 em.persist(privateUrl);
                 em.flush();
-                logger.info("returning " + privateUrl.getToken());
+                logger.fine("returning " + privateUrl.getToken());
                 return privateUrl;
-            } else {
-                /**
-                 * @todo Implement the case where a PrivateUrl already exists.
-                 * At minimum we should scramble the token to a new one.
-                 */
             }
         }
         return null;

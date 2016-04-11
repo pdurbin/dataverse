@@ -1,6 +1,7 @@
 package edu.harvard.iq.dataverse.privateurl;
 
 import edu.harvard.iq.dataverse.Dataset;
+import edu.harvard.iq.dataverse.RoleAssignment;
 import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -9,6 +10,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
+import javax.persistence.Transient;
 
 /**
  * @todo Should this be called PrivateUrlData instead? It might reduce confusion
@@ -33,6 +35,13 @@ public class PrivateUrl implements Serializable {
     @OneToOne()
     @JoinColumn(nullable = false, unique = true)
     private Dataset dataset;
+
+    /**
+     * @todo Should this be Transient? Would it make more sense to persist the
+     * id of the RoleAssignment?
+     */
+    @Transient
+    private RoleAssignment roleAssignment;
 
     /**
      * Don't use this constructor. It only exists to get JPA to stop complaining
@@ -69,6 +78,14 @@ public class PrivateUrl implements Serializable {
     public PrivateUrl(Dataset dataset, String token) {
         this.token = token;
         this.dataset = dataset;
+    }
+
+    public RoleAssignment getRoleAssignment() {
+        return roleAssignment;
+    }
+
+    public void setRoleAssignment(RoleAssignment roleAssignment) {
+        this.roleAssignment = roleAssignment;
     }
 
 }

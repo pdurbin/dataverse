@@ -17,6 +17,9 @@ import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.OK;
 import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
 import static junit.framework.Assert.assertEquals;
+import static com.jayway.restassured.RestAssured.given;
+import static com.jayway.restassured.path.json.JsonPath.with;
+import static junit.framework.Assert.assertEquals;
 
 public class DatasetsIT {
 
@@ -125,7 +128,7 @@ public class DatasetsIT {
         pristine.prettyPrint();
         assertEquals(404, pristine.getStatusCode());
 
-        Response createPrivateUrl = UtilIT.privateUrlRegenerate(datasetId, apiToken);
+        Response createPrivateUrl = UtilIT.privateUrlCreate(datasetId, apiToken);
         createPrivateUrl.prettyPrint();
         assertEquals(200, createPrivateUrl.getStatusCode());
 
@@ -192,9 +195,22 @@ public class DatasetsIT {
         shouldNoLongerExist.prettyPrint();
         assertEquals(404, shouldNoLongerExist.getStatusCode());
 
-        Response createPrivateUrlAgain = UtilIT.privateUrlRegenerate(datasetId, apiToken);
+        Response createPrivateUrlAgain = UtilIT.privateUrlCreate(datasetId, apiToken);
         createPrivateUrlAgain.prettyPrint();
         assertEquals(200, createPrivateUrlAgain.getStatusCode());
+
+        Response shouldNotDeletePrivateUrl = UtilIT.privateUrlDelete(datasetId, userWithNoRolesApiToken);
+        shouldNotDeletePrivateUrl.prettyPrint();
+        assertEquals(UNAUTHORIZED.getStatusCode(), shouldNotDeletePrivateUrl.getStatusCode());
+
+        Response deletePrivateUrlResponse = UtilIT.privateUrlDelete(datasetId, apiToken);
+        deletePrivateUrlResponse.prettyPrint();
+        assertEquals(200, deletePrivateUrlResponse.getStatusCode());
+
+        Response createPrivateUrlOnceAgain = UtilIT.privateUrlCreate(datasetId, apiToken);
+        createPrivateUrlOnceAgain.prettyPrint();
+        assertEquals(200, createPrivateUrlOnceAgain.getStatusCode());
+
         Response publishDataverse = UtilIT.publishDataverseViaSword(dataverseAlias, apiToken);
         assertEquals(200, publishDataverse.getStatusCode());
         Response publishDataset = UtilIT.publishDatasetViaSword(dataset1PersistentId, apiToken);
