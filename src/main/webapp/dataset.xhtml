@@ -669,8 +669,8 @@
                             <p:commandButton value="#{bundle.cancel}" onclick="PF('deleteVersionConfirmation').hide();PF('blockDatasetForm').hide();" type="button" />
                         </div>
                     </p:dialog>
-                    <p:dialog id="publicUrlId" styleClass="smallPopUp" header="#{bundle['dataset.privateurl.header']}" widgetVar="privateUrlConfirmation" modal="true">
-                        <p:panel id="publicUrlPanel">
+                    <p:dialog id="privateUrlId" styleClass="smallPopUp" header="#{bundle['dataset.privateurl.header']}" widgetVar="privateUrlConfirmation" modal="true">
+                        <p:panel id="privateUrlPanel">
                         <!--<p class="help-block">#{bundle['dataset.privateurl.tip']}</p>-->
                             <p class="help-block"><span class="glyphicon glyphicon-info-sign"/> #{bundle['dataset.privateurl.tip']}</p>
                             <div class="col-sm-offset-1">
@@ -683,10 +683,10 @@
                                 </div>
                             </div>
                             <div class="button-block">
-                                <p:commandButton value="#{bundle['dataset.privateurl.createPrivateUrl']}" action="#{DatasetPage.createPrivateUrl()}" update="publicUrlPanel" rendered="#{empty(DatasetPage.privateUrl)}" />
-                                <p:commandButton value="#{bundle['dataset.privateurl.disablePrivateUrl']}" action="#{DatasetPage.disablePrivateUrl()}" update="publicUrlPanel" rendered="#{!empty(DatasetPage.privateUrl)}"/>
-                                <p:commandButton value="#{bundle['dataset.privateurl.recreatePrivateUrl']}" action="#{DatasetPage.recreatePrivateUrl()}" update="publicUrlPanel" rendered="#{!empty(DatasetPage.privateUrl)}" />
-                                <p:commandButton value="#{bundle.close}" onclick="PF('privateUrlConfirmation').hide();PF('blockDatasetForm').hide();" type="button" />
+                                <p:commandButton styleClass="btn btn-default" value="#{bundle['dataset.privateurl.createPrivateUrl']}" action="#{DatasetPage.createPrivateUrl()}" update="privateUrlPanel" rendered="#{empty(DatasetPage.privateUrl)}" />
+                                <p:commandButton styleClass="btn btn-default" value="#{bundle['dataset.privateurl.disablePrivateUrl']}" action="#{DatasetPage.disablePrivateUrl()}" update="privateUrlPanel" rendered="#{!empty(DatasetPage.privateUrl)}"/>
+                                <p:commandButton styleClass="btn btn-default" value="#{bundle['dataset.privateurl.recreatePrivateUrl']}" action="#{DatasetPage.recreatePrivateUrl()}" update="privateUrlPanel" rendered="#{!empty(DatasetPage.privateUrl)}" />
+                                <p:commandButton styleClass="btn btn-default" value="#{bundle.close}" onclick="PF('privateUrlConfirmation').hide();PF('blockDatasetForm').hide();" type="button" />
                             </div>
                         </p:panel>
                     </p:dialog>
