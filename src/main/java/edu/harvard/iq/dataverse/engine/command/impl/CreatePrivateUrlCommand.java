@@ -28,8 +28,7 @@ public class CreatePrivateUrlCommand extends AbstractCommand<PrivateUrl> {
     @Override
     public PrivateUrl execute(CommandContext ctxt) throws CommandException {
         logger.fine("Executing CreatePrivateUrlCommand...");
-        String newToken = null;
-        PrivateUrl privateUrl = ctxt.datasets().createPrivateUrl(dataset.getId(), newToken);
+        PrivateUrl privateUrl = ctxt.datasets().createPrivateUrl(dataset.getId());
         DataverseRole memberRole = ctxt.roles().findBuiltinRoleByAlias(DataverseRole.MEMBER);
         GuestOfDataset guestOfDataset = new GuestOfDataset(dataset.getId());
         RoleAssignment roleAssignment = ctxt.engine().submit(new AssignRoleCommand(guestOfDataset, memberRole, dataset, getRequest()));

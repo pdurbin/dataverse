@@ -714,28 +714,26 @@ public class DatasetServiceBean implements java.io.Serializable {
         return null;
     }
 
-    public PrivateUrl createPrivateUrl(Long datasetId, String newToken) {
-        logger.fine("createPrivateUrl");
+    public PrivateUrl createPrivateUrl(Long datasetId) {
         Dataset dataset = find(datasetId);
         if (dataset != null) {
-            if (newToken == null || newToken.isEmpty()) {
-                newToken = UUID.randomUUID().toString();
-            }
             PrivateUrl existing = getPrivateUrl(datasetId);
             if (existing == null) {
+                String newToken = UUID.randomUUID().toString();
                 PrivateUrl privateUrl = new PrivateUrl(dataset, newToken);
                 em.persist(privateUrl);
                 em.flush();
-                logger.fine("returning " + privateUrl.getToken());
+                logger.fine("Private URL created with token " + privateUrl.getToken());
                 return privateUrl;
+            } else {
+                logger.info("Private URL already exists with id " + existing.getId());
             }
+        } else {
+            logger.info("Can't create Private URL because a dataset can't be found with id " + datasetId);
         }
         return null;
     }
 
-    /**
-     * @todo Implement this properly. DisablePrivateUrlCommand?
-     */
     public boolean deletePrivateUrl(Long datasetId) {
         PrivateUrl doomed = getPrivateUrl(datasetId);
         if (doomed != null) {

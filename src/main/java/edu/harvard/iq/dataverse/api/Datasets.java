@@ -11,7 +11,6 @@ import edu.harvard.iq.dataverse.DataverseServiceBean;
 import edu.harvard.iq.dataverse.MetadataBlock;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.DataverseRole;
-import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.engine.command.Command;
@@ -573,18 +572,10 @@ public class Datasets extends AbstractApiBean {
     @Path("{id}/privateUrl")
     public Response getPrivateUrlData(@PathParam("id") String idSupplied) {
         try {
-            User u = findUserOrDie();
-            /**
-             * @todo Only allow people who have permission to add a dataset
-             * access to get the token.
-             */
+            User user = findUserOrDie();
             Dataset dataset = findDatasetOrDie(idSupplied);
-            if (!permissionSvc.on(dataset).has(Permission.ManageDatasetPermissions)) {
-                /**
-                 * @todo Get this working (or similiar). It's the permission we
-                 * use in CreatePrivateUrlCommand and DeletePrivateUrlCommand.
-                 */
-//                return errorResponse(Response.Status.UNAUTHORIZED, "Not authorized.");
+            if (!permissionSvc.requestOn(createDataverseRequest(user), dataset).canIssue(CreatePrivateUrlCommand.class)) {
+                return errorResponse(Response.Status.UNAUTHORIZED, "Not authorized.");
             }
             long datasetId = dataset.getId();
             PrivateUrl privateUrl = datasetService.getPrivateUrl(datasetId);
@@ -610,7 +601,7 @@ public class Datasets extends AbstractApiBean {
     /**
      * @todo Should this be a POST since we're creating? Probably.
      */
-    @PUT
+    @POST
     @Path("{id}/privateUrl")
     public Response createPrivateUrl(@PathParam("id") String idSupplied) {
         try {

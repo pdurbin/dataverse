@@ -14,6 +14,7 @@ import static javax.ws.rs.core.Response.Status.CREATED;
 import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.OK;
 import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.path.json.JsonPath.with;
 import static junit.framework.Assert.assertEquals;
@@ -152,56 +153,41 @@ public class DatasetsIT {
 
         Response badApiKeyEmptyString = UtilIT.privateUrlGet(datasetId, "");
         badApiKeyEmptyString.prettyPrint();
-        assertEquals(401, badApiKeyEmptyString.getStatusCode());
+        assertEquals(UNAUTHORIZED.getStatusCode(), badApiKeyEmptyString.getStatusCode());
         Response badApiKeyDoesNotExist = UtilIT.privateUrlGet(datasetId, "junk");
         badApiKeyDoesNotExist.prettyPrint();
-        assertEquals(401, badApiKeyDoesNotExist.getStatusCode());
+        assertEquals(UNAUTHORIZED.getStatusCode(), badApiKeyDoesNotExist.getStatusCode());
         Response badDatasetId = UtilIT.privateUrlGet(Integer.MAX_VALUE, apiToken);
         badDatasetId.prettyPrint();
-        assertEquals(404, badDatasetId.getStatusCode());
+        assertEquals(NOT_FOUND.getStatusCode(), badDatasetId.getStatusCode());
         Response pristine = UtilIT.privateUrlGet(datasetId, apiToken);
         pristine.prettyPrint();
-        assertEquals(404, pristine.getStatusCode());
+        assertEquals(NOT_FOUND.getStatusCode(), pristine.getStatusCode());
 
         Response createPrivateUrl = UtilIT.privateUrlCreate(datasetId, apiToken);
         createPrivateUrl.prettyPrint();
-        assertEquals(200, createPrivateUrl.getStatusCode());
+        assertEquals(OK.getStatusCode(), createPrivateUrl.getStatusCode());
 
         Response userWithNoRoles = UtilIT.createRandomUser();
         String userWithNoRolesApiToken = UtilIT.getApiTokenFromResponse(userWithNoRoles);
         Response unAuth = UtilIT.privateUrlGet(datasetId, userWithNoRolesApiToken);
         unAuth.prettyPrint();
-        boolean securityBugFixed = false;
-        if (securityBugFixed) {
-            /**
-             * @todo Not just anyone should be able to get the token! You need
-             * to be able to create datasets, not just have a valid Dataverse
-             * account.
-             */
-            assertEquals(401, unAuth.getStatusCode());
-        }
+        assertEquals(UNAUTHORIZED.getStatusCode(), unAuth.getStatusCode());
         Response shouldExist = UtilIT.privateUrlGet(datasetId, apiToken);
         shouldExist.prettyPrint();
-        assertEquals(200, shouldExist.getStatusCode());
+        assertEquals(OK.getStatusCode(), shouldExist.getStatusCode());
 
         String tokenForGuestOfDataset = JsonPath.from(shouldExist.body().asString()).getString("data.generated");
         logger.info("privateUrlToken: " + tokenForGuestOfDataset);
         long roleAssignmentIdFromCreate = JsonPath.from(createPrivateUrl.body().asString()).getLong("data.roleAssignment.id");
         logger.info("roleAssignmentIdFromCreate: " + roleAssignmentIdFromCreate);
 
-//        Response badAnonLinkTokenEmptyString = UtilIT.nativeGet(datasetId, "");
-//        badAnonLinkTokenEmptyString.prettyPrint();
-//        assertEquals(401, badAnonLinkTokenEmptyString.getStatusCode());
-//        if (true) {
-//            return;
-//        }
-//
-//        Response badAnonLinkTokenDoesNotExist = UtilIT.nativeGetAnon(datasetId, "junk");
-//        badAnonLinkTokenDoesNotExist.prettyPrint();
-//        assertEquals(401, badAnonLinkTokenDoesNotExist.getStatusCode());
-//
+        Response badAnonLinkTokenEmptyString = UtilIT.nativeGet(datasetId, "");
+        badAnonLinkTokenEmptyString.prettyPrint();
+        assertEquals(UNAUTHORIZED.getStatusCode(), badAnonLinkTokenEmptyString.getStatusCode());
+
         Response getWithPrivateUrlToken = UtilIT.nativeGet(datasetId, tokenForGuestOfDataset);
-        assertEquals(200, getWithPrivateUrlToken.getStatusCode());
+        assertEquals(OK.getStatusCode(), getWithPrivateUrlToken.getStatusCode());
 //        getWithPrivateUrlToken.prettyPrint();
         logger.info("http://localhost:8080/privateurl.xhtml?token=" + tokenForGuestOfDataset);
         Response swordStatement = UtilIT.getSwordStatement(dataset1PersistentId, apiToken);
@@ -228,11 +214,15 @@ public class DatasetsIT {
 
         Response shouldNoLongerExist = UtilIT.privateUrlGet(datasetId, apiToken);
         shouldNoLongerExist.prettyPrint();
-        assertEquals(404, shouldNoLongerExist.getStatusCode());
+        assertEquals(NOT_FOUND.getStatusCode(), shouldNoLongerExist.getStatusCode());
+
+        Response createPrivateUrlUnauth = UtilIT.privateUrlCreate(datasetId, userWithNoRolesApiToken);
+        createPrivateUrlUnauth.prettyPrint();
+        assertEquals(UNAUTHORIZED.getStatusCode(), createPrivateUrlUnauth.getStatusCode());
 
         Response createPrivateUrlAgain = UtilIT.privateUrlCreate(datasetId, apiToken);
         createPrivateUrlAgain.prettyPrint();
-        assertEquals(200, createPrivateUrlAgain.getStatusCode());
+        assertEquals(OK.getStatusCode(), createPrivateUrlAgain.getStatusCode());
 
         Response shouldNotDeletePrivateUrl = UtilIT.privateUrlDelete(datasetId, userWithNoRolesApiToken);
         shouldNotDeletePrivateUrl.prettyPrint();
@@ -240,19 +230,19 @@ public class DatasetsIT {
 
         Response deletePrivateUrlResponse = UtilIT.privateUrlDelete(datasetId, apiToken);
         deletePrivateUrlResponse.prettyPrint();
-        assertEquals(200, deletePrivateUrlResponse.getStatusCode());
+        assertEquals(OK.getStatusCode(), deletePrivateUrlResponse.getStatusCode());
 
         Response createPrivateUrlOnceAgain = UtilIT.privateUrlCreate(datasetId, apiToken);
         createPrivateUrlOnceAgain.prettyPrint();
-        assertEquals(200, createPrivateUrlOnceAgain.getStatusCode());
+        assertEquals(OK.getStatusCode(), createPrivateUrlOnceAgain.getStatusCode());
 
         Response publishDataverse = UtilIT.publishDataverseViaSword(dataverseAlias, apiToken);
-        assertEquals(200, publishDataverse.getStatusCode());
+        assertEquals(OK.getStatusCode(), publishDataverse.getStatusCode());
         Response publishDataset = UtilIT.publishDatasetViaSword(dataset1PersistentId, apiToken);
-        assertEquals(200, publishDataset.getStatusCode());
+        assertEquals(OK.getStatusCode(), publishDataset.getStatusCode());
         Response privateUrlTokenShouldBeDeletedOnPublish = UtilIT.privateUrlGet(datasetId, apiToken);
         privateUrlTokenShouldBeDeletedOnPublish.prettyPrint();
-        assertEquals(404, privateUrlTokenShouldBeDeletedOnPublish.getStatusCode());
+        assertEquals(NOT_FOUND.getStatusCode(), privateUrlTokenShouldBeDeletedOnPublish.getStatusCode());
 
         Response getRoleAssignmentsOnDatasetShouldFailUnauthorized = UtilIT.getRoleAssignmentsOnDataset(datasetId.toString(), null, userWithNoRolesApiToken);
         assertEquals(UNAUTHORIZED.getStatusCode(), getRoleAssignmentsOnDatasetShouldFailUnauthorized.getStatusCode());
