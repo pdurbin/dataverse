@@ -5,6 +5,7 @@ import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.authorization.RoleAssignmentSet;
+import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
 import edu.harvard.iq.dataverse.search.IndexAsync;
 import edu.harvard.iq.dataverse.search.IndexResponse;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
@@ -134,12 +135,12 @@ public class DataverseRoleServiceBean implements java.io.Serializable {
 		}
 		em.remove(ra);
             /**
-             * @todo Clean all this ":guestOfDataset" code up assuming it gets
+             * @todo Clean all this GuestOfDataset code up assuming it gets
              * approved.
              */
-            if (ra.getAssigneeIdentifier().startsWith(":guestOfDataset")) {
+            if (ra.getAssigneeIdentifier().startsWith(GuestOfDataset.identifierPrefix)) {
                 logger.info("starts with... " + ra.getAssigneeIdentifier());
-                String[] parts = ra.getAssigneeIdentifier().split(":guestOfDataset");
+                String[] parts = ra.getAssigneeIdentifier().split(GuestOfDataset.identifierPrefix);
                 long datasetId = new Long(parts[1]);
                 boolean status = datasetService.deletePrivateUrl(datasetId);
                 logger.info("status of deleting PrivateUrl: " + status);

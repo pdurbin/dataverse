@@ -64,13 +64,11 @@ public class RoleAssigneeServiceBean {
     public RoleAssignee getRoleAssignee(String identifier) {
         switch (identifier.charAt(0)) {
             case ':':
-                if (identifier.startsWith(":guestOfDataset")) {
+                if (identifier.startsWith(GuestOfDataset.identifierPrefix)) {
                     /**
-                     * @todo Lots more error checking! Also, refactor
-                     * ":guestOfDataset" into a static String we can use all
-                     * over.
+                     * @todo Lots more error checking!
                      */
-                    String[] parts = identifier.split(":guestOfDataset");
+                    String[] parts = identifier.split(GuestOfDataset.identifierPrefix);
                     long datasetId = new Long(parts[1]);
                     GuestOfDataset guestOfDataset = new GuestOfDataset(datasetId);
                     Map<String, RoleAssignee> datasetGuests = new TreeMap<>();

@@ -6,6 +6,7 @@ import edu.harvard.iq.dataverse.util.BundleUtil;
 public class GuestOfDataset implements User {
 
     private final long datasetId;
+    public static final String identifierPrefix = ":guestOfDataset";
 
     public GuestOfDataset(long datasetId) {
         this.datasetId = datasetId;
@@ -37,7 +38,7 @@ public class GuestOfDataset implements User {
         /**
          * @todo Internationalize this? Does it matter?
          */
-        return ":guestOfDataset" + datasetId;
+        return identifierPrefix + datasetId;
     }
 
     @Override
