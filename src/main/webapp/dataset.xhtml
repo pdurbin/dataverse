@@ -86,7 +86,7 @@
                                             </ul>
                                         </li>
                                         <li>
-                                            <p:commandLink id="privateUrl" onclick="PF('privateUrlConfirmation').show()" rendered="#{DatasetPage.dataset.latestVersion.versionState=='DRAFT'}">
+                                            <p:commandLink id="privateUrl" onclick="PF('privateUrlConfirmation').show()" rendered="#{DatasetPage.workingVersion == DatasetPage.dataset.latestVersion and DatasetPage.dataset.latestVersion.versionState=='DRAFT'}">
                                                 <h:outputText value="#{bundle['dataset.editBtn.itemLabel.privateUrl']}" />
                                             </p:commandLink>
                                         </li>
