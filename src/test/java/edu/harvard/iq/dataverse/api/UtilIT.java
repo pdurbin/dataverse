@@ -364,6 +364,20 @@ public class UtilIT {
                 .post(swordConfiguration.getBaseUrlPathCurrent() + "/edit/study/" + persistentId);
     }
 
+    static Response publishDatasetViaNativeApi(Integer datasetId, String majorOrMinor, String apiToken) {
+        /**
+         * @todo This should be a POST rather than a GET:
+         * https://github.com/IQSS/dataverse/issues/2431
+         *
+         * @todo Prevent version less than v1.0 to be published (i.e. v0.1):
+         * https://github.com/IQSS/dataverse/issues/2461
+         */
+        return given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .urlEncodingEnabled(false)
+                .get("/api/datasets/" + datasetId + "/actions/:publish?type=" + majorOrMinor);
+    }
+
     static Response publishDataverseViaSword(String alias, String apiToken) {
         return given()
                 .auth().basic(apiToken, EMPTY_STRING)

@@ -6,8 +6,6 @@ import java.util.logging.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.jayway.restassured.path.json.JsonPath;
-import static com.jayway.restassured.RestAssured.given;
-import static com.jayway.restassured.path.json.JsonPath.with;
 
 import java.util.List;
 import java.util.Map;
@@ -16,7 +14,6 @@ import static javax.ws.rs.core.Response.Status.CREATED;
 import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.OK;
 import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
-import static junit.framework.Assert.assertEquals;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.path.json.JsonPath.with;
 import static junit.framework.Assert.assertEquals;
@@ -47,6 +44,44 @@ public class DatasetsIT {
         Integer datasetId = UtilIT.getDatasetIdFromResponse(createDatasetResponse);
 
         Response deleteDatasetResponse = UtilIT.deleteDatasetViaNativeApi(datasetId, apiToken);
+        deleteDatasetResponse.prettyPrint();
+        assertEquals(200, deleteDatasetResponse.getStatusCode());
+
+        Response deleteDataverseResponse = UtilIT.deleteDataverse(dataverseAlias, apiToken);
+        deleteDataverseResponse.prettyPrint();
+        assertEquals(200, deleteDataverseResponse.getStatusCode());
+
+        Response deleteUserResponse = UtilIT.deleteUser(username);
+        deleteUserResponse.prettyPrint();
+        assertEquals(200, deleteUserResponse.getStatusCode());
+
+    }
+
+    @Test
+    public void testCreatePublishDestroyDataset() {
+
+        Response createUser = UtilIT.createRandomUser();
+        createUser.prettyPrint();
+        assertEquals(200, createUser.getStatusCode());
+        String username = UtilIT.getUsernameFromResponse(createUser);
+        String apiToken = UtilIT.getApiTokenFromResponse(createUser);
+        Response makeSuperUser = UtilIT.makeSuperUser(username);
+        assertEquals(200, makeSuperUser.getStatusCode());
+
+        Response createDataverseResponse = UtilIT.createRandomDataverse(apiToken);
+        createDataverseResponse.prettyPrint();
+        String dataverseAlias = UtilIT.getAliasFromResponse(createDataverseResponse);
+
+        Response createDatasetResponse = UtilIT.createRandomDatasetViaNativeApi(dataverseAlias, apiToken);
+        createDatasetResponse.prettyPrint();
+        Integer datasetId = JsonPath.from(createDatasetResponse.body().asString()).getInt("data.id");
+
+        Response publishDataverse = UtilIT.publishDataverseViaSword(dataverseAlias, apiToken);
+        assertEquals(200, publishDataverse.getStatusCode());
+        Response publishDataset = UtilIT.publishDatasetViaNativeApi(datasetId, "major", apiToken);
+        assertEquals(200, publishDataset.getStatusCode());
+
+        Response deleteDatasetResponse = UtilIT.destroyDataset(datasetId, apiToken);
         deleteDatasetResponse.prettyPrint();
         assertEquals(200, deleteDatasetResponse.getStatusCode());
 

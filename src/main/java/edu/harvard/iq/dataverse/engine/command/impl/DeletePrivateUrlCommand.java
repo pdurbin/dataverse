@@ -20,9 +20,9 @@ public class DeletePrivateUrlCommand extends AbstractCommand<Dataset> {
 
     final Dataset dataset;
 
-    public DeletePrivateUrlCommand(DataverseRequest aRequest, Dataset anAffectedDvObject) {
-        super(aRequest, anAffectedDvObject);
-        dataset = anAffectedDvObject;
+    public DeletePrivateUrlCommand(DataverseRequest aRequest, Dataset theDataset) {
+        super(aRequest, theDataset);
+        dataset = theDataset;
     }
 
     @Override
