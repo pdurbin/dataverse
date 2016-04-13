@@ -6,6 +6,7 @@ import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.authorization.RoleAssignmentSet;
 import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import edu.harvard.iq.dataverse.search.IndexAsync;
 import edu.harvard.iq.dataverse.search.IndexResponse;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
@@ -142,8 +143,11 @@ public class DataverseRoleServiceBean implements java.io.Serializable {
                 logger.info("starts with... " + ra.getAssigneeIdentifier());
                 String[] parts = ra.getAssigneeIdentifier().split(GuestOfDataset.identifierPrefix);
                 long datasetId = new Long(parts[1]);
-                boolean status = datasetService.deletePrivateUrl(datasetId);
-                logger.info("status of deleting PrivateUrl: " + status);
+                PrivateUrl doomed = datasetService.getPrivateUrl(datasetId);
+                if (doomed != null) {
+                    boolean status = datasetService.deletePrivateUrl(doomed);
+                    logger.info("status of deleting PrivateUrl: " + status);
+                }
             }
             /**
              * @todo update permissionModificationTime here.

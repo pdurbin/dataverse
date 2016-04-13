@@ -15,6 +15,7 @@ import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.OK;
 import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.path.json.JsonPath.with;
 import static junit.framework.Assert.assertEquals;
@@ -131,6 +132,10 @@ public class DatasetsIT {
         String username = UtilIT.getUsernameFromResponse(createUser);
         String apiToken = UtilIT.getApiTokenFromResponse(createUser);
 
+        Response failToCreateWhenDatasetIdNotFound = UtilIT.privateUrlCreate(Integer.MAX_VALUE, apiToken);
+        failToCreateWhenDatasetIdNotFound.prettyPrint();
+        assertEquals(NOT_FOUND.getStatusCode(), failToCreateWhenDatasetIdNotFound.getStatusCode());
+
         Response createDataverseResponse = UtilIT.createRandomDataverse(apiToken);
         createDataverseResponse.prettyPrint();
         String dataverseAlias = UtilIT.getAliasFromResponse(createDataverseResponse);
@@ -168,6 +173,10 @@ public class DatasetsIT {
         createPrivateUrl.prettyPrint();
         assertEquals(OK.getStatusCode(), createPrivateUrl.getStatusCode());
 
+        /**
+         * @todo Do a GET of privateurl.xhtml to make sure you get a 200
+         * response.
+         */
         Response userWithNoRoles = UtilIT.createRandomUser();
         String userWithNoRolesApiToken = UtilIT.getApiTokenFromResponse(userWithNoRoles);
         Response unAuth = UtilIT.privateUrlGet(datasetId, userWithNoRolesApiToken);
@@ -232,9 +241,17 @@ public class DatasetsIT {
         deletePrivateUrlResponse.prettyPrint();
         assertEquals(OK.getStatusCode(), deletePrivateUrlResponse.getStatusCode());
 
+        Response tryToDeleteAlreadyDeletedPrivateUrl = UtilIT.privateUrlDelete(datasetId, apiToken);
+        tryToDeleteAlreadyDeletedPrivateUrl.prettyPrint();
+        assertEquals(NOT_FOUND.getStatusCode(), tryToDeleteAlreadyDeletedPrivateUrl.getStatusCode());
+
         Response createPrivateUrlOnceAgain = UtilIT.privateUrlCreate(datasetId, apiToken);
         createPrivateUrlOnceAgain.prettyPrint();
         assertEquals(OK.getStatusCode(), createPrivateUrlOnceAgain.getStatusCode());
+
+        Response tryToCreatePrivateUrlWhenExisting = UtilIT.privateUrlCreate(datasetId, apiToken);
+        tryToCreatePrivateUrlWhenExisting.prettyPrint();
+        assertEquals(BAD_REQUEST.getStatusCode(), tryToCreatePrivateUrlWhenExisting.getStatusCode());
 
         Response publishDataverse = UtilIT.publishDataverseViaSword(dataverseAlias, apiToken);
         assertEquals(OK.getStatusCode(), publishDataverse.getStatusCode());
@@ -250,6 +267,17 @@ public class DatasetsIT {
         publishingShouldHaveRemovedRoleAssignmentForGuestOfDataset.prettyPrint();
         List<JsonObject> noAssignmentsForGuestOfDataset = with(publishingShouldHaveRemovedRoleAssignmentForGuestOfDataset.body().asString()).param("member", "member").getJsonObject("data.findAll { data -> data._roleAlias == member }");
         assertEquals(0, noAssignmentsForGuestOfDataset.size());
+
+        Response createPostPublicationPrivateUrl = UtilIT.privateUrlCreate(datasetId, apiToken);
+        createPostPublicationPrivateUrl.prettyPrint();
+        assertEquals(BAD_REQUEST.getStatusCode(), createPostPublicationPrivateUrl.getStatusCode());
+
+        Response makeSuperUser = UtilIT.makeSuperUser(username);
+        assertEquals(200, makeSuperUser.getStatusCode());
+
+        Response deleteDatasetResponse = UtilIT.destroyDataset(datasetId, apiToken);
+        deleteDatasetResponse.prettyPrint();
+        assertEquals(200, deleteDatasetResponse.getStatusCode());
 
         if (true) {
             logger.info("Done with Private URL testing.");
@@ -267,9 +295,9 @@ public class DatasetsIT {
              * @todo Since now we're publishing above, we'll need to call
              * "destroy"
              */
-            Response deleteDatasetResponse = UtilIT.deleteDatasetViaNativeApi(datasetId, apiToken);
-            deleteDatasetResponse.prettyPrint();
-            assertEquals(200, deleteDatasetResponse.getStatusCode());
+//            Response deleteDatasetResponse = UtilIT.deleteDatasetViaNativeApi(datasetId, apiToken);
+//            deleteDatasetResponse.prettyPrint();
+//            assertEquals(200, deleteDatasetResponse.getStatusCode());
         }
 
     }

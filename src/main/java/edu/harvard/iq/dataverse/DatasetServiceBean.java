@@ -11,8 +11,8 @@ import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.dataaccess.ImageThumbConverter;
-import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
-import edu.harvard.iq.dataverse.engine.command.impl.RevokeRoleCommand;
+import edu.harvard.iq.dataverse.engine.command.exception.IllegalCommandException;
+import edu.harvard.iq.dataverse.engine.command.impl.CreatePrivateUrlCommand;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ejb.EJB;
@@ -714,35 +713,27 @@ public class DatasetServiceBean implements java.io.Serializable {
         return null;
     }
 
-    public PrivateUrl createPrivateUrl(Long datasetId) {
-        Dataset dataset = find(datasetId);
-        if (dataset != null) {
-            PrivateUrl existing = getPrivateUrl(datasetId);
-            if (existing == null) {
-                String newToken = UUID.randomUUID().toString();
-                PrivateUrl privateUrl = new PrivateUrl(dataset, newToken);
-                em.persist(privateUrl);
-                em.flush();
-                logger.fine("Private URL created with token " + privateUrl.getToken());
-                return privateUrl;
-            } else {
-                logger.info("Private URL already exists with id " + existing.getId());
-            }
-        } else {
-            logger.info("Can't create Private URL because a dataset can't be found with id " + datasetId);
-        }
-        return null;
+    /**
+     * @todo Passing in the CreatePrivateUrlCommand here seems like a great way
+     * to centralize null checks. Can we do this for deletePrivateUrl and
+     * possibly other methods?
+     */
+    public PrivateUrl createPrivateUrl(Dataset dataset, String token, CreatePrivateUrlCommand command) throws IllegalCommandException {
+        // CreatePrivateUrlCommand will ensure that dataset and newToken are non-null.
+        PrivateUrl privateUrl = new PrivateUrl(dataset, token);
+        em.persist(privateUrl);
+        em.flush();
+        logger.fine("Private URL created with token " + privateUrl.getToken());
+        return privateUrl;
     }
 
-    public boolean deletePrivateUrl(Long datasetId) {
-        PrivateUrl doomed = getPrivateUrl(datasetId);
-        if (doomed != null) {
-            em.remove(doomed);
-            return true;
-        } else {
-            logger.info("Couldn't find a Private URL to delete based on dataset id " + datasetId);
-            return false;
-        }
+    /**
+     * @param doomed Non-null PrivateUrl.
+     * @return true if no exceptions are thrown.
+     */
+    public boolean deletePrivateUrl(PrivateUrl doomed) {
+        em.remove(doomed);
+        return true;
     }
 
 }

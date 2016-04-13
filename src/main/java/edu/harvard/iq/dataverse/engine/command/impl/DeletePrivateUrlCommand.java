@@ -10,6 +10,8 @@ import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.engine.command.RequiredPermissions;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandExecutionException;
+import edu.harvard.iq.dataverse.engine.command.exception.IllegalCommandException;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -28,8 +30,25 @@ public class DeletePrivateUrlCommand extends AbstractCommand<Dataset> {
     @Override
     public Dataset execute(CommandContext ctxt) throws CommandException {
         logger.fine("Executing DeletePrivateUrlCommand....");
-        boolean privateUrlDeleted = ctxt.datasets().deletePrivateUrl(dataset.getId());
+        if (dataset == null) {
+            /**
+             * @todo Internationalize this.
+             */
+            String message = "Can't delete Private URL. Dataset is null.";
+            logger.info(message);
+            throw new IllegalCommandException(message, this);
+        }
+        PrivateUrl doomed = ctxt.datasets().getPrivateUrl(dataset.getId());
+        if (doomed == null) {
+            String message = "Dataset id " + dataset.getId() + " doesn't have a Private URL to delete.";
+            logger.info(message);
+            throw new IllegalCommandException(message, this);
+        }
+        boolean privateUrlDeleted = ctxt.datasets().deletePrivateUrl(doomed);
         if (!privateUrlDeleted) {
+            /**
+             * @todo Internationalize this.
+             */
             String message = "Problem deleting Private URL.";
             throw new CommandExecutionException(message, this);
         }
