@@ -2,6 +2,7 @@ package edu.harvard.iq.dataverse;
 
 import edu.harvard.iq.dataverse.authorization.DataverseRole;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import java.util.Objects;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -14,6 +15,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
@@ -57,8 +59,11 @@ public class RoleAssignment implements java.io.Serializable {
 	@ManyToOne( cascade = CascadeType.MERGE ) 
 	@JoinColumn( nullable=false )
 	private DvObject definitionPoint;
-	
-	public RoleAssignment() {}
+
+        @OneToOne(mappedBy = "roleAssignment", cascade = {CascadeType.REMOVE, CascadeType.MERGE, CascadeType.PERSIST}, orphanRemoval = true, optional = false)
+        private PrivateUrl privateUrl;
+
+        public RoleAssignment() {}
 		
 	public RoleAssignment(DataverseRole aRole, RoleAssignee anAssignee, DvObject aDefinitionPoint) {
         role = aRole;

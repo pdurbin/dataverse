@@ -50,7 +50,7 @@ public class CreatePrivateUrlCommandTest {
                     }
 
                     @Override
-                    public PrivateUrl createPrivateUrl(Dataset dataset, String token, CreatePrivateUrlCommand command) throws IllegalCommandException {
+                    public PrivateUrl createPrivateUrl(Dataset dataset, String token, RoleAssignment roleAssignment, CreatePrivateUrlCommand command) throws IllegalCommandException {
                         return new PrivateUrl(dataset, token);
                     }
 

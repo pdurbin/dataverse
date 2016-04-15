@@ -442,7 +442,7 @@ public class Datasets extends AbstractApiBean {
     
     Dataset findDatasetOrDie( String id ) throws WrappedResponse {
         Dataset dataset;
-        LOGGER.info("Looking for dataset " + id);
+        LOGGER.fine("Looking for dataset " + id);
         if ( id.equals(PERSISTENT_ID_KEY) ) {
             String persistentId = getRequestParameter(PERSISTENT_ID_KEY.substring(1));
             LOGGER.info("Looking for dataset " + persistentId);
@@ -563,6 +563,10 @@ public class Datasets extends AbstractApiBean {
             }
             return okResponse(jab);
         } catch (WrappedResponse ex) {
+            /**
+             * @todo Why is this message null? Shouldn't it say "key not
+             * authorized"?
+             */
             LOGGER.log(Level.WARNING, "Can't list assignments: {0}", ex.getMessage());
             return ex.getResponse();
         }
@@ -571,6 +575,7 @@ public class Datasets extends AbstractApiBean {
     @GET
     @Path("{id}/privateUrl")
     public Response getPrivateUrlData(@PathParam("id") String idSupplied) {
+        System.out.println("called GET of Private URL...");
         try {
             User user = findUserOrDie();
             Dataset dataset = findDatasetOrDie(idSupplied);
@@ -583,6 +588,10 @@ public class Datasets extends AbstractApiBean {
             response.add("datasetIdSupplied", datasetId);
             if (privateUrl != null) {
                 response.add("generated", privateUrl.getToken());
+                RoleAssignment roleAssignment = privateUrl.getRoleAssignment();
+                if (roleAssignment != null) {
+                    response.add("roleAssignment", json(roleAssignment));
+                }
                 DatasetVersion draft = datasetService.getDraftDatasetVersionFromPrivateUrlToken(privateUrl.getToken());
                 if (draft != null) {
                     response.add("draftId", draft.getId());

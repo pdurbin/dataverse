@@ -233,10 +233,19 @@ public class PublishDatasetCommand extends AbstractCommand<Dataset> {
             }
         }
 
+        savedDataset = ctxt.em().merge(savedDataset);
         PrivateUrl privateUrl = ctxt.datasets().getPrivateUrl(savedDataset.getId());
         if (privateUrl != null) {
-            logger.fine("Deleting Private URL for dataset id " + savedDataset.getId());
+            logger.info("In PublishDatasetCommand...  about to call DeletePrivateUrlCommand for dataset id " + savedDataset.getId());
+//ctxt.em().flush();
             savedDataset = ctxt.engine().submit(new DeletePrivateUrlCommand(getRequest(), savedDataset));
+//            savedDataset = ctxt.em().merge(savedDataset);
+//            GuestOfDataset guestOfDataset = new GuestOfDataset(savedDataset.getId());
+//            List<RoleAssignment> roleAssignments = ctxt.roles().directRoleAssignments(guestOfDataset, savedDataset);
+            List<RoleAssignment> roleAssignments = ctxt.roles().directRoleAssignments(savedDataset);
+            for (RoleAssignment roleAssignment : roleAssignments) {
+                logger.info("In PublishDatasetCommand... Found a role assignment: " + roleAssignment);
+            }
         }
 
         /*

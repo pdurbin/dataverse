@@ -140,7 +140,7 @@ public class DataverseRoleServiceBean implements java.io.Serializable {
              * approved.
              */
             if (ra.getAssigneeIdentifier().startsWith(GuestOfDataset.identifierPrefix)) {
-                logger.info("starts with... " + ra.getAssigneeIdentifier());
+                logger.info("In revoke, starts with... " + ra.getAssigneeIdentifier() + " and role assignment is " + ra);
                 String[] parts = ra.getAssigneeIdentifier().split(GuestOfDataset.identifierPrefix);
                 long datasetId = new Long(parts[1]);
                 PrivateUrl doomed = datasetService.getPrivateUrl(datasetId);

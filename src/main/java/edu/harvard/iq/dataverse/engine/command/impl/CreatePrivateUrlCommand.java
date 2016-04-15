@@ -11,6 +11,7 @@ import edu.harvard.iq.dataverse.engine.command.CommandContext;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.engine.command.RequiredPermissions;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
+import edu.harvard.iq.dataverse.engine.command.exception.CommandExecutionException;
 import edu.harvard.iq.dataverse.engine.command.exception.IllegalCommandException;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import java.util.UUID;
@@ -57,12 +58,19 @@ public class CreatePrivateUrlCommand extends AbstractCommand<PrivateUrl> {
             logger.info(message);
             throw new IllegalCommandException(message, this);
         }
-        final String token = UUID.randomUUID().toString();
-        PrivateUrl privateUrl = ctxt.datasets().createPrivateUrl(dataset, token, this);
         DataverseRole memberRole = ctxt.roles().findBuiltinRoleByAlias(DataverseRole.MEMBER);
         GuestOfDataset guestOfDataset = new GuestOfDataset(dataset.getId());
         RoleAssignment roleAssignment = ctxt.engine().submit(new AssignRoleCommand(guestOfDataset, memberRole, dataset, getRequest()));
-        privateUrl.setRoleAssignment(roleAssignment);
+        if (roleAssignment == null) {
+            /**
+             * @todo Internationalize this.
+             */
+            String message = "Can't create Private URL because a role of" + memberRole.getName() + " for " + guestOfDataset.getIdentifier() + " could not be assigned to  dataset id " + dataset.getId();
+            logger.info(message);
+            throw new CommandExecutionException(message, this);
+        }
+        final String token = UUID.randomUUID().toString();
+        PrivateUrl privateUrl = ctxt.datasets().createPrivateUrl(dataset, token, roleAssignment, this);
         return privateUrl;
     }
 

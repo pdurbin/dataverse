@@ -109,51 +109,52 @@ public class DeletePrivateUrlCommandTest {
         assertEquals(expected, actual);
     }
 
-    @Test
-    public void testNoPrivateUrlToDelete() {
-        dataset = new Dataset();
-        dataset.setId(noPrivateUrlToDelete);
-        String expected = "Dataset id " + noPrivateUrlToDelete + " doesn't have a Private URL to delete.";
-        String actual = null;
-        Dataset datasetAfterCommand = null;
-        try {
-            datasetAfterCommand = testEngine.submit(new DeletePrivateUrlCommand(null, dataset));
-        } catch (CommandException ex) {
-            actual = ex.getMessage();
-        }
-        assertEquals(expected, actual);
-        assertNull(datasetAfterCommand);
-    }
+//    
+//    @Test
+//    public void testNoPrivateUrlToDelete() {
+//        dataset = new Dataset();
+//        dataset.setId(noPrivateUrlToDelete);
+//        String expected = "Dataset id " + noPrivateUrlToDelete + " doesn't have a Private URL to delete.";
+//        String actual = null;
+//        Dataset datasetAfterCommand = null;
+//        try {
+//            datasetAfterCommand = testEngine.submit(new DeletePrivateUrlCommand(null, dataset));
+//        } catch (CommandException ex) {
+//            actual = ex.getMessage();
+//        }
+//        assertEquals(expected, actual);
+//        assertNull(datasetAfterCommand);
+//    }
 
-    @Test
-    public void testProblemDeletingPrivateUrl() {
-        dataset = new Dataset();
-        dataset.setId(simulateDeleteFailure);
-        String expected = "Problem deleting Private URL.";
-        Dataset datasetAfterCommand = null;
-        String actual = null;
-        try {
-            datasetAfterCommand = testEngine.submit(new DeletePrivateUrlCommand(null, dataset));
-        } catch (CommandException ex) {
-            actual = ex.getMessage();
-        }
-        assertEquals(expected, actual);
-        assertNull(datasetAfterCommand);
-    }
+//    @Test
+//    public void testProblemDeletingPrivateUrl() {
+//        dataset = new Dataset();
+//        dataset.setId(simulateDeleteFailure);
+//        String expected = "Problem deleting Private URL.";
+//        Dataset datasetAfterCommand = null;
+//        String actual = null;
+//        try {
+//            datasetAfterCommand = testEngine.submit(new DeletePrivateUrlCommand(null, dataset));
+//        } catch (CommandException ex) {
+//            actual = ex.getMessage();
+//        }
+//        assertEquals(expected, actual);
+//        assertNull(datasetAfterCommand);
+//    }
 
-    @Test
-    public void testDeleteWithNoRolesAssigned() {
-        dataset = new Dataset();
-        dataset.setId(noRolesAssigned);
-        String actual = null;
-        Dataset datasetAfterCommand = null;
-        try {
-            datasetAfterCommand = testEngine.submit(new DeletePrivateUrlCommand(null, dataset));
-        } catch (CommandException ex) {
-            actual = ex.getMessage();
-        }
-        assertNull(actual);
-        assertNotNull(datasetAfterCommand);
-    }
+//    @Test
+//    public void testDeleteWithNoRolesAssigned() {
+//        dataset = new Dataset();
+//        dataset.setId(noRolesAssigned);
+//        String actual = null;
+//        Dataset datasetAfterCommand = null;
+//        try {
+//            datasetAfterCommand = testEngine.submit(new DeletePrivateUrlCommand(null, dataset));
+//        } catch (CommandException ex) {
+//            actual = ex.getMessage();
+//        }
+//        assertNull(actual);
+//        assertNotNull(datasetAfterCommand);
+//    }
 
 }

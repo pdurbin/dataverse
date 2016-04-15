@@ -1,6 +1,7 @@
 package edu.harvard.iq.dataverse.engine.command.impl;
 
 import edu.harvard.iq.dataverse.Dataset;
+import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
@@ -9,7 +10,6 @@ import edu.harvard.iq.dataverse.engine.command.CommandContext;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.engine.command.RequiredPermissions;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
-import edu.harvard.iq.dataverse.engine.command.exception.CommandExecutionException;
 import edu.harvard.iq.dataverse.engine.command.exception.IllegalCommandException;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import java.util.List;
@@ -44,21 +44,30 @@ public class DeletePrivateUrlCommand extends AbstractCommand<Dataset> {
             logger.info(message);
             throw new IllegalCommandException(message, this);
         }
-        boolean privateUrlDeleted = ctxt.datasets().deletePrivateUrl(doomed);
-        if (!privateUrlDeleted) {
-            /**
-             * @todo Internationalize this.
-             */
-            String message = "Problem deleting Private URL.";
-            throw new CommandExecutionException(message, this);
+        List<RoleAssignment> assignments = ctxt.roles().directRoleAssignments(dataset);
+        for (RoleAssignment roleAssignment : assignments) {
+            logger.info("all role assignments: " + roleAssignment);
         }
         GuestOfDataset guestOfDataset = new GuestOfDataset(dataset.getId());
         List<RoleAssignment> roleAssignments = ctxt.roles().directRoleAssignments(guestOfDataset, dataset);
+        DvObject dvObject = null;
         for (RoleAssignment roleAssignment : roleAssignments) {
-            ctxt.engine().submit(new RevokeRoleCommand(roleAssignment, getRequest()));
+            logger.info("In DeletePrivateUrlCommand calling RevokeRoleCommand for role assignment: " + roleAssignment);
+            dvObject = ctxt.engine().submit(new RevokeRoleCommand(roleAssignment, getRequest()));
         }
-        return dataset;
+//        boolean privateUrlDeleted = ctxt.datasets().deletePrivateUrl(doomed);
+//        if (!privateUrlDeleted) {
+//            /**
+//             * @todo Internationalize this.
+//             */
+//            String message = "Problem deleting Private URL.";
+//            throw new CommandExecutionException(message, this);
+//        }
 
+        if (dvObject instanceof Dataset) {
+            return (Dataset) dvObject;
+        } else {
+            return dataset;
+        }
     }
-
 }

@@ -718,12 +718,16 @@ public class DatasetServiceBean implements java.io.Serializable {
      * to centralize null checks. Can we do this for deletePrivateUrl and
      * possibly other methods?
      */
-    public PrivateUrl createPrivateUrl(Dataset dataset, String token, CreatePrivateUrlCommand command) throws IllegalCommandException {
+    public PrivateUrl createPrivateUrl(Dataset dataset, String token, RoleAssignment roleAssignment, CreatePrivateUrlCommand command) throws IllegalCommandException {
+        logger.info("Creating Private URL with role assignment id " + roleAssignment.getId());
+//        roleAssignment = em.merge(roleAssignment);
+//        em.flush();
         // CreatePrivateUrlCommand will ensure that dataset and newToken are non-null.
-        PrivateUrl privateUrl = new PrivateUrl(dataset, token);
+        PrivateUrl privateUrl = new PrivateUrl(token, dataset, roleAssignment);
         em.persist(privateUrl);
         em.flush();
-        logger.fine("Private URL created with token " + privateUrl.getToken());
+        
+        logger.info("Private URL created with token " + privateUrl.getToken() + " and role assignment id " + privateUrl.getRoleAssignment().getId());
         return privateUrl;
     }
 
@@ -732,6 +736,9 @@ public class DatasetServiceBean implements java.io.Serializable {
      * @return true if no exceptions are thrown.
      */
     public boolean deletePrivateUrl(PrivateUrl doomed) {
+        if(doomed == null) {
+            logger.info("in delete...private url is null");
+        }
         em.remove(doomed);
         return true;
     }

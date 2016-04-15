@@ -10,13 +10,14 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
-import javax.persistence.Transient;
 
 /**
  * Dataset authors can create and send a Private URL to a reviewer to see the
  * lasted draft of their dataset (even if the dataset has never been published)
- * without having to create an account. When the dataset is published, the
- * Private URL is deleted.
+ * without the reviewer having to create an account. When the dataset is
+ * published, the Private URL is deleted. Creating a Public URL creates a role
+ * assignment (read only access) and when that role assignments is revoked, the
+ * Public URL is deleted.
  *
  * @todo Should this be called PrivateUrlData instead? It might reduce confusion
  * in other parts of the code.
@@ -35,11 +36,8 @@ public class PrivateUrl implements Serializable {
     @JoinColumn(name = "dataset_id", nullable = false, unique = true)
     private Dataset dataset;
 
-    /**
-     * @todo Should this be Transient? Would it make more sense to persist the
-     * id of the RoleAssignment?
-     */
-    @Transient
+    @OneToOne
+    @JoinColumn(name = "roleassignment_id", nullable = false, unique = true)
     private RoleAssignment roleAssignment;
 
     /**
@@ -74,9 +72,16 @@ public class PrivateUrl implements Serializable {
         return dataset;
     }
 
+    @Deprecated
     public PrivateUrl(Dataset dataset, String token) {
         this.token = token;
         this.dataset = dataset;
+    }    
+    
+    public PrivateUrl(String token, Dataset dataset, RoleAssignment roleAssignment) {
+        this.token = token;
+        this.dataset = dataset;
+        this.roleAssignment = roleAssignment;
     }
 
     public RoleAssignment getRoleAssignment() {

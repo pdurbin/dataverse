@@ -2,10 +2,10 @@ package edu.harvard.iq.dataverse.engine.command.impl;
 
 import edu.harvard.iq.dataverse.DataFile;
 import edu.harvard.iq.dataverse.Dataverse;
+import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.Permission;
-import edu.harvard.iq.dataverse.authorization.users.User;
-import edu.harvard.iq.dataverse.engine.command.AbstractVoidCommand;
+import edu.harvard.iq.dataverse.engine.command.AbstractCommand;
 import edu.harvard.iq.dataverse.engine.command.CommandContext;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
@@ -18,7 +18,7 @@ import java.util.Set;
  * @author michael
  */
 // no annotations here, since permissions are dynamically decided
-public class RevokeRoleCommand extends AbstractVoidCommand {
+public class RevokeRoleCommand extends AbstractCommand<DvObject> {
 	
 	private final RoleAssignment toBeRevoked;
 
@@ -27,11 +27,13 @@ public class RevokeRoleCommand extends AbstractVoidCommand {
         super(aRequest, toBeRevoked.getDefinitionPoint() instanceof DataFile ? toBeRevoked.getDefinitionPoint().getOwner() : toBeRevoked.getDefinitionPoint());
 		this.toBeRevoked = toBeRevoked;
 	}
-	
-	@Override
-	protected void executeImpl(CommandContext ctxt) throws CommandException {
+
+        @Override
+    public DvObject execute(CommandContext ctxt) throws CommandException {
 		ctxt.roles().revoke(toBeRevoked);
-	}
+                return toBeRevoked.getDefinitionPoint();
+    }
+	
         
     @Override
     public Map<String, Set<Permission>> getRequiredPermissions() {
