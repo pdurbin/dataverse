@@ -268,38 +268,36 @@ public class DatasetsIT {
         List<JsonObject> noAssignmentsForGuestOfDataset = with(publishingShouldHaveRemovedRoleAssignmentForGuestOfDataset.body().asString()).param("member", "member").getJsonObject("data.findAll { data -> data._roleAlias == member }");
         assertEquals(0, noAssignmentsForGuestOfDataset.size());
 
-        Response createPostPublicationPrivateUrl = UtilIT.privateUrlCreate(datasetId, apiToken);
-        createPostPublicationPrivateUrl.prettyPrint();
-        assertEquals(BAD_REQUEST.getStatusCode(), createPostPublicationPrivateUrl.getStatusCode());
+        Response tryToCreatePrivateUrlToPublishedVersion = UtilIT.privateUrlCreate(datasetId, apiToken);
+        tryToCreatePrivateUrlToPublishedVersion.prettyPrint();
+        assertEquals(BAD_REQUEST.getStatusCode(), tryToCreatePrivateUrlToPublishedVersion.getStatusCode());
+
+        String newTitle = "I am changing the title";
+        Response updatedMetadataResponse = UtilIT.updateDatasetTitleViaSword(dataset1PersistentId, newTitle, apiToken);
+        updatedMetadataResponse.prettyPrint();
+        assertEquals(OK.getStatusCode(), updatedMetadataResponse.getStatusCode());
+
+        Response createPrivateUrlForPostVersionOneDraft = UtilIT.privateUrlCreate(datasetId, apiToken);
+        createPrivateUrlForPostVersionOneDraft.prettyPrint();
+        assertEquals(OK.getStatusCode(), createPrivateUrlForPostVersionOneDraft.getStatusCode());
 
         Response makeSuperUser = UtilIT.makeSuperUser(username);
         assertEquals(200, makeSuperUser.getStatusCode());
 
-        Response deleteDatasetResponse = UtilIT.destroyDataset(datasetId, apiToken);
-        deleteDatasetResponse.prettyPrint();
-        assertEquals(200, deleteDatasetResponse.getStatusCode());
+        Response destroyDatasetResponse = UtilIT.destroyDataset(datasetId, apiToken);
+        destroyDatasetResponse.prettyPrint();
+        assertEquals(200, destroyDatasetResponse.getStatusCode());
 
-        if (true) {
-            logger.info("Done with Private URL testing.");
-            return;
-        }
+        Response deleteDataverseResponse = UtilIT.deleteDataverse(dataverseAlias, apiToken);
+        deleteDataverseResponse.prettyPrint();
+        assertEquals(200, deleteDataverseResponse.getStatusCode());
+
+        Response deleteUserResponse = UtilIT.deleteUser(username);
+        deleteUserResponse.prettyPrint();
+        assertEquals(200, deleteUserResponse.getStatusCode());
         /**
          * @todo Should the Search API work with the Private URL token?
          */
-        /**
-         * @todo Revoke token.
-         */
-        boolean deltingDatasetRemovesAnonLinkButNotViceVersa = false;
-        if (deltingDatasetRemovesAnonLinkButNotViceVersa) {
-            /**
-             * @todo Since now we're publishing above, we'll need to call
-             * "destroy"
-             */
-//            Response deleteDatasetResponse = UtilIT.deleteDatasetViaNativeApi(datasetId, apiToken);
-//            deleteDatasetResponse.prettyPrint();
-//            assertEquals(200, deleteDatasetResponse.getStatusCode());
-        }
-
     }
 
 }

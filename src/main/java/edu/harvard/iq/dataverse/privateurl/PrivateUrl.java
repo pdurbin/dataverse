@@ -13,6 +13,11 @@ import javax.persistence.OneToOne;
 import javax.persistence.Transient;
 
 /**
+ * Dataset authors can create and send a Private URL to a reviewer to see the
+ * lasted draft of their dataset (even if the dataset has never been published)
+ * without having to create an account. When the dataset is published, the
+ * Private URL is deleted.
+ *
  * @todo Should this be called PrivateUrlData instead? It might reduce confusion
  * in other parts of the code.
  */
@@ -26,14 +31,8 @@ public class PrivateUrl implements Serializable {
     @Column(nullable = false, unique = true)
     private String token;
 
-    /**
-     * @todo When a dataset is deleted, automatically delete the Private URL but
-     * not vice versa.
-     *
-     */
-//    @OneToOne(mappedBy = "privateUrl", cascade = {CascadeType.REMOVE, CascadeType.MERGE, CascadeType.PERSIST})
-    @OneToOne()
-    @JoinColumn(nullable = false, unique = true)
+    @OneToOne
+    @JoinColumn(name = "dataset_id", nullable = false, unique = true)
     private Dataset dataset;
 
     /**

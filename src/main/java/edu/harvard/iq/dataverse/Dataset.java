@@ -1,5 +1,6 @@
 package edu.harvard.iq.dataverse;
 
+import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -616,5 +617,8 @@ public class Dataset extends DvObjectContainer {
     protected boolean isPermissionRoot() {
         return false;
     }
+
+    @OneToOne(mappedBy = "dataset", cascade = {CascadeType.REMOVE, CascadeType.MERGE, CascadeType.PERSIST}, orphanRemoval = true, optional = false)
+    private PrivateUrl privateUrl;
 
 }
