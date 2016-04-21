@@ -11,8 +11,6 @@ import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.dataaccess.ImageThumbConverter;
-import edu.harvard.iq.dataverse.engine.command.exception.IllegalCommandException;
-import edu.harvard.iq.dataverse.engine.command.impl.CreatePrivateUrlCommand;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
@@ -666,74 +664,88 @@ public class DatasetServiceBean implements java.io.Serializable {
         if (datasetId == null) {
             return null;
         }
-        TypedQuery<PrivateUrl> typedQuery = em.createQuery("SELECT OBJECT(o) FROM PrivateUrl o WHERE o.dataset.id = :id", PrivateUrl.class);
-        typedQuery.setParameter("id", datasetId);
+        TypedQuery<RoleAssignment> query = em.createNamedQuery(
+                "RoleAssignment.listByAssigneeIdentifier_DefinitionPointId",
+                RoleAssignment.class);
+        GuestOfDataset guestOfDataset = new GuestOfDataset(datasetId);
+        String identifier = guestOfDataset.getIdentifier();
+        query.setParameter("assigneeIdentifier", identifier);
+        query.setParameter("definitionPointId", datasetId);
+        RoleAssignment roleAssignment;
         try {
-            PrivateUrl privateUrl = typedQuery.getSingleResult();
-            return privateUrl;
+            roleAssignment = query.getSingleResult();
         } catch (NoResultException | NonUniqueResultException ex) {
+            return null;
+        }
+        if (roleAssignment == null) {
+            return null;
+        }
+        Dataset dataset = getDatasetFromRoleAssignment(roleAssignment);
+        if (dataset != null) {
+            PrivateUrl privateUrl = new PrivateUrl(dataset, roleAssignment.getPrivateUrlToken());
+            return privateUrl;
+        } else {
             return null;
         }
     }
 
     public GuestOfDataset getUserFromPrivateUrlToken(String privateUrlToken) {
-        if (privateUrlToken == null) {
+        RoleAssignment roleAssignment = getRoleAssignmentFromPrivateUrlToken(privateUrlToken);
+        if (roleAssignment == null) {
             return null;
         }
-        TypedQuery<PrivateUrl> typedQuery = em.createQuery("SELECT OBJECT(o) FROM PrivateUrl o WHERE o.token = :token", PrivateUrl.class);
-        typedQuery.setParameter("token", privateUrlToken);
-        try {
-            PrivateUrl privateUrl = typedQuery.getSingleResult();
-            Dataset dataset = privateUrl.getDataset();
-            if (dataset != null) {
-                return new GuestOfDataset(dataset.getId());
-            }
-        } catch (NoResultException | NonUniqueResultException ex) {
+        Dataset dataset = getDatasetFromRoleAssignment(roleAssignment);
+        if (dataset != null) {
+            GuestOfDataset guestOfDataset = new GuestOfDataset(dataset.getId());
+            return guestOfDataset;
         }
         return null;
     }
 
     public DatasetVersion getDraftDatasetVersionFromPrivateUrlToken(String privateUrlToken) {
-        if (privateUrlToken == null) {
+        RoleAssignment roleAssignment = getRoleAssignmentFromPrivateUrlToken(privateUrlToken);
+        if (roleAssignment == null) {
             return null;
         }
-        TypedQuery<PrivateUrl> typedQuery = em.createQuery("SELECT OBJECT(o) FROM PrivateUrl o WHERE o.token = :token", PrivateUrl.class);
-        typedQuery.setParameter("token", privateUrlToken);
-        try {
-            PrivateUrl privateUrl = typedQuery.getSingleResult();
-            Dataset dataset = privateUrl.getDataset();
-            if (dataset != null) {
-                DatasetVersion latestVersion = dataset.getLatestVersion();
-                if (latestVersion.isDraft()) {
-                    return latestVersion;
-                }
+        Dataset dataset = getDatasetFromRoleAssignment(roleAssignment);
+        if (dataset != null) {
+            DatasetVersion latestVersion = dataset.getLatestVersion();
+            if (latestVersion.isDraft()) {
+                return latestVersion;
             }
-        } catch (NoResultException | NonUniqueResultException ex) {
         }
         return null;
     }
 
-    /**
-     * @todo Passing in the CreatePrivateUrlCommand here seems like a great way
-     * to centralize null checks. Can we do this for deletePrivateUrl and
-     * possibly other methods?
-     */
-    public PrivateUrl createPrivateUrl(Dataset dataset, String token, CreatePrivateUrlCommand command) throws IllegalCommandException {
-        // CreatePrivateUrlCommand will ensure that dataset and newToken are non-null.
-        PrivateUrl privateUrl = new PrivateUrl(dataset, token);
-        em.persist(privateUrl);
-        em.flush();
-        logger.fine("Private URL created with token " + privateUrl.getToken());
-        return privateUrl;
+    private RoleAssignment getRoleAssignmentFromPrivateUrlToken(String privateUrlToken) {
+        if (privateUrlToken == null) {
+            return null;
+        }
+        TypedQuery<RoleAssignment> query = em.createNamedQuery(
+                "RoleAssignment.listByPrivateUrlToken",
+                RoleAssignment.class);
+        query.setParameter("privateUrlToken", privateUrlToken);
+        try {
+            RoleAssignment roleAssignment = query.getSingleResult();
+            return roleAssignment;
+        } catch (NoResultException | NonUniqueResultException ex) {
+            return null;
+        }
     }
 
-    /**
-     * @param doomed Non-null PrivateUrl.
-     * @return true if no exceptions are thrown.
-     */
-    public boolean deletePrivateUrl(PrivateUrl doomed) {
-        em.remove(doomed);
-        return true;
+    private Dataset getDatasetFromRoleAssignment(RoleAssignment roleAssignment) {
+        if (roleAssignment == null) {
+            return null;
+        }
+        DvObject dvObject = roleAssignment.getDefinitionPoint();
+        if (dvObject == null) {
+            return null;
+        }
+        if (dvObject instanceof Dataset) {
+            return (Dataset) roleAssignment.getDefinitionPoint();
+        } else {
+            return null;
+        }
     }
-
+    
 }

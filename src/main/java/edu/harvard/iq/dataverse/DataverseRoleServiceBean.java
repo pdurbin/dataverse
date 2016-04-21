@@ -5,8 +5,6 @@ import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.authorization.RoleAssignmentSet;
-import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
-import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import edu.harvard.iq.dataverse.search.IndexAsync;
 import edu.harvard.iq.dataverse.search.IndexResponse;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
@@ -135,20 +133,6 @@ public class DataverseRoleServiceBean implements java.io.Serializable {
 			ra = em.merge(ra);
 		}
 		em.remove(ra);
-            /**
-             * @todo Clean all this GuestOfDataset code up assuming it gets
-             * approved.
-             */
-            if (ra.getAssigneeIdentifier().startsWith(GuestOfDataset.identifierPrefix)) {
-                logger.info("starts with... " + ra.getAssigneeIdentifier());
-                String[] parts = ra.getAssigneeIdentifier().split(GuestOfDataset.identifierPrefix);
-                long datasetId = new Long(parts[1]);
-                PrivateUrl doomed = datasetService.getPrivateUrl(datasetId);
-                if (doomed != null) {
-                    boolean status = datasetService.deletePrivateUrl(doomed);
-                    logger.info("status of deleting PrivateUrl: " + status);
-                }
-            }
             /**
              * @todo update permissionModificationTime here.
              */

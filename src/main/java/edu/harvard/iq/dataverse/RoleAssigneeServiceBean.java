@@ -65,15 +65,13 @@ public class RoleAssigneeServiceBean {
         switch (identifier.charAt(0)) {
             case ':':
                 if (identifier.startsWith(GuestOfDataset.identifierPrefix)) {
-                    /**
-                     * @todo Lots more error checking!
-                     */
                     String[] parts = identifier.split(GuestOfDataset.identifierPrefix);
-                    long datasetId = new Long(parts[1]);
-                    GuestOfDataset guestOfDataset = new GuestOfDataset(datasetId);
-                    Map<String, RoleAssignee> datasetGuests = new TreeMap<>();
-                    datasetGuests.put(guestOfDataset.getIdentifier(), guestOfDataset);
-                    return datasetGuests.get(guestOfDataset.getIdentifier());
+                    try {
+                        long datasetId = new Long(parts[1]);
+                        return new GuestOfDataset(datasetId);
+                    } catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
+                        throw new IllegalArgumentException("Could not find dataset id in '" + identifier + "'");
+                    }
                 } else {
                     return predefinedRoleAssignees.get(identifier);
                 }

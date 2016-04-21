@@ -59,6 +59,9 @@ public class DatasetsIT {
 
     }
 
+    /**
+     * This test requires the root dataverse to be published to pass.
+     */
     @Test
     public void testCreatePublishDestroyDataset() {
 
@@ -124,6 +127,9 @@ public class DatasetsIT {
         return response;
     }
 
+    /**
+     * This test requires the root dataverse to be published to pass.
+     */
     @Test
     public void testPrivateUrl() {
 

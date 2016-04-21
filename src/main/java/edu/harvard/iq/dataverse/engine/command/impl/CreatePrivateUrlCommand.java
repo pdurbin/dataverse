@@ -44,7 +44,7 @@ public class CreatePrivateUrlCommand extends AbstractCommand<PrivateUrl> {
             /**
              * @todo Internationalize this.
              */
-            String message = "Private URL already exists with id " + existing.getId() + " for dataset id " + dataset.getId() + ".";
+            String message = "Private URL already exists for dataset id " + dataset.getId() + ".";
             logger.info(message);
             throw new IllegalCommandException(message, this);
         }
@@ -58,10 +58,11 @@ public class CreatePrivateUrlCommand extends AbstractCommand<PrivateUrl> {
             throw new IllegalCommandException(message, this);
         }
         final String token = UUID.randomUUID().toString();
-        PrivateUrl privateUrl = ctxt.datasets().createPrivateUrl(dataset, token, this);
+        PrivateUrl privateUrl = new PrivateUrl(dataset, token);
+        String privateUrlToken = privateUrl.getToken();
         DataverseRole memberRole = ctxt.roles().findBuiltinRoleByAlias(DataverseRole.MEMBER);
         GuestOfDataset guestOfDataset = new GuestOfDataset(dataset.getId());
-        RoleAssignment roleAssignment = ctxt.engine().submit(new AssignRoleCommand(guestOfDataset, memberRole, dataset, getRequest()));
+        RoleAssignment roleAssignment = ctxt.engine().submit(new AssignRoleCommand(guestOfDataset, memberRole, dataset, getRequest(), privateUrlToken));
         privateUrl.setRoleAssignment(roleAssignment);
         return privateUrl;
     }

@@ -16,6 +16,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class DeletePrivateUrlCommandTest {
@@ -52,15 +53,6 @@ public class DeletePrivateUrlCommandTest {
                         }
                     }
 
-                    @Override
-                    public boolean deletePrivateUrl(PrivateUrl doomed) {
-                        if (dataset.getId().equals(simulateDeleteFailure)) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
                 };
             }
 
@@ -88,12 +80,12 @@ public class DeletePrivateUrlCommandTest {
          * @todo Work these getters and setters that increase our code coverage
          * numbers into actual tests and remove them from here.
          */
-        PrivateUrl codeCoverage = new PrivateUrl();
-        codeCoverage.setId(Long.MAX_VALUE);
-        codeCoverage.setToken("foo");
-        codeCoverage.getRoleAssignment();
-        codeCoverage.getDataset();
-        codeCoverage.getToken();
+//        PrivateUrl codeCoverage = new PrivateUrl();
+//        codeCoverage.setId(Long.MAX_VALUE);
+//        codeCoverage.setToken("foo");
+//        codeCoverage.getRoleAssignment();
+//        codeCoverage.getDataset();
+//        codeCoverage.getToken();
     }
 
     @Test
@@ -125,6 +117,10 @@ public class DeletePrivateUrlCommandTest {
         assertNull(datasetAfterCommand);
     }
 
+    /**
+     * @todo Revisit this test. "Problem deleting Private URL" code was deleted.
+     */
+    @Ignore
     @Test
     public void testProblemDeletingPrivateUrl() {
         dataset = new Dataset();

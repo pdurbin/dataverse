@@ -9,7 +9,6 @@ import edu.harvard.iq.dataverse.authorization.DataverseRole;
 import edu.harvard.iq.dataverse.engine.TestCommandContext;
 import edu.harvard.iq.dataverse.engine.TestDataverseEngine;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
-import edu.harvard.iq.dataverse.engine.command.exception.IllegalCommandException;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,11 +46,6 @@ public class CreatePrivateUrlCommandTest {
                         } else {
                             return null;
                         }
-                    }
-
-                    @Override
-                    public PrivateUrl createPrivateUrl(Dataset dataset, String token, CreatePrivateUrlCommand command) throws IllegalCommandException {
-                        return new PrivateUrl(dataset, token);
                     }
 
                 };
@@ -96,7 +90,7 @@ public class CreatePrivateUrlCommandTest {
     @Test
     public void testAlreadyExists() {
         dataset.setId(privateUrlAlreadyExists);
-        String expected = "Private URL already exists with id null for dataset id " + privateUrlAlreadyExists + ".";
+        String expected = "Private URL already exists for dataset id " + privateUrlAlreadyExists + ".";
         String actual = null;
         PrivateUrl privateUrl = null;
         try {

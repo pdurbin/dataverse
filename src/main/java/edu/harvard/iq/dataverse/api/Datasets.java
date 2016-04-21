@@ -541,8 +541,9 @@ public class Datasets extends AbstractApiBean {
                 return errorResponse(Response.Status.BAD_REQUEST, "Assignee not found");
             }
             DataverseRole theRole = rolesSvc.findBuiltinRoleByAlias("admin");
+            String privateUrlToken = null;
             return okResponse(
-                    json(execCommand(new AssignRoleCommand(assignee, theRole, dataset, createDataverseRequest(findUserOrDie())))));
+                    json(execCommand(new AssignRoleCommand(assignee, theRole, dataset, createDataverseRequest(findUserOrDie()), privateUrlToken))));
         } catch (WrappedResponse ex) {
             LOGGER.log(Level.WARNING, "Can''t create assignment: {0}", ex.getMessage());
             return ex.getResponse();
@@ -568,6 +569,9 @@ public class Datasets extends AbstractApiBean {
         }
     }
 
+    /**
+     * @todo Document this in the API Guide.
+     */
     @GET
     @Path("{id}/privateUrl")
     public Response getPrivateUrlData(@PathParam("id") String idSupplied) {
@@ -588,7 +592,7 @@ public class Datasets extends AbstractApiBean {
                     response.add("draftId", draft.getId());
                     return okResponse(response);
                 } else {
-                    return errorResponse(Response.Status.INTERNAL_SERVER_ERROR, "Private URL exists for dataset that isn't in draft. It should have been deleted when the dataset was published.");
+                    return errorResponse(Response.Status.NOT_FOUND, "getDraftDatasetVersionFromPrivateUrlToken returned null.");
                 }
             } else {
                 return errorResponse(Response.Status.NOT_FOUND, "No Private URL found for dataset " + datasetId + ".");
@@ -599,7 +603,7 @@ public class Datasets extends AbstractApiBean {
     }
 
     /**
-     * @todo Should this be a POST since we're creating? Probably.
+     * @todo Document this in the API Guide.
      */
     @POST
     @Path("{id}/privateUrl")
@@ -612,6 +616,10 @@ public class Datasets extends AbstractApiBean {
             response.add("datasetId", datasetId);
             PrivateUrl privateUrl = execCommand(new CreatePrivateUrlCommand(createDataverseRequest(user), dataset));
             if (privateUrl != null) {
+                /**
+                 * @todo Consider removing "generated" since the token now
+                 * appears in the JSON for a role assignment.
+                 */
                 response.add("generated", privateUrl.getToken());
                 RoleAssignment roleAssignment = privateUrl.getRoleAssignment();
                 if (roleAssignment != null) {
@@ -624,6 +632,9 @@ public class Datasets extends AbstractApiBean {
         }
     }
 
+    /**
+     * @todo Document this in the API Guide.
+     */
     @DELETE
     @Path("{id}/privateUrl")
     public Response deletePrivateUrl(@PathParam("id") Long idSupplied) {

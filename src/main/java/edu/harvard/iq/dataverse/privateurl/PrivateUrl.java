@@ -2,15 +2,6 @@ package edu.harvard.iq.dataverse.privateurl;
 
 import edu.harvard.iq.dataverse.Dataset;
 import edu.harvard.iq.dataverse.RoleAssignment;
-import java.io.Serializable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
-import javax.persistence.Transient;
 
 /**
  * Dataset authors can create and send a Private URL to a reviewer to see the
@@ -21,53 +12,14 @@ import javax.persistence.Transient;
  * @todo Should this be called PrivateUrlData instead? It might reduce confusion
  * in other parts of the code.
  */
-@Entity
-public class PrivateUrl implements Serializable {
+public class PrivateUrl {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, unique = true)
-    private String token;
-
-    @OneToOne
-    @JoinColumn(name = "dataset_id", nullable = false, unique = true)
-    private Dataset dataset;
-
-    /**
-     * @todo Should this be Transient? Would it make more sense to persist the
-     * id of the RoleAssignment?
-     */
-    @Transient
+    private final String token;
+    private final Dataset dataset;
     private RoleAssignment roleAssignment;
-
-    /**
-     * Don't use this constructor. It only exists to get JPA to stop complaining
-     * about the following.
-     *
-     * Exception Description: The instance creation method
-     * [edu.harvard.iq.dataverse.privateurl.PrivateUrl.<Default Constructor>],
-     * with no parameters, does not exist, or is not accessible.
-     */
-    @Deprecated
-    public PrivateUrl() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
 
     public String getToken() {
         return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
     }
 
     public Dataset getDataset() {

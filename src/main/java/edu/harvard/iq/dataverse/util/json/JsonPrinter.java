@@ -88,6 +88,7 @@ public class JsonPrinter {
 				.add("assignee", ra.getAssigneeIdentifier() )
 				.add("roleId", ra.getRole().getId() )
 				.add("_roleAlias", ra.getRole().getAlias())
+				.add("privateUrlToken", ra.getPrivateUrlToken())
 				.add("definitionPointId", ra.getDefinitionPoint().getId() );
 	}
 	

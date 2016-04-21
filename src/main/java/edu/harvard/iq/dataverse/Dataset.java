@@ -618,7 +618,4 @@ public class Dataset extends DvObjectContainer {
         return false;
     }
 
-    @OneToOne(mappedBy = "dataset", cascade = {CascadeType.REMOVE, CascadeType.MERGE, CascadeType.PERSIST}, orphanRemoval = true, optional = false)
-    private PrivateUrl privateUrl;
-
 }
