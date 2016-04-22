@@ -1571,6 +1571,9 @@ public class DatasetPage implements java.io.Serializable {
         }
 
         privateUrl = datasetService.getPrivateUrl(dataset.getId());
+        if (privateUrl != null && permissionService.on(dataset).canIssue(CreatePrivateUrlCommand.class)) {
+            JH.addMessage(FacesMessage.SEVERITY_INFO, BundleUtil.getStringFromBundle("dataset.privateurl.infoMessage"));
+        }
         return null;
     }
     
