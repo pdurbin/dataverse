@@ -4331,4 +4331,8 @@ public class DatasetPage implements java.io.Serializable {
         }
     }
 
+    public boolean isUserCanCreatePrivateURL() {
+        return dataset.getLatestVersion().isDraft();
+    }
+
 }
