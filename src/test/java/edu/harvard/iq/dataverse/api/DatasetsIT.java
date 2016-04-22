@@ -221,6 +221,7 @@ public class DatasetsIT {
         List<JsonObject> assignments = with(roleAssignments.body().asString()).param("member", "member").getJsonObject("data.findAll { data -> data._roleAlias == member }");
         assertEquals(1, assignments.size());
         GuestOfDataset guestOfDataset = new GuestOfDataset(datasetId);
+        assertEquals("Private URL Enabled", guestOfDataset.getDisplayInfo().getTitle());
         List<JsonObject> assigneeShouldExistForGuestOfDataset = with(roleAssignments.body().asString()).param("assigneeString", guestOfDataset.getIdentifier()).getJsonObject("data.findAll { data -> data.assignee == assigneeString }");
         logger.info(assigneeShouldExistForGuestOfDataset + " found for " + guestOfDataset.getIdentifier());
         assertEquals(1, assigneeShouldExistForGuestOfDataset.size());

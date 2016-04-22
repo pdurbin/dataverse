@@ -43,7 +43,7 @@ public class GuestOfDataset implements User {
 
     @Override
     public RoleAssigneeDisplayInfo getDisplayInfo() {
-        String title = BundleUtil.getStringFromBundle("dataset.editBtn.itemLabel.privateUrl");
+        String title = BundleUtil.getStringFromBundle("dataset.privateurl.roleassigeeTitle");
         return new RoleAssigneeDisplayInfo(title, null);
     }
 
