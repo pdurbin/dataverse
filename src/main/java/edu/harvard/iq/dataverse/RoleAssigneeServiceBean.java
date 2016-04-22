@@ -64,6 +64,14 @@ public class RoleAssigneeServiceBean {
     public RoleAssignee getRoleAssignee(String identifier) {
         switch (identifier.charAt(0)) {
             case ':':
+                /**
+                 * This "startsWith" code is here to support a functional
+                 * requirement to display the Private URL role assignment when
+                 * looking at permissions at the dataset level in the GUI and
+                 * allow for revoking the role from that page. Interestingly, if
+                 * you remove the "startsWith" code, null will be returned for
+                 * Private URL but the assignment is still visible from the API.
+                 */
                 if (identifier.startsWith(GuestOfDataset.identifierPrefix)) {
                     String[] parts = identifier.split(GuestOfDataset.identifierPrefix);
                     try {

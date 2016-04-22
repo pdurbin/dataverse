@@ -18,6 +18,7 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.path.json.JsonPath.with;
+import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
 import static junit.framework.Assert.assertEquals;
 
 public class DatasetsIT {
@@ -219,6 +220,10 @@ public class DatasetsIT {
         assertEquals(OK.getStatusCode(), roleAssignments.getStatusCode());
         List<JsonObject> assignments = with(roleAssignments.body().asString()).param("member", "member").getJsonObject("data.findAll { data -> data._roleAlias == member }");
         assertEquals(1, assignments.size());
+        GuestOfDataset guestOfDataset = new GuestOfDataset(datasetId);
+        List<JsonObject> assigneeShouldExistForGuestOfDataset = with(roleAssignments.body().asString()).param("assigneeString", guestOfDataset.getIdentifier()).getJsonObject("data.findAll { data -> data.assignee == assigneeString }");
+        logger.info(assigneeShouldExistForGuestOfDataset + " found for " + guestOfDataset.getIdentifier());
+        assertEquals(1, assigneeShouldExistForGuestOfDataset.size());
         Map roleAssignment = assignments.get(0);
         int roleAssignmentId = (int) roleAssignment.get("id");
         logger.info("role assignment id: " + roleAssignmentId);
