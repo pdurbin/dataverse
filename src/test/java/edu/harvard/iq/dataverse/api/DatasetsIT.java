@@ -293,6 +293,39 @@ public class DatasetsIT {
         createPrivateUrlForPostVersionOneDraft.prettyPrint();
         assertEquals(OK.getStatusCode(), createPrivateUrlForPostVersionOneDraft.getStatusCode());
 
+        /**
+         * @todo Make this a more explicit delete of the draft version rather
+         * than the latest version which we happen to know is a draft.
+         */
+        Response deleteDraftVersion = UtilIT.deleteLatestDatasetVersionViaSwordApi(dataset1PersistentId, apiToken);
+        deleteDraftVersion.prettyPrint();
+        assertEquals(OK.getStatusCode(), createPrivateUrlForPostVersionOneDraft.getStatusCode());
+
+        Response privateUrlRoleAssignmentShouldBeGoneAfterDraftDeleted = UtilIT.getRoleAssignmentsOnDataset(datasetId.toString(), null, apiToken);
+        privateUrlRoleAssignmentShouldBeGoneAfterDraftDeleted.prettyPrint();
+        assertEquals(false, privateUrlRoleAssignmentShouldBeGoneAfterDraftDeleted.body().asString().contains(guestOfDataset.getIdentifier()));
+
+        String newTitleAgain = "I am changing the title again";
+        Response draftCreatedAgainPostPub = UtilIT.updateDatasetTitleViaSword(dataset1PersistentId, newTitleAgain, apiToken);
+        draftCreatedAgainPostPub.prettyPrint();
+        assertEquals(OK.getStatusCode(), draftCreatedAgainPostPub.getStatusCode());
+
+        /**
+         * Making sure the Private URL is deleted when a dataset is destroyed is
+         * less of an issue now that a Private URL is now effectively only a
+         * specialized role assignment which is already known to be deleted when
+         * a dataset is destroy. Still, we'll keep this test in here in case we
+         * switch Private URL back to being its own table in the future.
+         */
+        Response createPrivateUrlToMakeSureItIsDeletedWithDestructionOfDataset = UtilIT.privateUrlCreate(datasetId, apiToken);
+        createPrivateUrlToMakeSureItIsDeletedWithDestructionOfDataset.prettyPrint();
+        assertEquals(OK.getStatusCode(), createPrivateUrlToMakeSureItIsDeletedWithDestructionOfDataset.getStatusCode());
+
+        /**
+         * @todo What about deaccessioning? We can't test deaccessioning via API
+         * until https://github.com/IQSS/dataverse/issues/778 is worked on. If
+         * you deaccession a dataset, is the Private URL deleted?
+         */
         Response makeSuperUser = UtilIT.makeSuperUser(username);
         assertEquals(200, makeSuperUser.getStatusCode());
 
