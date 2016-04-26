@@ -6,6 +6,7 @@ import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUserServi
 import edu.harvard.iq.dataverse.authorization.users.ApiToken;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
+import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
 import edu.harvard.iq.dataverse.authorization.users.GuestUser;
 import edu.harvard.iq.dataverse.datavariable.VariableServiceBean;
 import edu.harvard.iq.dataverse.engine.command.Command;
@@ -1573,6 +1574,19 @@ public class DatasetPage implements java.io.Serializable {
         privateUrl = datasetService.getPrivateUrl(dataset.getId());
         if (privateUrl != null && permissionService.on(dataset).canIssue(CreatePrivateUrlCommand.class)) {
             JH.addMessage(FacesMessage.SEVERITY_INFO, BundleUtil.getStringFromBundle("dataset.privateurl.infoMessage"));
+        }
+        if (session.getUser() instanceof GuestOfDataset) {
+            GuestOfDataset guestOfDataset = (GuestOfDataset) session.getUser();
+            String identifier = guestOfDataset.getIdentifier();
+            String[] parts = identifier.split(GuestOfDataset.identifierPrefix);
+            try {
+                long datasetId = new Long(parts[1]);
+                if (dataset.getId().equals(datasetId)) {
+                    JH.addMessage(FacesMessage.SEVERITY_INFO, BundleUtil.getStringFromBundle("dataset.privateurl.infoMessage"));
+                }
+            } catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
+                logger.info("Could not find dataset id in '" + identifier + "' so we can't show the info message to the user who clicked the Private URL.");
+            }
         }
         return null;
     }
