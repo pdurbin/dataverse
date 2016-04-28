@@ -4334,11 +4334,6 @@ public class DatasetPage implements java.io.Serializable {
         }
     }
 
-    public void recreatePrivateUrl() {
-        disablePrivateUrl();
-        createPrivateUrl();
-    }
-
     public void disablePrivateUrl() {
         try {
             commandEngine.submit(new DeletePrivateUrlCommand(dvRequestService.getDataverseRequest(), dataset));

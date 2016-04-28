@@ -685,7 +685,6 @@
                             <div class="button-block">
                                 <p:commandButton styleClass="btn btn-default" value="#{bundle['dataset.privateurl.createPrivateUrl']}" action="#{DatasetPage.createPrivateUrl()}" update="privateUrlPanel" rendered="#{empty(DatasetPage.privateUrl)}" />
                                 <p:commandButton styleClass="btn btn-default" value="#{bundle['dataset.privateurl.disablePrivateUrl']}" action="#{DatasetPage.disablePrivateUrl()}" update="privateUrlPanel" rendered="#{!empty(DatasetPage.privateUrl)}"/>
-                                <p:commandButton styleClass="btn btn-default" value="#{bundle['dataset.privateurl.recreatePrivateUrl']}" action="#{DatasetPage.recreatePrivateUrl()}" update="privateUrlPanel" rendered="#{!empty(DatasetPage.privateUrl)}" />
                                 <p:commandButton styleClass="btn btn-default" value="#{bundle.close}" onclick="PF('privateUrlConfirmation').hide();PF('blockDatasetForm').hide();" type="button" />
                             </div>
                         </p:panel>
