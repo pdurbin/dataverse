@@ -4329,6 +4329,7 @@ public class DatasetPage implements java.io.Serializable {
         try {
             PrivateUrl createdPrivateUrl = commandEngine.submit(new CreatePrivateUrlCommand(dvRequestService.getDataverseRequest(), dataset));
             privateUrl = createdPrivateUrl;
+            JH.addSuccessMessage(BundleUtil.getStringFromBundle("dataset.privateurl.createdSuccess"));
         } catch (CommandException ex) {
             logger.info("Unable to create a Private URL for dataset id " + dataset.getId() + ": " + ex);
         }
@@ -4338,6 +4339,7 @@ public class DatasetPage implements java.io.Serializable {
         try {
             commandEngine.submit(new DeletePrivateUrlCommand(dvRequestService.getDataverseRequest(), dataset));
             privateUrl = null;
+            JH.addSuccessMessage(BundleUtil.getStringFromBundle("dataset.privateurl.disabledSuccess"));
         } catch (CommandException ex) {
             logger.info("CommandException caught calling DeletePrivateUrlCommand: " + ex);
         }
