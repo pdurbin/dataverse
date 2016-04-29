@@ -584,9 +584,14 @@ public class Datasets extends AbstractApiBean {
             long datasetId = dataset.getId();
             PrivateUrl privateUrl = datasetService.getPrivateUrl(datasetId);
             JsonObjectBuilder response = Json.createObjectBuilder();
-            response.add("datasetIdSupplied", datasetId);
+            response.add("datasetId", datasetId);
             if (privateUrl != null) {
-                response.add("generated", privateUrl.getToken());
+                /**
+                 * @todo refactor this into "json" method on the JsonPrinter
+                 * called from this method and createPrivateUrl
+                 */
+                response.add("privateUrlToken", privateUrl.getToken());
+                response.add("URL", PrivateUrl.getPrivateUrlLinkReviewerWillClick(systemConfig.getDataverseSiteUrl(), privateUrl));
                 DatasetVersion draft = datasetService.getDraftDatasetVersionFromPrivateUrlToken(privateUrl.getToken());
                 if (draft != null) {
                     response.add("draftId", draft.getId());

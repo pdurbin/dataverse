@@ -1,6 +1,7 @@
 package edu.harvard.iq.dataverse.api;
 
 import com.jayway.restassured.RestAssured;
+import static com.jayway.restassured.RestAssured.given;
 import com.jayway.restassured.response.Response;
 import java.util.logging.Logger;
 import org.junit.BeforeClass;
@@ -16,9 +17,10 @@ import static javax.ws.rs.core.Response.Status.OK;
 import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
-import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.path.json.JsonPath.with;
+import static edu.harvard.iq.dataverse.api.UtilIT.API_TOKEN_HTTP_HEADER;
 import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import java.util.UUID;
 import static junit.framework.Assert.assertEquals;
 
 public class DatasetsIT {
@@ -180,10 +182,6 @@ public class DatasetsIT {
         createPrivateUrl.prettyPrint();
         assertEquals(OK.getStatusCode(), createPrivateUrl.getStatusCode());
 
-        /**
-         * @todo Do a GET of privateurl.xhtml to make sure you get a 200
-         * response.
-         */
         Response userWithNoRoles = UtilIT.createRandomUser();
         String userWithNoRolesApiToken = UtilIT.getApiTokenFromResponse(userWithNoRoles);
         Response unAuth = UtilIT.privateUrlGet(datasetId, userWithNoRolesApiToken);
@@ -193,8 +191,26 @@ public class DatasetsIT {
         shouldExist.prettyPrint();
         assertEquals(OK.getStatusCode(), shouldExist.getStatusCode());
 
-        String tokenForGuestOfDataset = JsonPath.from(shouldExist.body().asString()).getString("data.generated");
+        String tokenForGuestOfDataset = JsonPath.from(shouldExist.body().asString()).getString("data.privateUrlToken");
         logger.info("privateUrlToken: " + tokenForGuestOfDataset);
+
+        String urlWithToken = JsonPath.from(shouldExist.body().asString()).getString("data.URL");
+        logger.info("URL with token: " + urlWithToken);
+
+        assertEquals(tokenForGuestOfDataset, urlWithToken.substring(urlWithToken.length() - UUID.randomUUID().toString().length()));
+
+        Response getDatasetAsUserWhoClicksPrivateUrl = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .get(urlWithToken);
+        String title = getDatasetAsUserWhoClicksPrivateUrl.getBody().htmlPath().getString("html.head.title");
+        assertEquals("Darwin's Finches - " + dataverseAlias + " Dataverse", title);
+        assertEquals(OK.getStatusCode(), getDatasetAsUserWhoClicksPrivateUrl.getStatusCode());
+
+        Response junkPrivateUrlToken = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .get("/privateurl.xhtml?token=" + "junk");
+        assertEquals("404 Not Found", junkPrivateUrlToken.getBody().htmlPath().getString("html.head.title").substring(0, 13));
+
         long roleAssignmentIdFromCreate = JsonPath.from(createPrivateUrl.body().asString()).getLong("data.roleAssignment.id");
         logger.info("roleAssignmentIdFromCreate: " + roleAssignmentIdFromCreate);
 
@@ -324,7 +340,12 @@ public class DatasetsIT {
         /**
          * @todo What about deaccessioning? We can't test deaccessioning via API
          * until https://github.com/IQSS/dataverse/issues/778 is worked on. If
-         * you deaccession a dataset, is the Private URL deleted?
+         * you deaccession a dataset, is the Private URL deleted? Probably not
+         * because in order to create a Private URL the dataset version must be
+         * a draft and for that draft to be deaccessioned it must be published
+         * first and publishing a version will delete the Private URL. So, we
+         * shouldn't need to worry about cleaning up Private URLs in the case of
+         * deaccessioning.
          */
         Response makeSuperUser = UtilIT.makeSuperUser(username);
         assertEquals(200, makeSuperUser.getStatusCode());

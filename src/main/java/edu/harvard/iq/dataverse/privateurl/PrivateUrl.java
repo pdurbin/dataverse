@@ -39,4 +39,11 @@ public class PrivateUrl {
         this.roleAssignment = roleAssignment;
     }
 
+    /**
+     * @todo this should probably be a field that is set by the constructor
+     */
+    public static String getPrivateUrlLinkReviewerWillClick(String dataverseSiteUrl, PrivateUrl privateUrl) {
+        return dataverseSiteUrl + "/privateurl.xhtml?token=" + privateUrl.getToken();
+    }
+
 }

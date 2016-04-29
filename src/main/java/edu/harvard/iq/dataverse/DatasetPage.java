@@ -1573,7 +1573,7 @@ public class DatasetPage implements java.io.Serializable {
 
         privateUrl = datasetService.getPrivateUrl(dataset.getId());
         if (privateUrl != null && permissionService.on(dataset).canIssue(CreatePrivateUrlCommand.class)) {
-            JH.addMessage(FacesMessage.SEVERITY_INFO, BundleUtil.getStringFromBundle("dataset.privateurl.infoMessageAuthor", getPrivateUrlString(privateUrl)));
+            JH.addMessage(FacesMessage.SEVERITY_INFO, BundleUtil.getStringFromBundle("dataset.privateurl.infoMessageAuthor", Arrays.asList(getPrivateUrlLink(privateUrl))));
         }
         if (session.getUser() instanceof GuestOfDataset) {
             GuestOfDataset guestOfDataset = (GuestOfDataset) session.getUser();
@@ -4329,7 +4329,7 @@ public class DatasetPage implements java.io.Serializable {
         try {
             PrivateUrl createdPrivateUrl = commandEngine.submit(new CreatePrivateUrlCommand(dvRequestService.getDataverseRequest(), dataset));
             privateUrl = createdPrivateUrl;
-            JH.addSuccessMessage(BundleUtil.getStringFromBundle("dataset.privateurl.createdSuccess", getPrivateUrlString(privateUrl)));
+            JH.addSuccessMessage(BundleUtil.getStringFromBundle("dataset.privateurl.createdSuccess", Arrays.asList(getPrivateUrlLink(privateUrl))));
         } catch (CommandException ex) {
             logger.info("Unable to create a Private URL for dataset id " + dataset.getId() + ": " + ex);
         }
@@ -4349,8 +4349,8 @@ public class DatasetPage implements java.io.Serializable {
         return dataset.getLatestVersion().isDraft();
     }
 
-    private List<String> getPrivateUrlString(PrivateUrl privateUrl) {
-        return Arrays.asList(systemConfig.getDataverseSiteUrl() + "/privateurl.xhtml?token=" + privateUrl.getToken());
+    public String getPrivateUrlLink(PrivateUrl privateUrl) {
+        return PrivateUrl.getPrivateUrlLinkReviewerWillClick(systemConfig.getDataverseSiteUrl(), privateUrl);
     }
 
 }

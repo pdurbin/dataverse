@@ -678,7 +678,7 @@
                                     <p>#{bundle['dataset.privateurl.absent']}</p>
                                 </div>
                                 <div class="highlight" jsf:rendered="#{!empty(DatasetPage.privateUrl)}">
-                                    <ui:param name="privateUrlLink" value="#{systemConfig.dataverseSiteUrl}/privateurl.xhtml?token=#{DatasetPage.privateUrl.token}" />
+                                    <ui:param name="privateUrlLink" value="#{DatasetPage.getPrivateUrlLink(DatasetPage.privateUrl)}" />
                                     <p><a href="#{privateUrlLink}">#{privateUrlLink}</a></p>
                                 </div>
                             </div>
