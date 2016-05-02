@@ -3,7 +3,7 @@ package edu.harvard.iq.dataverse.engine.command.impl;
 import edu.harvard.iq.dataverse.Dataset;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.Permission;
-import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.engine.command.AbstractCommand;
 import edu.harvard.iq.dataverse.engine.command.CommandContext;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
@@ -43,8 +43,8 @@ public class DeletePrivateUrlCommand extends AbstractCommand<Dataset> {
             logger.info(message);
             throw new IllegalCommandException(message, this);
         }
-        GuestOfDataset guestOfDataset = new GuestOfDataset(dataset.getId());
-        List<RoleAssignment> roleAssignments = ctxt.roles().directRoleAssignments(guestOfDataset, dataset);
+        PrivateUrlUser privateUrlUser = new PrivateUrlUser(dataset.getId());
+        List<RoleAssignment> roleAssignments = ctxt.roles().directRoleAssignments(privateUrlUser, dataset);
         for (RoleAssignment roleAssignment : roleAssignments) {
             ctxt.engine().submit(new RevokeRoleCommand(roleAssignment, getRequest()));
         }

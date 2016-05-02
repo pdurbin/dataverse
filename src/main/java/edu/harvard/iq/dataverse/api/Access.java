@@ -20,7 +20,7 @@ import edu.harvard.iq.dataverse.DataverseTheme;
 import edu.harvard.iq.dataverse.PermissionServiceBean;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
-import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.authorization.users.GuestUser;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.dataaccess.DataFileIO;
@@ -966,8 +966,8 @@ public class Access extends AbstractApiBean {
                     user = (AuthenticatedUser) session.getUser();
                 } else {
                     logger.fine("User associated with the session is not an authenticated user.");
-                    if (session.getUser() instanceof GuestOfDataset) {
-                        logger.fine("User associated with the session is a GuestOfDataset user.");
+                    if (session.getUser() instanceof PrivateUrlUser) {
+                        logger.fine("User associated with the session is a PrivateUrlUser user.");
                         user = session.getUser();
                     }
                     if (session.getUser() instanceof GuestUser) {

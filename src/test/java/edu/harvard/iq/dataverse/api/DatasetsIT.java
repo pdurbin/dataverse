@@ -19,7 +19,7 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static com.jayway.restassured.path.json.JsonPath.with;
 import static edu.harvard.iq.dataverse.api.UtilIT.API_TOKEN_HTTP_HEADER;
-import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import java.util.UUID;
 import static junit.framework.Assert.assertEquals;
 
@@ -191,13 +191,13 @@ public class DatasetsIT {
         shouldExist.prettyPrint();
         assertEquals(OK.getStatusCode(), shouldExist.getStatusCode());
 
-        String tokenForGuestOfDataset = JsonPath.from(shouldExist.body().asString()).getString("data.token");
-        logger.info("privateUrlToken: " + tokenForGuestOfDataset);
+        String tokenForPrivateUrlUser = JsonPath.from(shouldExist.body().asString()).getString("data.token");
+        logger.info("privateUrlToken: " + tokenForPrivateUrlUser);
 
         String urlWithToken = JsonPath.from(shouldExist.body().asString()).getString("data.link");
         logger.info("URL with token: " + urlWithToken);
 
-        assertEquals(tokenForGuestOfDataset, urlWithToken.substring(urlWithToken.length() - UUID.randomUUID().toString().length()));
+        assertEquals(tokenForPrivateUrlUser, urlWithToken.substring(urlWithToken.length() - UUID.randomUUID().toString().length()));
 
         Response getDatasetAsUserWhoClicksPrivateUrl = given()
                 .header(API_TOKEN_HTTP_HEADER, apiToken)
@@ -218,14 +218,14 @@ public class DatasetsIT {
         badAnonLinkTokenEmptyString.prettyPrint();
         assertEquals(UNAUTHORIZED.getStatusCode(), badAnonLinkTokenEmptyString.getStatusCode());
 
-        Response getWithPrivateUrlToken = UtilIT.nativeGet(datasetId, tokenForGuestOfDataset);
+        Response getWithPrivateUrlToken = UtilIT.nativeGet(datasetId, tokenForPrivateUrlUser);
         assertEquals(OK.getStatusCode(), getWithPrivateUrlToken.getStatusCode());
 //        getWithPrivateUrlToken.prettyPrint();
-        logger.info("http://localhost:8080/privateurl.xhtml?token=" + tokenForGuestOfDataset);
+        logger.info("http://localhost:8080/privateurl.xhtml?token=" + tokenForPrivateUrlUser);
         Response swordStatement = UtilIT.getSwordStatement(dataset1PersistentId, apiToken);
         assertEquals(OK.getStatusCode(), swordStatement.getStatusCode());
         Integer fileId = UtilIT.getFileIdFromSwordStatementResponse(swordStatement);
-        Response downloadFile = UtilIT.downloadFile(fileId, tokenForGuestOfDataset);
+        Response downloadFile = UtilIT.downloadFile(fileId, tokenForPrivateUrlUser);
         assertEquals(OK.getStatusCode(), downloadFile.getStatusCode());
         Response downloadFileBadToken = UtilIT.downloadFile(fileId, "junk");
         assertEquals(FORBIDDEN.getStatusCode(), downloadFileBadToken.getStatusCode());
@@ -236,11 +236,11 @@ public class DatasetsIT {
         assertEquals(OK.getStatusCode(), roleAssignments.getStatusCode());
         List<JsonObject> assignments = with(roleAssignments.body().asString()).param("member", "member").getJsonObject("data.findAll { data -> data._roleAlias == member }");
         assertEquals(1, assignments.size());
-        GuestOfDataset guestOfDataset = new GuestOfDataset(datasetId);
-        assertEquals("Private URL Enabled", guestOfDataset.getDisplayInfo().getTitle());
-        List<JsonObject> assigneeShouldExistForGuestOfDataset = with(roleAssignments.body().asString()).param("assigneeString", guestOfDataset.getIdentifier()).getJsonObject("data.findAll { data -> data.assignee == assigneeString }");
-        logger.info(assigneeShouldExistForGuestOfDataset + " found for " + guestOfDataset.getIdentifier());
-        assertEquals(1, assigneeShouldExistForGuestOfDataset.size());
+        PrivateUrlUser privateUrlUser = new PrivateUrlUser(datasetId);
+        assertEquals("Private URL Enabled", privateUrlUser.getDisplayInfo().getTitle());
+        List<JsonObject> assigneeShouldExistForPrivateUrlUser = with(roleAssignments.body().asString()).param("assigneeString", privateUrlUser.getIdentifier()).getJsonObject("data.findAll { data -> data.assignee == assigneeString }");
+        logger.info(assigneeShouldExistForPrivateUrlUser + " found for " + privateUrlUser.getIdentifier());
+        assertEquals(1, assigneeShouldExistForPrivateUrlUser.size());
         Map roleAssignment = assignments.get(0);
         int roleAssignmentId = (int) roleAssignment.get("id");
         logger.info("role assignment id: " + roleAssignmentId);
@@ -291,10 +291,10 @@ public class DatasetsIT {
 
         Response getRoleAssignmentsOnDatasetShouldFailUnauthorized = UtilIT.getRoleAssignmentsOnDataset(datasetId.toString(), null, userWithNoRolesApiToken);
         assertEquals(UNAUTHORIZED.getStatusCode(), getRoleAssignmentsOnDatasetShouldFailUnauthorized.getStatusCode());
-        Response publishingShouldHaveRemovedRoleAssignmentForGuestOfDataset = UtilIT.getRoleAssignmentsOnDataset(datasetId.toString(), null, apiToken);
-        publishingShouldHaveRemovedRoleAssignmentForGuestOfDataset.prettyPrint();
-        List<JsonObject> noAssignmentsForGuestOfDataset = with(publishingShouldHaveRemovedRoleAssignmentForGuestOfDataset.body().asString()).param("member", "member").getJsonObject("data.findAll { data -> data._roleAlias == member }");
-        assertEquals(0, noAssignmentsForGuestOfDataset.size());
+        Response publishingShouldHaveRemovedRoleAssignmentForPrivateUrlUser = UtilIT.getRoleAssignmentsOnDataset(datasetId.toString(), null, apiToken);
+        publishingShouldHaveRemovedRoleAssignmentForPrivateUrlUser.prettyPrint();
+        List<JsonObject> noAssignmentsForPrivateUrlUser = with(publishingShouldHaveRemovedRoleAssignmentForPrivateUrlUser.body().asString()).param("member", "member").getJsonObject("data.findAll { data -> data._roleAlias == member }");
+        assertEquals(0, noAssignmentsForPrivateUrlUser.size());
 
         Response tryToCreatePrivateUrlToPublishedVersion = UtilIT.privateUrlCreate(datasetId, apiToken);
         tryToCreatePrivateUrlToPublishedVersion.prettyPrint();
@@ -319,7 +319,7 @@ public class DatasetsIT {
 
         Response privateUrlRoleAssignmentShouldBeGoneAfterDraftDeleted = UtilIT.getRoleAssignmentsOnDataset(datasetId.toString(), null, apiToken);
         privateUrlRoleAssignmentShouldBeGoneAfterDraftDeleted.prettyPrint();
-        assertEquals(false, privateUrlRoleAssignmentShouldBeGoneAfterDraftDeleted.body().asString().contains(guestOfDataset.getIdentifier()));
+        assertEquals(false, privateUrlRoleAssignmentShouldBeGoneAfterDraftDeleted.body().asString().contains(privateUrlUser.getIdentifier()));
 
         String newTitleAgain = "I am changing the title again";
         Response draftCreatedAgainPostPub = UtilIT.updateDatasetTitleViaSword(dataset1PersistentId, newTitleAgain, apiToken);

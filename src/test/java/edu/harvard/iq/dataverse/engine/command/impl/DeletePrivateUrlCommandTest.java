@@ -6,7 +6,7 @@ import edu.harvard.iq.dataverse.DataverseRoleServiceBean;
 import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
-import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.engine.TestCommandContext;
 import edu.harvard.iq.dataverse.engine.TestDataverseEngine;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
@@ -41,8 +41,8 @@ public class DeletePrivateUrlCommandTest {
                             Dataset dataset = new Dataset();
                             dataset.setId(hasPrivateUrlToDelete);
                             String token = null;
-                            GuestOfDataset guestOfDataset = new GuestOfDataset(datasetId);
-                            RoleAssignment roleAssignment = new RoleAssignment(null, guestOfDataset, dataset, token);
+                            PrivateUrlUser privateUrlUser = new PrivateUrlUser(datasetId);
+                            RoleAssignment roleAssignment = new RoleAssignment(null, privateUrlUser, dataset, token);
                             return new PrivateUrl(roleAssignment, dataset, "FIXME");
                         } else {
                             return null;

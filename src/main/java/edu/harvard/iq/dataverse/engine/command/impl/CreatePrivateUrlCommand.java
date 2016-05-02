@@ -5,7 +5,7 @@ import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.DataverseRole;
 import edu.harvard.iq.dataverse.authorization.Permission;
-import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.engine.command.AbstractCommand;
 import edu.harvard.iq.dataverse.engine.command.CommandContext;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
@@ -57,10 +57,10 @@ public class CreatePrivateUrlCommand extends AbstractCommand<PrivateUrl> {
             logger.info(message);
             throw new IllegalCommandException(message, this);
         }
-        GuestOfDataset guestOfDataset = new GuestOfDataset(dataset.getId());
+        PrivateUrlUser privateUrlUser = new PrivateUrlUser(dataset.getId());
         DataverseRole memberRole = ctxt.roles().findBuiltinRoleByAlias(DataverseRole.MEMBER);
         final String privateUrlToken = UUID.randomUUID().toString();
-        RoleAssignment roleAssignment = ctxt.engine().submit(new AssignRoleCommand(guestOfDataset, memberRole, dataset, getRequest(), privateUrlToken));
+        RoleAssignment roleAssignment = ctxt.engine().submit(new AssignRoleCommand(privateUrlUser, memberRole, dataset, getRequest(), privateUrlToken));
         PrivateUrl privateUrl = new PrivateUrl(roleAssignment, dataset, ctxt.systemConfig().getDataverseSiteUrl());
         return privateUrl;
     }

@@ -6,14 +6,17 @@ import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.DataverseRoleServiceBean;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.DataverseRole;
-import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import edu.harvard.iq.dataverse.authorization.RoleAssignee;
+import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.engine.TestCommandContext;
 import edu.harvard.iq.dataverse.engine.TestDataverseEngine;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import edu.harvard.iq.dataverse.util.SystemConfig;
+import edu.harvard.iq.dataverse.util.json.JsonPrinter;
 import java.util.ArrayList;
 import java.util.List;
+import javax.json.JsonObjectBuilder;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -42,8 +45,8 @@ public class CreatePrivateUrlCommandTest {
                             Dataset dataset = new Dataset();
                             dataset.setId(privateUrlAlreadyExists);
                             String token = null;
-                            GuestOfDataset guestOfDataset = new GuestOfDataset(datasetId);
-                            RoleAssignment roleAssignment = new RoleAssignment(null, guestOfDataset, dataset, token);
+                            PrivateUrlUser privateUrlUser = new PrivateUrlUser(datasetId);
+                            RoleAssignment roleAssignment = new RoleAssignment(null, privateUrlUser, dataset, token);
                             return new PrivateUrl(roleAssignment, dataset, "FIXME");
                         } else if (datasetId.equals(latestVersionIsNotDraft)) {
                             return null;
@@ -149,6 +152,12 @@ public class CreatePrivateUrlCommandTest {
         assertNotNull(privateUrl);
         assertNotNull(privateUrl.getDataset());
         assertNotNull(privateUrl.getRoleAssignment());
+        PrivateUrlUser expectedUser = new PrivateUrlUser(dataset.getId());
+        assertEquals(expectedUser.getIdentifier(), privateUrl.getRoleAssignment().getAssigneeIdentifier());
+        assertEquals(expectedUser.isSuperuser(), false);
+        assertEquals(expectedUser.isBuiltInUser(), false);
+        assertEquals(expectedUser.isAuthenticated(), false);
+        assertEquals(expectedUser.getDisplayInfo().getTitle(), "Private URL Enabled");
         assertNotNull(privateUrl.getToken());
         assertEquals("https://dataverse.example.edu/privateurl.xhtml?token=" + privateUrl.getToken(), privateUrl.getLink());
     }

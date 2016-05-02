@@ -4,7 +4,7 @@ import edu.harvard.iq.dataverse.Dataset;
 import edu.harvard.iq.dataverse.DatasetServiceBean;
 import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.DataverseSession;
-import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.io.Serializable;
 import java.util.logging.Logger;
@@ -33,9 +33,9 @@ public class PrivateUrlPage implements Serializable {
     String token;
 
     public String init() {
-        GuestOfDataset guestOfDataset = datasetService.getUserFromPrivateUrlToken(token);
-        if (guestOfDataset != null) {
-            session.setUser(guestOfDataset);
+        PrivateUrlUser privateUrlUser = datasetService.getUserFromPrivateUrlToken(token);
+        if (privateUrlUser != null) {
+            session.setUser(privateUrlUser);
             DatasetVersion draft = datasetService.getDraftDatasetVersionFromPrivateUrlToken(token);
             if (draft != null) {
                 Dataset dataset = draft.getDataset();
@@ -43,7 +43,7 @@ public class PrivateUrlPage implements Serializable {
                     String persistentId = dataset.getGlobalId();
                     if (persistentId != null) {
                         String relativeUrl = "/dataset.xhtml?persistentId=" + persistentId + "&version=DRAFT" + "&faces-redirect=true";
-                        logger.fine("Redirecting " + guestOfDataset.getIdentifier() + " to " + relativeUrl);
+                        logger.fine("Redirecting " + privateUrlUser.getIdentifier() + " to " + relativeUrl);
                         return relativeUrl;
                     }
                 }

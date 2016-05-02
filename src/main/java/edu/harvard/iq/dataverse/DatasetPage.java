@@ -6,7 +6,7 @@ import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUserServi
 import edu.harvard.iq.dataverse.authorization.users.ApiToken;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
-import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.authorization.users.GuestUser;
 import edu.harvard.iq.dataverse.datavariable.VariableServiceBean;
 import edu.harvard.iq.dataverse.engine.command.Command;
@@ -495,7 +495,7 @@ public class DatasetPage implements java.io.Serializable {
         // --------------------------------------------------------------------
         // (2) In Dataverse 4.3 and earlier we required that users be authenticated
         // to download files, but in developing the Private URL feature, we have
-        // added a new subclass of "User" called "GuestOfDataset" that returns false
+        // added a new subclass of "User" called "PrivateUrlUser" that returns false
         // for isAuthenticated but that should be able to download restricted files
         // when given the Member role (which includes the DownloadFile permission).
         // This is consistent with how Builtin and Shib users (both are
@@ -1575,10 +1575,10 @@ public class DatasetPage implements java.io.Serializable {
         if (privateUrl != null && permissionService.on(dataset).canIssue(CreatePrivateUrlCommand.class)) {
             JH.addMessage(FacesMessage.SEVERITY_INFO, BundleUtil.getStringFromBundle("dataset.privateurl.infoMessageAuthor", Arrays.asList(getPrivateUrlLink(privateUrl))));
         }
-        if (session.getUser() instanceof GuestOfDataset) {
-            GuestOfDataset guestOfDataset = (GuestOfDataset) session.getUser();
-            String identifier = guestOfDataset.getIdentifier();
-            String[] parts = identifier.split(GuestOfDataset.identifierPrefix);
+        if (session.getUser() instanceof PrivateUrlUser) {
+            PrivateUrlUser privateUrlUser = (PrivateUrlUser) session.getUser();
+            String identifier = privateUrlUser.getIdentifier();
+            String[] parts = identifier.split(PrivateUrlUser.PREFIX);
             try {
                 long datasetId = new Long(parts[1]);
                 if (dataset.getId().equals(datasetId)) {

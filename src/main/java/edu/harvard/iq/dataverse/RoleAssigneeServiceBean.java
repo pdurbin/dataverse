@@ -10,7 +10,7 @@ import edu.harvard.iq.dataverse.authorization.groups.impl.builtin.AuthenticatedU
 import edu.harvard.iq.dataverse.authorization.groups.impl.explicit.ExplicitGroup;
 import edu.harvard.iq.dataverse.authorization.groups.impl.explicit.ExplicitGroupServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
-import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.authorization.users.GuestUser;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,12 +71,17 @@ public class RoleAssigneeServiceBean {
                  * allow for revoking the role from that page. Interestingly, if
                  * you remove the "startsWith" code, null will be returned for
                  * Private URL but the assignment is still visible from the API.
+                 * When null is returned ManagePermissionsPage cannot list the
+                 * assignment.
+                 *
+                 * "startsWith" is the moral equivalent of
+                 * "identifier.charAt(0)". :)
                  */
-                if (identifier.startsWith(GuestOfDataset.identifierPrefix)) {
-                    String[] parts = identifier.split(GuestOfDataset.identifierPrefix);
+                if (identifier.startsWith(PrivateUrlUser.PREFIX)) {
+                    String[] parts = identifier.split(PrivateUrlUser.PREFIX);
                     try {
                         long datasetId = new Long(parts[1]);
-                        return new GuestOfDataset(datasetId);
+                        return new PrivateUrlUser(datasetId);
                     } catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
                         throw new IllegalArgumentException("Could not find dataset id in '" + identifier + "'");
                     }

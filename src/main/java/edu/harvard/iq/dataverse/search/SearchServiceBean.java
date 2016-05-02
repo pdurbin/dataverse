@@ -14,7 +14,7 @@ import edu.harvard.iq.dataverse.DvObjectServiceBean;
 import edu.harvard.iq.dataverse.authorization.groups.Group;
 import edu.harvard.iq.dataverse.authorization.groups.GroupServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
-import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.authorization.users.GuestUser;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.util.JsfHelper;
@@ -753,7 +753,7 @@ public class SearchServiceBean {
         // (1) Is this a GuestUser or similar?
         // Yes, all set, give back "publicOnly" filter string
         // ----------------------------------------------------
-        if (user instanceof GuestUser || user instanceof GuestOfDataset) {
+        if (user instanceof GuestUser || user instanceof PrivateUrlUser) {
             return publicOnly;
         }
 

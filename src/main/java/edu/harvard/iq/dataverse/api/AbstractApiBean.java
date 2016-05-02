@@ -20,6 +20,7 @@ import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.groups.GroupServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.authorization.users.GuestUser;
+import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.engine.command.Command;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
@@ -231,9 +232,9 @@ public abstract class AbstractApiBean {
          * @todo Rewrite this to check for more common cases first: Guest or
          * AuthenticatedUser.
          */
-        User guestOfDataset = datasetSvc.getUserFromPrivateUrlToken(requestApiKey);
-        if (guestOfDataset != null) {
-            return guestOfDataset;
+        PrivateUrlUser privateUrlUser = datasetSvc.getUserFromPrivateUrlToken(requestApiKey);
+        if (privateUrlUser != null) {
+            return privateUrlUser;
         }
         return ( requestApiKey == null )
                 ? GuestUser.get()

@@ -8,7 +8,7 @@ package edu.harvard.iq.dataverse;
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
-import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
+import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.dataaccess.ImageThumbConverter;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
@@ -671,8 +671,8 @@ public class DatasetServiceBean implements java.io.Serializable {
         TypedQuery<RoleAssignment> query = em.createNamedQuery(
                 "RoleAssignment.listByAssigneeIdentifier_DefinitionPointId",
                 RoleAssignment.class);
-        GuestOfDataset guestOfDataset = new GuestOfDataset(datasetId);
-        String identifier = guestOfDataset.getIdentifier();
+        PrivateUrlUser privateUrlUser = new PrivateUrlUser(datasetId);
+        String identifier = privateUrlUser.getIdentifier();
         query.setParameter("assigneeIdentifier", identifier);
         query.setParameter("definitionPointId", datasetId);
         RoleAssignment roleAssignment;
@@ -693,15 +693,15 @@ public class DatasetServiceBean implements java.io.Serializable {
         }
     }
 
-    public GuestOfDataset getUserFromPrivateUrlToken(String privateUrlToken) {
+    public PrivateUrlUser getUserFromPrivateUrlToken(String privateUrlToken) {
         RoleAssignment roleAssignment = getRoleAssignmentFromPrivateUrlToken(privateUrlToken);
         if (roleAssignment == null) {
             return null;
         }
         Dataset dataset = getDatasetFromRoleAssignment(roleAssignment);
         if (dataset != null) {
-            GuestOfDataset guestOfDataset = new GuestOfDataset(dataset.getId());
-            return guestOfDataset;
+            PrivateUrlUser privateUrlUser = new PrivateUrlUser(dataset.getId());
+            return privateUrlUser;
         }
         return null;
     }
