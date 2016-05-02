@@ -6,6 +6,7 @@
 package edu.harvard.iq.dataverse.authorization.users;
 
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
+import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -50,6 +51,9 @@ public class PrivateUrlUserTest {
         assertNotNull(returnFromValidIdentifier);
         assertEquals(":privateUrlForDvObjectId42", returnFromValidIdentifier.getIdentifier());
         assertEquals("Private URL Enabled", returnFromValidIdentifier.getDisplayInfo().getTitle());
+        Assert.assertTrue(returnFromValidIdentifier instanceof PrivateUrlUser);
+        PrivateUrlUser privateUrlUser42 = (PrivateUrlUser) returnFromValidIdentifier;
+        assertEquals(42, privateUrlUser42.getDatasetId());
 
     }
 
