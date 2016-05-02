@@ -14,36 +14,47 @@ import edu.harvard.iq.dataverse.RoleAssignment;
  */
 public class PrivateUrl {
 
-    private final String token;
+    /**
+     * @todo Do we even need a Dataset field? Instead we could use
+     * roleAssignment.getDefinitionPoint() and cast to Dataset. Should Private
+     * URL be more generic anyway? Will we want to use it on other DvObjects
+     * some day such as Dataverses and DataFiles?
+     */
     private final Dataset dataset;
-    private RoleAssignment roleAssignment;
+    private final RoleAssignment roleAssignment;
+    /**
+     * @todo Should the token be exposed here as a separate field? It's nice and
+     * convenient. The token is also available at
+     * roleAssignment.getPrivateUrlToken().
+     */
+    private final String token;
+    /**
+     * @todo This link should probably be some sort of URL object rather than a
+     * String.
+     */
+    private final String link;
 
-    public String getToken() {
-        return token;
+    public PrivateUrl(RoleAssignment roleAssignment, Dataset dataset, String dataverseSiteUrl) {
+        this.token = roleAssignment.getPrivateUrlToken();
+        this.link = dataverseSiteUrl + "/privateurl.xhtml?token=" + token;
+        this.dataset = dataset;
+        this.roleAssignment = roleAssignment;
     }
 
     public Dataset getDataset() {
         return dataset;
     }
 
-    public PrivateUrl(Dataset dataset, String token) {
-        this.token = token;
-        this.dataset = dataset;
-    }
-
     public RoleAssignment getRoleAssignment() {
         return roleAssignment;
     }
 
-    public void setRoleAssignment(RoleAssignment roleAssignment) {
-        this.roleAssignment = roleAssignment;
+    public String getToken() {
+        return token;
     }
 
-    /**
-     * @todo this should probably be a field that is set by the constructor
-     */
-    public static String getPrivateUrlLinkReviewerWillClick(String dataverseSiteUrl, PrivateUrl privateUrl) {
-        return dataverseSiteUrl + "/privateurl.xhtml?token=" + privateUrl.getToken();
+    public String getLink() {
+        return link;
     }
 
 }

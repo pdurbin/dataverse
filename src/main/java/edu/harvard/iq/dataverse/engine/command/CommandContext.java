@@ -28,6 +28,7 @@ import edu.harvard.iq.dataverse.engine.DataverseEngine;
 import edu.harvard.iq.dataverse.search.SolrIndexServiceBean;
 import edu.harvard.iq.dataverse.search.savedsearch.SavedSearchServiceBean;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
+import edu.harvard.iq.dataverse.util.SystemConfig;
 import javax.persistence.EntityManager;
 
 /**
@@ -95,4 +96,6 @@ public interface CommandContext {
     public UserNotificationServiceBean notifications();
     
     public AuthenticationServiceBean authentication();
+    
+    public SystemConfig systemConfig();
 }

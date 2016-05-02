@@ -191,10 +191,10 @@ public class DatasetsIT {
         shouldExist.prettyPrint();
         assertEquals(OK.getStatusCode(), shouldExist.getStatusCode());
 
-        String tokenForGuestOfDataset = JsonPath.from(shouldExist.body().asString()).getString("data.privateUrlToken");
+        String tokenForGuestOfDataset = JsonPath.from(shouldExist.body().asString()).getString("data.token");
         logger.info("privateUrlToken: " + tokenForGuestOfDataset);
 
-        String urlWithToken = JsonPath.from(shouldExist.body().asString()).getString("data.URL");
+        String urlWithToken = JsonPath.from(shouldExist.body().asString()).getString("data.link");
         logger.info("URL with token: " + urlWithToken);
 
         assertEquals(tokenForGuestOfDataset, urlWithToken.substring(urlWithToken.length() - UUID.randomUUID().toString().length()));

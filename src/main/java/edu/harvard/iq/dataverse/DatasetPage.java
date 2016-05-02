@@ -4350,7 +4350,7 @@ public class DatasetPage implements java.io.Serializable {
     }
 
     public String getPrivateUrlLink(PrivateUrl privateUrl) {
-        return PrivateUrl.getPrivateUrlLinkReviewerWillClick(systemConfig.getDataverseSiteUrl(), privateUrl);
+        return privateUrl.getLink();
     }
 
 }

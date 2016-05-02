@@ -582,20 +582,14 @@ public class Datasets extends AbstractApiBean {
                 return errorResponse(Response.Status.UNAUTHORIZED, "Not authorized.");
             }
             long datasetId = dataset.getId();
+            /**
+             * @todo Should this be a GetPrivateUrlCommand?
+             */
             PrivateUrl privateUrl = datasetService.getPrivateUrl(datasetId);
-            JsonObjectBuilder response = Json.createObjectBuilder();
-            response.add("datasetId", datasetId);
             if (privateUrl != null) {
-                /**
-                 * @todo refactor this into "json" method on the JsonPrinter
-                 * called from this method and createPrivateUrl
-                 */
-                response.add("privateUrlToken", privateUrl.getToken());
-                response.add("URL", PrivateUrl.getPrivateUrlLinkReviewerWillClick(systemConfig.getDataverseSiteUrl(), privateUrl));
                 DatasetVersion draft = datasetService.getDraftDatasetVersionFromPrivateUrlToken(privateUrl.getToken());
                 if (draft != null) {
-                    response.add("draftId", draft.getId());
-                    return okResponse(response);
+                    return okResponse(json(privateUrl));
                 } else {
                     return errorResponse(Response.Status.NOT_FOUND, "getDraftDatasetVersionFromPrivateUrlToken returned null.");
                 }
@@ -616,22 +610,7 @@ public class Datasets extends AbstractApiBean {
         try {
             User user = findUserOrDie();
             Dataset dataset = findDatasetOrDie(idSupplied);
-            long datasetId = dataset.getId();
-            JsonObjectBuilder response = Json.createObjectBuilder();
-            response.add("datasetId", datasetId);
-            PrivateUrl privateUrl = execCommand(new CreatePrivateUrlCommand(createDataverseRequest(user), dataset));
-            if (privateUrl != null) {
-                /**
-                 * @todo Consider removing "generated" since the token now
-                 * appears in the JSON for a role assignment.
-                 */
-                response.add("generated", privateUrl.getToken());
-                RoleAssignment roleAssignment = privateUrl.getRoleAssignment();
-                if (roleAssignment != null) {
-                    response.add("roleAssignment", json(roleAssignment));
-                }
-            }
-            return okResponse(response);
+            return okResponse(json(execCommand(new CreatePrivateUrlCommand(createDataverseRequest(user), dataset))));
         } catch (WrappedResponse wr) {
             return wr.getResponse();
         }

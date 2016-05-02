@@ -14,6 +14,7 @@ import edu.harvard.iq.dataverse.dataaccess.ImageThumbConverter;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
+import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
@@ -72,6 +73,9 @@ public class DatasetServiceBean implements java.io.Serializable {
     
     @EJB
     PermissionServiceBean permissionService;
+
+    @EJB
+    SystemConfig systemConfig;
 
     @PersistenceContext(unitName = "VDCNet-ejbPU")
     private EntityManager em;
@@ -682,7 +686,7 @@ public class DatasetServiceBean implements java.io.Serializable {
         }
         Dataset dataset = getDatasetFromRoleAssignment(roleAssignment);
         if (dataset != null) {
-            PrivateUrl privateUrl = new PrivateUrl(dataset, roleAssignment.getPrivateUrlToken());
+            PrivateUrl privateUrl = new PrivateUrl(roleAssignment, dataset, systemConfig.getDataverseSiteUrl());
             return privateUrl;
         } else {
             return null;

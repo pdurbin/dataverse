@@ -6,17 +6,19 @@ import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.DataverseRoleServiceBean;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.DataverseRole;
+import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
 import edu.harvard.iq.dataverse.engine.TestCommandContext;
 import edu.harvard.iq.dataverse.engine.TestDataverseEngine;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
+import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import org.junit.Before;
-import org.junit.Test;
 
 public class CreatePrivateUrlCommandTest {
 
@@ -40,7 +42,9 @@ public class CreatePrivateUrlCommandTest {
                             Dataset dataset = new Dataset();
                             dataset.setId(privateUrlAlreadyExists);
                             String token = null;
-                            return new PrivateUrl(dataset, token);
+                            GuestOfDataset guestOfDataset = new GuestOfDataset(datasetId);
+                            RoleAssignment roleAssignment = new RoleAssignment(null, guestOfDataset, dataset, token);
+                            return new PrivateUrl(roleAssignment, dataset, "FIXME");
                         } else if (datasetId.equals(latestVersionIsNotDraft)) {
                             return null;
                         } else {
@@ -69,7 +73,21 @@ public class CreatePrivateUrlCommandTest {
                 };
             }
 
-        });
+            @Override
+            public SystemConfig systemConfig() {
+                return new SystemConfig() {
+
+                    @Override
+                    public String getDataverseSiteUrl() {
+                        return "https://dataverse.example.edu";
+                    }
+
+                };
+
+            }
+
+        }
+        );
     }
 
     @Test
@@ -124,11 +142,15 @@ public class CreatePrivateUrlCommandTest {
     }
 
     @Test
-    public void testdfdsfAttemptCreatePrivateUrlOnNonDraft() throws CommandException {
+    public void testCreatePrivateUrlSuccessfully() throws CommandException {
         dataset = new Dataset();
         dataset.setId(createDatasetLong);
         PrivateUrl privateUrl = testEngine.submit(new CreatePrivateUrlCommand(null, dataset));
         assertNotNull(privateUrl);
+        assertNotNull(privateUrl.getDataset());
+        assertNotNull(privateUrl.getRoleAssignment());
+        assertNotNull(privateUrl.getToken());
+        assertEquals("https://dataverse.example.edu/privateurl.xhtml?token=" + privateUrl.getToken(), privateUrl.getLink());
     }
 
 }

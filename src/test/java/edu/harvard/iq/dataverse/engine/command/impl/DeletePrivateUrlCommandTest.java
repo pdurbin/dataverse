@@ -6,26 +6,25 @@ import edu.harvard.iq.dataverse.DataverseRoleServiceBean;
 import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
+import edu.harvard.iq.dataverse.authorization.users.GuestOfDataset;
 import edu.harvard.iq.dataverse.engine.TestCommandContext;
 import edu.harvard.iq.dataverse.engine.TestDataverseEngine;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
 
 public class DeletePrivateUrlCommandTest {
 
     private TestDataverseEngine testEngine;
     Dataset dataset;
     private final Long noPrivateUrlToDelete = 1l;
-    private final Long simulateDeleteFailure = 2l;
-    private final Long noRolesAssigned = 3l;
+    private final Long hasPrivateUrlToDelete = 2l;
 
     @Before
     public void setUp() {
@@ -38,16 +37,13 @@ public class DeletePrivateUrlCommandTest {
                     public PrivateUrl getPrivateUrl(Long datasetId) {
                         if (datasetId.equals(noPrivateUrlToDelete)) {
                             return null;
-                        } else if (datasetId.equals(simulateDeleteFailure)) {
+                        } else if (datasetId.equals(hasPrivateUrlToDelete)) {
                             Dataset dataset = new Dataset();
-                            dataset.setId(simulateDeleteFailure);
+                            dataset.setId(hasPrivateUrlToDelete);
                             String token = null;
-                            return new PrivateUrl(dataset, token);
-                        } else if (datasetId.equals(noRolesAssigned)) {
-                            Dataset dataset = new Dataset();
-                            dataset.setId(simulateDeleteFailure);
-                            String token = null;
-                            return new PrivateUrl(dataset, token);
+                            GuestOfDataset guestOfDataset = new GuestOfDataset(datasetId);
+                            RoleAssignment roleAssignment = new RoleAssignment(null, guestOfDataset, dataset, token);
+                            return new PrivateUrl(roleAssignment, dataset, "FIXME");
                         } else {
                             return null;
                         }
@@ -76,16 +72,6 @@ public class DeletePrivateUrlCommandTest {
             }
 
         });
-        /**
-         * @todo Work these getters and setters that increase our code coverage
-         * numbers into actual tests and remove them from here.
-         */
-//        PrivateUrl codeCoverage = new PrivateUrl();
-//        codeCoverage.setId(Long.MAX_VALUE);
-//        codeCoverage.setToken("foo");
-//        codeCoverage.getRoleAssignment();
-//        codeCoverage.getDataset();
-//        codeCoverage.getToken();
     }
 
     @Test
@@ -117,30 +103,10 @@ public class DeletePrivateUrlCommandTest {
         assertNull(datasetAfterCommand);
     }
 
-    /**
-     * @todo Revisit this test. "Problem deleting Private URL" code was deleted.
-     */
-    @Ignore
     @Test
-    public void testProblemDeletingPrivateUrl() {
+    public void testSuccessfulDelete() {
         dataset = new Dataset();
-        dataset.setId(simulateDeleteFailure);
-        String expected = "Problem deleting Private URL.";
-        Dataset datasetAfterCommand = null;
-        String actual = null;
-        try {
-            datasetAfterCommand = testEngine.submit(new DeletePrivateUrlCommand(null, dataset));
-        } catch (CommandException ex) {
-            actual = ex.getMessage();
-        }
-        assertEquals(expected, actual);
-        assertNull(datasetAfterCommand);
-    }
-
-    @Test
-    public void testDeleteWithNoRolesAssigned() {
-        dataset = new Dataset();
-        dataset.setId(noRolesAssigned);
+        dataset.setId(hasPrivateUrlToDelete);
         String actual = null;
         Dataset datasetAfterCommand = null;
         try {
@@ -150,6 +116,11 @@ public class DeletePrivateUrlCommandTest {
         }
         assertNull(actual);
         assertNotNull(datasetAfterCommand);
+        /**
+         * @todo How would we confirm that the role assignement is actually
+         * gone? Really all we're testing above is that there was no
+         * IllegalCommandException from submitting the command.
+         */
     }
 
 }
