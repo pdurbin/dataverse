@@ -12,11 +12,21 @@ import edu.harvard.iq.dataverse.util.BundleUtil;
  */
 public class PrivateUrlUser implements User {
 
-    private final long datasetId;
     public static final String PREFIX = ":privateUrlForDvObjectId";
+
+    /**
+     * In the future, this could probably be dvObjectId rather than datasetId,
+     * if necessary. It's really just roleAssignment.getDefinitionPoint(), which
+     * is a DvObject.
+     */
+    private final long datasetId;
 
     public PrivateUrlUser(long datasetId) {
         this.datasetId = datasetId;
+    }
+
+    public long getDatasetId() {
+        return datasetId;
     }
 
     /**

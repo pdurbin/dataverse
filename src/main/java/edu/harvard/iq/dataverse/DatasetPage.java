@@ -1577,15 +1577,8 @@ public class DatasetPage implements java.io.Serializable {
         }
         if (session.getUser() instanceof PrivateUrlUser) {
             PrivateUrlUser privateUrlUser = (PrivateUrlUser) session.getUser();
-            String identifier = privateUrlUser.getIdentifier();
-            String[] parts = identifier.split(PrivateUrlUser.PREFIX);
-            try {
-                long datasetId = new Long(parts[1]);
-                if (dataset.getId().equals(datasetId)) {
-                    JH.addMessage(FacesMessage.SEVERITY_INFO, BundleUtil.getStringFromBundle("dataset.privateurl.infoMessageReviewer"));
-                }
-            } catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
-                logger.info("Could not find dataset id in '" + identifier + "' so we can't show the info message to the user who clicked the Private URL.");
+            if (dataset.getId().equals(privateUrlUser.getDatasetId())) {
+                JH.addMessage(FacesMessage.SEVERITY_INFO, BundleUtil.getStringFromBundle("dataset.privateurl.infoMessageReviewer"));
             }
         }
         return null;
