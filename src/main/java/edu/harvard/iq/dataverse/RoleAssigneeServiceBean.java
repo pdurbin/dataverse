@@ -65,26 +65,20 @@ public class RoleAssigneeServiceBean {
         switch (identifier.charAt(0)) {
             case ':':
                 /**
-                 * This "startsWith" code is here to support a functional
-                 * requirement to display the Private URL role assignment when
-                 * looking at permissions at the dataset level in the GUI and
-                 * allow for revoking the role from that page. Interestingly, if
-                 * you remove the "startsWith" code, null will be returned for
-                 * Private URL but the assignment is still visible from the API.
-                 * When null is returned ManagePermissionsPage cannot list the
-                 * assignment.
+                 * This "startsWith" code in identifier2roleAssignee is here to
+                 * support a functional requirement to display the Private URL
+                 * role assignment when looking at permissions at the dataset
+                 * level in the GUI and allow for revoking the role from that
+                 * page. Interestingly, if you remove the "startsWith" code,
+                 * null will be returned for Private URL but the assignment is
+                 * still visible from the API. When null is returned
+                 * ManagePermissionsPage cannot list the assignment.
                  *
                  * "startsWith" is the moral equivalent of
                  * "identifier.charAt(0)". :)
                  */
                 if (identifier.startsWith(PrivateUrlUser.PREFIX)) {
-                    String[] parts = identifier.split(PrivateUrlUser.PREFIX);
-                    try {
-                        long datasetId = new Long(parts[1]);
-                        return new PrivateUrlUser(datasetId);
-                    } catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
-                        throw new IllegalArgumentException("Could not find dataset id in '" + identifier + "'");
-                    }
+                    return PrivateUrlUser.identifier2roleAssignee(identifier);
                 } else {
                     return predefinedRoleAssignees.get(identifier);
                 }
