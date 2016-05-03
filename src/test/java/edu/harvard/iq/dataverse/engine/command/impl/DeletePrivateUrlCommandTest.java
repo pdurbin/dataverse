@@ -1,7 +1,6 @@
 package edu.harvard.iq.dataverse.engine.command.impl;
 
 import edu.harvard.iq.dataverse.Dataset;
-import edu.harvard.iq.dataverse.DatasetServiceBean;
 import edu.harvard.iq.dataverse.DataverseRoleServiceBean;
 import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.RoleAssignment;
@@ -11,6 +10,7 @@ import edu.harvard.iq.dataverse.engine.TestCommandContext;
 import edu.harvard.iq.dataverse.engine.TestDataverseEngine;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrlServiceBean;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
@@ -30,8 +30,8 @@ public class DeletePrivateUrlCommandTest {
     public void setUp() {
         testEngine = new TestDataverseEngine(new TestCommandContext() {
             @Override
-            public DatasetServiceBean datasets() {
-                return new DatasetServiceBean() {
+            public PrivateUrlServiceBean privateUrl() {
+                return new PrivateUrlServiceBean() {
 
                     @Override
                     public PrivateUrl getPrivateUrl(Long datasetId) {

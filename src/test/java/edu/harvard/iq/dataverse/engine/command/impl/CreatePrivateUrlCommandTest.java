@@ -1,22 +1,19 @@
 package edu.harvard.iq.dataverse.engine.command.impl;
 
 import edu.harvard.iq.dataverse.Dataset;
-import edu.harvard.iq.dataverse.DatasetServiceBean;
 import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.DataverseRoleServiceBean;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.DataverseRole;
-import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.engine.TestCommandContext;
 import edu.harvard.iq.dataverse.engine.TestDataverseEngine;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrlServiceBean;
 import edu.harvard.iq.dataverse.util.SystemConfig;
-import edu.harvard.iq.dataverse.util.json.JsonPrinter;
 import java.util.ArrayList;
 import java.util.List;
-import javax.json.JsonObjectBuilder;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -36,8 +33,8 @@ public class CreatePrivateUrlCommandTest {
         dataset = new Dataset();
         testEngine = new TestDataverseEngine(new TestCommandContext() {
             @Override
-            public DatasetServiceBean datasets() {
-                return new DatasetServiceBean() {
+            public PrivateUrlServiceBean privateUrl() {
+                return new PrivateUrlServiceBean() {
 
                     @Override
                     public PrivateUrl getPrivateUrl(Long datasetId) {

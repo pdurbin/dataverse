@@ -12,6 +12,7 @@ import edu.harvard.iq.dataverse.engine.command.CommandContext;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
 import edu.harvard.iq.dataverse.engine.command.exception.PermissionException;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrlServiceBean;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import edu.harvard.iq.dataverse.search.SearchServiceBean;
 import java.util.Map;
@@ -131,6 +132,9 @@ public class EjbDataverseEngine {
 
     @EJB
     SystemConfig systemConfig;
+
+    @EJB
+    PrivateUrlServiceBean privateUrlService;
 
     @PersistenceContext(unitName = "VDCNet-ejbPU")
     private EntityManager em;
@@ -379,6 +383,11 @@ public class EjbDataverseEngine {
                 @Override
                 public SystemConfig systemConfig() {
                     return systemConfig;
+                }
+
+                @Override
+                public PrivateUrlServiceBean privateUrl() {
+                    return privateUrlService;
                 }
 
             };

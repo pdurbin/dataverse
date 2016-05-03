@@ -26,6 +26,7 @@ import edu.harvard.iq.dataverse.ingest.IngestRequest;
 import edu.harvard.iq.dataverse.ingest.IngestServiceBean;
 import edu.harvard.iq.dataverse.metadataimport.ForeignMetadataImportServiceBean;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrlServiceBean;
 import edu.harvard.iq.dataverse.search.SearchFilesServiceBean;
 import edu.harvard.iq.dataverse.search.SortBy;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
@@ -149,6 +150,8 @@ public class DatasetPage implements java.io.Serializable {
     SearchFilesServiceBean searchFilesService;
     @EJB
     DataverseRoleServiceBean dataverseRoleService;
+    @EJB
+    PrivateUrlServiceBean privateUrlService;
     @Inject
     DataverseRequestServiceBean dvRequestService;
     @Inject
@@ -1571,7 +1574,7 @@ public class DatasetPage implements java.io.Serializable {
             return "/404.xhtml";
         }
 
-        privateUrl = datasetService.getPrivateUrl(dataset.getId());
+        privateUrl = privateUrlService.getPrivateUrl(dataset.getId());
         if (privateUrl != null && permissionService.on(dataset).canIssue(CreatePrivateUrlCommand.class)) {
             JH.addMessage(FacesMessage.SEVERITY_INFO, BundleUtil.getStringFromBundle("dataset.privateurl.infoMessageAuthor", Arrays.asList(getPrivateUrlLink(privateUrl))));
         }

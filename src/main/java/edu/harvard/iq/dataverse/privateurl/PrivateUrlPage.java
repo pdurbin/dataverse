@@ -20,7 +20,7 @@ public class PrivateUrlPage implements Serializable {
     private static final Logger logger = Logger.getLogger(PrivateUrlPage.class.getCanonicalName());
 
     @EJB
-    DatasetServiceBean datasetService;
+    PrivateUrlServiceBean privateUrlService;
     @EJB
     SystemConfig systemConfig;
     @Inject
@@ -33,10 +33,10 @@ public class PrivateUrlPage implements Serializable {
     String token;
 
     public String init() {
-        PrivateUrlUser privateUrlUser = datasetService.getUserFromPrivateUrlToken(token);
+        PrivateUrlUser privateUrlUser = privateUrlService.getUserFromPrivateUrlToken(token);
         if (privateUrlUser != null) {
             session.setUser(privateUrlUser);
-            DatasetVersion draft = datasetService.getDraftDatasetVersionFromPrivateUrlToken(token);
+            DatasetVersion draft = privateUrlService.getDraftDatasetVersionFromPrivateUrlToken(token);
             if (draft != null) {
                 Dataset dataset = draft.getDataset();
                 if (dataset != null) {

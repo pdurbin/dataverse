@@ -585,9 +585,9 @@ public class Datasets extends AbstractApiBean {
             /**
              * @todo Should this be a GetPrivateUrlCommand?
              */
-            PrivateUrl privateUrl = datasetService.getPrivateUrl(datasetId);
+            PrivateUrl privateUrl = privateUrlSvc.getPrivateUrl(datasetId);
             if (privateUrl != null) {
-                DatasetVersion draft = datasetService.getDraftDatasetVersionFromPrivateUrlToken(privateUrl.getToken());
+                DatasetVersion draft = privateUrlSvc.getDraftDatasetVersionFromPrivateUrlToken(privateUrl.getToken());
                 if (draft != null) {
                     return okResponse(json(privateUrl));
                 } else {
@@ -624,7 +624,7 @@ public class Datasets extends AbstractApiBean {
     public Response deletePrivateUrl(@PathParam("id") Long idSupplied) {
         try {
             User user = findUserOrDie();
-            PrivateUrl privateUrl = datasetService.getPrivateUrl(idSupplied);
+            PrivateUrl privateUrl = privateUrlSvc.getPrivateUrl(idSupplied);
             if (privateUrl != null) {
                 Dataset dataset = privateUrl.getDataset();
                 execCommand(new DeletePrivateUrlCommand(createDataverseRequest(user), dataset));

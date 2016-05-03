@@ -8,13 +8,10 @@ package edu.harvard.iq.dataverse;
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
-import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.dataaccess.ImageThumbConverter;
-import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
-import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
@@ -33,8 +30,6 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.inject.Named;
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -73,9 +68,6 @@ public class DatasetServiceBean implements java.io.Serializable {
     
     @EJB
     PermissionServiceBean permissionService;
-
-    @EJB
-    SystemConfig systemConfig;
 
     @PersistenceContext(unitName = "VDCNet-ejbPU")
     private EntityManager em;
@@ -663,93 +655,4 @@ public class DatasetServiceBean implements java.io.Serializable {
         
         return false;
     }
-
-    public PrivateUrl getPrivateUrl(Long datasetId) {
-        if (datasetId == null) {
-            return null;
-        }
-        TypedQuery<RoleAssignment> query = em.createNamedQuery(
-                "RoleAssignment.listByAssigneeIdentifier_DefinitionPointId",
-                RoleAssignment.class);
-        PrivateUrlUser privateUrlUser = new PrivateUrlUser(datasetId);
-        String identifier = privateUrlUser.getIdentifier();
-        query.setParameter("assigneeIdentifier", identifier);
-        query.setParameter("definitionPointId", datasetId);
-        RoleAssignment roleAssignment;
-        try {
-            roleAssignment = query.getSingleResult();
-        } catch (NoResultException | NonUniqueResultException ex) {
-            return null;
-        }
-        if (roleAssignment == null) {
-            return null;
-        }
-        Dataset dataset = getDatasetFromRoleAssignment(roleAssignment);
-        if (dataset != null) {
-            PrivateUrl privateUrl = new PrivateUrl(roleAssignment, dataset, systemConfig.getDataverseSiteUrl());
-            return privateUrl;
-        } else {
-            return null;
-        }
-    }
-
-    public PrivateUrlUser getUserFromPrivateUrlToken(String privateUrlToken) {
-        RoleAssignment roleAssignment = getRoleAssignmentFromPrivateUrlToken(privateUrlToken);
-        if (roleAssignment == null) {
-            return null;
-        }
-        Dataset dataset = getDatasetFromRoleAssignment(roleAssignment);
-        if (dataset != null) {
-            PrivateUrlUser privateUrlUser = new PrivateUrlUser(dataset.getId());
-            return privateUrlUser;
-        }
-        return null;
-    }
-
-    public DatasetVersion getDraftDatasetVersionFromPrivateUrlToken(String privateUrlToken) {
-        RoleAssignment roleAssignment = getRoleAssignmentFromPrivateUrlToken(privateUrlToken);
-        if (roleAssignment == null) {
-            return null;
-        }
-        Dataset dataset = getDatasetFromRoleAssignment(roleAssignment);
-        if (dataset != null) {
-            DatasetVersion latestVersion = dataset.getLatestVersion();
-            if (latestVersion.isDraft()) {
-                return latestVersion;
-            }
-        }
-        return null;
-    }
-
-    private RoleAssignment getRoleAssignmentFromPrivateUrlToken(String privateUrlToken) {
-        if (privateUrlToken == null) {
-            return null;
-        }
-        TypedQuery<RoleAssignment> query = em.createNamedQuery(
-                "RoleAssignment.listByPrivateUrlToken",
-                RoleAssignment.class);
-        query.setParameter("privateUrlToken", privateUrlToken);
-        try {
-            RoleAssignment roleAssignment = query.getSingleResult();
-            return roleAssignment;
-        } catch (NoResultException | NonUniqueResultException ex) {
-            return null;
-        }
-    }
-
-    private Dataset getDatasetFromRoleAssignment(RoleAssignment roleAssignment) {
-        if (roleAssignment == null) {
-            return null;
-        }
-        DvObject dvObject = roleAssignment.getDefinitionPoint();
-        if (dvObject == null) {
-            return null;
-        }
-        if (dvObject instanceof Dataset) {
-            return (Dataset) roleAssignment.getDefinitionPoint();
-        } else {
-            return null;
-        }
-    }
-    
 }

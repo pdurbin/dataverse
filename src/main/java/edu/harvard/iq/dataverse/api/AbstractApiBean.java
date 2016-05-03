@@ -27,6 +27,7 @@ import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
 import edu.harvard.iq.dataverse.engine.command.exception.IllegalCommandException;
 import edu.harvard.iq.dataverse.engine.command.exception.PermissionException;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrlServiceBean;
 import edu.harvard.iq.dataverse.search.savedsearch.SavedSearchServiceBean;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import edu.harvard.iq.dataverse.util.json.JsonParser;
@@ -170,6 +171,9 @@ public abstract class AbstractApiBean {
     @EJB
     protected SavedSearchServiceBean savedSearchSvc;
 
+    @EJB
+    protected PrivateUrlServiceBean privateUrlSvc;
+
 	@PersistenceContext(unitName = "VDCNet-ejbPU")
 	protected EntityManager em;
     
@@ -231,7 +235,7 @@ public abstract class AbstractApiBean {
         if (requestApiKey == null) {
             return GuestUser.get();
         }
-        PrivateUrlUser privateUrlUser = datasetSvc.getUserFromPrivateUrlToken(requestApiKey);
+        PrivateUrlUser privateUrlUser = privateUrlSvc.getUserFromPrivateUrlToken(requestApiKey);
         if (privateUrlUser != null) {
             return privateUrlUser;
         }

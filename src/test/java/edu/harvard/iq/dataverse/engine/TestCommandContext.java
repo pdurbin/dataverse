@@ -5,6 +5,7 @@ import edu.harvard.iq.dataverse.*;
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
 import edu.harvard.iq.dataverse.authorization.groups.impl.explicit.ExplicitGroupServiceBean;
 import edu.harvard.iq.dataverse.engine.command.CommandContext;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrlServiceBean;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import edu.harvard.iq.dataverse.search.SearchServiceBean;
 import edu.harvard.iq.dataverse.search.SolrIndexServiceBean;
@@ -167,6 +168,11 @@ public class TestCommandContext implements CommandContext {
 
     @Override
     public SystemConfig systemConfig() {
+        return null;
+    }
+
+    @Override
+    public PrivateUrlServiceBean privateUrl() {
         return null;
     }
 	

@@ -25,6 +25,7 @@ import edu.harvard.iq.dataverse.UserNotificationServiceBean;
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
 import edu.harvard.iq.dataverse.authorization.groups.impl.explicit.ExplicitGroupServiceBean;
 import edu.harvard.iq.dataverse.engine.DataverseEngine;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrlServiceBean;
 import edu.harvard.iq.dataverse.search.SolrIndexServiceBean;
 import edu.harvard.iq.dataverse.search.savedsearch.SavedSearchServiceBean;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
@@ -96,6 +97,8 @@ public interface CommandContext {
     public UserNotificationServiceBean notifications();
     
     public AuthenticationServiceBean authentication();
-    
+
     public SystemConfig systemConfig();
+
+    public PrivateUrlServiceBean privateUrl();
 }

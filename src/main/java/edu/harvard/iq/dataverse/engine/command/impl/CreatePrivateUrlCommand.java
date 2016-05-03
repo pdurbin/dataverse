@@ -39,7 +39,7 @@ public class CreatePrivateUrlCommand extends AbstractCommand<PrivateUrl> {
             logger.info(message);
             throw new IllegalCommandException(message, this);
         }
-        PrivateUrl existing = ctxt.datasets().getPrivateUrl(dataset.getId());
+        PrivateUrl existing = ctxt.privateUrl().getPrivateUrl(dataset.getId());
         if (existing != null) {
             /**
              * @todo Internationalize this.

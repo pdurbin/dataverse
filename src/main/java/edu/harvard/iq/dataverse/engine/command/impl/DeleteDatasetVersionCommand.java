@@ -68,7 +68,7 @@ public class DeleteDatasetVersionCommand extends AbstractVoidCommand {
                         dvIt.remove();
                     }
                 }
-                PrivateUrl privateUrl = ctxt.datasets().getPrivateUrl(doomed.getId());
+                PrivateUrl privateUrl = ctxt.privateUrl().getPrivateUrl(doomed.getId());
                 if (privateUrl != null) {
                     logger.fine("Deleting Private URL for dataset id " + doomed.getId());
                     /**
