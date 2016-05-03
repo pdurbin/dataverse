@@ -5,8 +5,11 @@ import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
+import java.util.logging.Logger;
 
 public class PrivateUrlUtil {
+
+    private static final Logger logger = Logger.getLogger(PrivateUrlUtil.class.getCanonicalName());
 
     /**
      * @todo If there is a use case for this outside the context of Private URL,
@@ -55,6 +58,30 @@ public class PrivateUrlUtil {
             return privateUrlUser;
         }
         return null;
+    }
+
+    static PrivateUrlRedirectData getPrivateUrlRedirectData(RoleAssignment roleAssignment) throws Exception {
+        PrivateUrlUser privateUrlUser = PrivateUrlUtil.getPrivateUrlUserFromRoleAssignment(roleAssignment);
+        String draftDatasetPageToBeRedirectedTo = PrivateUrlUtil.getDraftDatasetPageToBeRedirectedTo(roleAssignment);
+        return new PrivateUrlRedirectData(privateUrlUser, draftDatasetPageToBeRedirectedTo);
+    }
+
+    static String getDraftDatasetPageToBeRedirectedTo(RoleAssignment roleAssignment) throws Exception {
+        return getDraftUrl(getDraftDatasetVersionFromRoleAssignment(roleAssignment));
+    }
+
+    static String getDraftUrl(DatasetVersion draft) throws Exception {
+        if (draft != null) {
+            Dataset dataset = draft.getDataset();
+            if (dataset != null) {
+                String persistentId = dataset.getGlobalId();
+                if (persistentId != null) {
+                    String relativeUrl = "/dataset.xhtml?persistentId=" + persistentId + "&version=DRAFT";
+                    return relativeUrl;
+                }
+            }
+        }
+        throw new Exception();
     }
 
 }

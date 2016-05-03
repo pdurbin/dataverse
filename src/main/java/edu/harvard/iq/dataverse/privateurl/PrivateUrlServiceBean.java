@@ -90,4 +90,8 @@ public class PrivateUrlServiceBean implements Serializable {
         return PrivateUrlUtil.getDraftDatasetVersionFromRoleAssignment(getRoleAssignmentFromPrivateUrlToken(token));
     }
 
+    public PrivateUrlRedirectData getPrivateUrlRedirectData(String token) throws Exception {
+        return PrivateUrlUtil.getPrivateUrlRedirectData(getRoleAssignmentFromPrivateUrlToken(token));
+    }
+
 }

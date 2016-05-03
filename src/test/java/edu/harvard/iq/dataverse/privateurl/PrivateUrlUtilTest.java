@@ -10,11 +10,14 @@ import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import org.junit.Before;
+import org.junit.Ignore;
 
 public class PrivateUrlUtilTest {
 
@@ -145,4 +148,89 @@ public class PrivateUrlUtilTest {
         assertNotNull(privateUrlUserOut);
     }
 
+    @Test
+    public void testGetPrivateUrlRedirectDataSuccess() throws Exception {
+        DataverseRole aRole = null;
+        long datasetId = 42;
+        PrivateUrlUser privateUrlUser = new PrivateUrlUser(datasetId);
+        RoleAssignee anAssignee = privateUrlUser;
+        Dataset dataset = new Dataset();
+        dataset.setProtocol("doi");
+        dataset.setAuthority("10.5072/FK2");
+        dataset.setIdentifier("3L33T");
+        dataset.setId(datasetId);
+        String privateUrlToken = null;
+        RoleAssignment ra = new RoleAssignment(aRole, anAssignee, dataset, privateUrlToken);
+        PrivateUrlRedirectData privateUrlRedirectData = PrivateUrlUtil.getPrivateUrlRedirectData(ra);
+        assertNotNull(privateUrlRedirectData);
+        assertEquals("/dataset.xhtml?persistentId=doi:10.5072/FK2/3L33T&version=DRAFT", privateUrlRedirectData.getDraftDatasetPageToBeRedirectedTo());
+        assertEquals(privateUrlUser.getIdentifier(), privateUrlRedirectData.getPrivateUrlUser().getIdentifier());
+    }
+
+    @Test
+    public void testGetDraftUrlDraftNull() {
+        DatasetVersion draft = null;
+        Exception exception = null;
+        try {
+            PrivateUrlUtil.getDraftUrl(draft);
+        } catch (Exception ex) {
+            exception = ex;
+        }
+        assertNotNull(exception);
+    }
+
+    @Test
+    public void testGetDraftUrlDatasetNull() {
+        DatasetVersion draft = new DatasetVersion();
+        draft.setDataset(null);
+        Exception exception = null;
+        try {
+            PrivateUrlUtil.getDraftUrl(draft);
+        } catch (Exception ex) {
+            exception = ex;
+        }
+        assertNotNull(exception);
+    }
+
+    @Test
+    public void testGetDraftUrlNoGlobalId() throws Exception {
+        DatasetVersion draft = new DatasetVersion();
+        Dataset dataset = new Dataset();
+        draft.setDataset(dataset);
+        /**
+         * @todo Investigate why dataset.getGlobalId() yields the String
+         * "null:null/null" when I expect null value. This smells like a bug.
+         */
+        assertEquals("/dataset.xhtml?persistentId=null:null/null&version=DRAFT", PrivateUrlUtil.getDraftUrl(draft));
+    }
+
+    @Test
+    public void testGetDraftUrlSuccess() throws Exception {
+        DatasetVersion draft = new DatasetVersion();
+        Dataset dataset = new Dataset();
+        dataset.setProtocol("doi");
+        dataset.setAuthority("10.5072/FK2");
+        dataset.setIdentifier("3L33T");
+        draft.setDataset(dataset);
+        assertEquals("/dataset.xhtml?persistentId=doi:10.5072/FK2/3L33T&version=DRAFT", PrivateUrlUtil.getDraftUrl(draft));
+    }
+
+    @Test
+    public void testGetPrivateUrlRedirectDataConstructor() throws Exception {
+        Exception exception1 = null;
+        try {
+            PrivateUrlRedirectData privateUrlRedirectData = new PrivateUrlRedirectData(null, null);
+        } catch (Exception ex) {
+            exception1 = ex;
+        }
+        assertNotNull(exception1);
+        Exception exception2 = null;
+        try {
+            PrivateUrlUser privateUrlUser = new PrivateUrlUser(42);
+            PrivateUrlRedirectData privateUrlRedirectData = new PrivateUrlRedirectData(privateUrlUser, null);
+        } catch (Exception ex) {
+            exception2 = ex;
+        }
+        assertNotNull(exception2);
+    }
 }

@@ -1,11 +1,7 @@
 package edu.harvard.iq.dataverse.privateurl;
 
-import edu.harvard.iq.dataverse.Dataset;
-import edu.harvard.iq.dataverse.DatasetServiceBean;
-import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.DataverseSession;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
-import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.io.Serializable;
 import java.util.logging.Logger;
 import javax.ejb.EJB;
@@ -21,36 +17,27 @@ public class PrivateUrlPage implements Serializable {
 
     @EJB
     PrivateUrlServiceBean privateUrlService;
-    @EJB
-    SystemConfig systemConfig;
     @Inject
     DataverseSession session;
 
     /**
-     * The unique string used to look up a user and automatically log that user
-     * in.
+     * The unique string used to look up a PrivateUrlUser and the associated
+     * draft dataset version to redirect the user to.
      */
     String token;
 
     public String init() {
-        PrivateUrlUser privateUrlUser = privateUrlService.getUserFromPrivateUrlToken(token);
-        if (privateUrlUser != null) {
+        try {
+            PrivateUrlRedirectData privateUrlRedirectData = privateUrlService.getPrivateUrlRedirectData(token);
+            String draftDatasetPageToBeRedirectedTo = privateUrlRedirectData.getDraftDatasetPageToBeRedirectedTo() + "&faces-redirect=true";
+            PrivateUrlUser privateUrlUser = privateUrlRedirectData.getPrivateUrlUser();
             session.setUser(privateUrlUser);
-            DatasetVersion draft = privateUrlService.getDraftDatasetVersionFromPrivateUrlToken(token);
-            if (draft != null) {
-                Dataset dataset = draft.getDataset();
-                if (dataset != null) {
-                    String persistentId = dataset.getGlobalId();
-                    if (persistentId != null) {
-                        String relativeUrl = "/dataset.xhtml?persistentId=" + persistentId + "&version=DRAFT" + "&faces-redirect=true";
-                        logger.fine("Redirecting " + privateUrlUser.getIdentifier() + " to " + relativeUrl);
-                        return relativeUrl;
-                    }
-                }
-            }
+            logger.info("Redirecting PrivateUrlUser '" + privateUrlUser.getIdentifier() + "' to " + draftDatasetPageToBeRedirectedTo);
+            return draftDatasetPageToBeRedirectedTo;
+        } catch (Exception ex) {
+            logger.info("Exception processing Private URL token '" + token + "':" + ex);
+            return "/404.xhtml";
         }
-        logger.info("Not redirecting. Couldn't find draft dataset version based on token: " + token);
-        return "/404.xhtml";
     }
 
     public String getToken() {
