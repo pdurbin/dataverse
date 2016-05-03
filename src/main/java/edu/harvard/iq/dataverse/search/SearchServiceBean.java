@@ -754,7 +754,7 @@ public class SearchServiceBean {
         }
 
         // ----------------------------------------------------
-        // (1) Is this a GuestUser?
+        // (1) Is this a GuestUser?  
         // Yes, all set, give back "publicOnly" filter string
         // ----------------------------------------------------
         if (user instanceof GuestUser) {

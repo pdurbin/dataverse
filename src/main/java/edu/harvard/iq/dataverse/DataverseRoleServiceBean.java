@@ -38,7 +38,6 @@ public class DataverseRoleServiceBean implements java.io.Serializable {
     @EJB IndexServiceBean indexService;   
     @EJB SolrIndexServiceBean solrIndexService;
     @EJB IndexAsync indexAsync;
-    @EJB DatasetServiceBean datasetService;
 
 	public DataverseRole save( DataverseRole aRole ) {
 		if ( aRole.getId() == null ) {
