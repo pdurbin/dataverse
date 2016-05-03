@@ -10,6 +10,7 @@ import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Test;
@@ -233,4 +234,42 @@ public class PrivateUrlUtilTest {
         }
         assertNotNull(exception2);
     }
+
+    @Test
+    public void testGetPrivateUrlFromRoleAssignmentNoSiteUrl() {
+        String dataverseSiteUrl = null;
+        RoleAssignment ra = null;
+        PrivateUrl privateUrl = PrivateUrlUtil.getPrivateUrlFromRoleAssignment(ra, dataverseSiteUrl);
+        assertNull(privateUrl);
+    }
+
+    @Test
+    public void testGetPrivateUrlFromRoleAssignmentDatasetNull() {
+        String dataverseSiteUrl = "https://dataverse.example.edu";
+        DataverseRole aRole = null;
+        PrivateUrlUser privateUrlUser = new PrivateUrlUser(42);
+        RoleAssignee anAssignee = privateUrlUser;
+        DvObject dataset = null;
+        String privateUrlToken = null;
+        RoleAssignment ra = new RoleAssignment(aRole, anAssignee, dataset, privateUrlToken);
+        PrivateUrl privateUrl = PrivateUrlUtil.getPrivateUrlFromRoleAssignment(ra, dataverseSiteUrl);
+        assertNull(privateUrl);
+    }
+
+    @Test
+    public void testGetPrivateUrlFromRoleAssignmentSuccess() {
+        String dataverseSiteUrl = "https://dataverse.example.edu";
+        DataverseRole aRole = null;
+        PrivateUrlUser privateUrlUser = new PrivateUrlUser(42);
+        RoleAssignee anAssignee = privateUrlUser;
+        DvObject dataset = new Dataset();
+        dataset.setId(42l);
+        String privateUrlToken = "cd71e9d7-73a7-4ec8-b890-3d00499e8693";
+        RoleAssignment ra = new RoleAssignment(aRole, anAssignee, dataset, privateUrlToken);
+        PrivateUrl privateUrl = PrivateUrlUtil.getPrivateUrlFromRoleAssignment(ra, dataverseSiteUrl);
+        assertNotNull(privateUrl);
+        assertEquals(new Long(42), privateUrl.getDataset().getId());
+        assertEquals("https://dataverse.example.edu/privateurl.xhtml?token=cd71e9d7-73a7-4ec8-b890-3d00499e8693", privateUrl.getLink());
+    }
+
 }

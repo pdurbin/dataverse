@@ -1,6 +1,7 @@
 package edu.harvard.iq.dataverse.privateurl;
 
 import edu.harvard.iq.dataverse.Dataset;
+import edu.harvard.iq.dataverse.DatasetServiceBean;
 import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.RoleAssigneeServiceBean;
 import edu.harvard.iq.dataverse.RoleAssignment;
@@ -25,36 +26,34 @@ public class PrivateUrlServiceBean implements Serializable {
     private EntityManager em;
 
     @EJB
+    DatasetServiceBean datasetServiceBean;
+    @EJB
     RoleAssigneeServiceBean roleAssigneeService;
 
     @EJB
     SystemConfig systemConfig;
 
     public PrivateUrl getPrivateUrl(Long datasetId) {
-        if (datasetId == null) {
-            return null;
-        }
+        RoleAssignment roleAssignment = getPrivateUrlRoleAssignment(datasetServiceBean.find(datasetId));
+        return PrivateUrlUtil.getPrivateUrlFromRoleAssignment(roleAssignment, systemConfig.getDataverseSiteUrl());
+    }
+
+    /**
+     * @param dataset A non-null dataset;
+     * @return A role assignment for a Private URL, if found, or null.
+     *
+     * @todo This might be a good place for Optional.
+     */
+    public RoleAssignment getPrivateUrlRoleAssignment(Dataset dataset) {
         TypedQuery<RoleAssignment> query = em.createNamedQuery(
                 "RoleAssignment.listByAssigneeIdentifier_DefinitionPointId",
                 RoleAssignment.class);
-        PrivateUrlUser privateUrlUser = new PrivateUrlUser(datasetId);
-        String identifier = privateUrlUser.getIdentifier();
-        query.setParameter("assigneeIdentifier", identifier);
-        query.setParameter("definitionPointId", datasetId);
-        RoleAssignment roleAssignment;
+        PrivateUrlUser privateUrlUser = new PrivateUrlUser(dataset.getId());
+        query.setParameter("assigneeIdentifier", privateUrlUser.getIdentifier());
+        query.setParameter("definitionPointId", dataset.getId());
         try {
-            roleAssignment = query.getSingleResult();
+            return query.getSingleResult();
         } catch (NoResultException | NonUniqueResultException ex) {
-            return null;
-        }
-        if (roleAssignment == null) {
-            return null;
-        }
-        Dataset dataset = PrivateUrlUtil.getDatasetFromRoleAssignment(roleAssignment);
-        if (dataset != null) {
-            PrivateUrl privateUrl = new PrivateUrl(roleAssignment, dataset, systemConfig.getDataverseSiteUrl());
-            return privateUrl;
-        } else {
             return null;
         }
     }

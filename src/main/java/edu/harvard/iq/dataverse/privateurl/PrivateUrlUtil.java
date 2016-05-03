@@ -84,4 +84,18 @@ public class PrivateUrlUtil {
         throw new Exception();
     }
 
+    static PrivateUrl getPrivateUrlFromRoleAssignment(RoleAssignment roleAssignment, String dataverseSiteUrl) {
+        if (dataverseSiteUrl == null) {
+            logger.info("dataverseSiteUrl was null. Can not instantiate a PrivateUrl object.");
+            return null;
+        }
+        Dataset dataset = PrivateUrlUtil.getDatasetFromRoleAssignment(roleAssignment);
+        if (dataset != null) {
+            PrivateUrl privateUrl = new PrivateUrl(roleAssignment, dataset, dataverseSiteUrl);
+            return privateUrl;
+        } else {
+            return null;
+        }
+    }
+
 }
