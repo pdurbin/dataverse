@@ -749,11 +749,15 @@ public class SearchServiceBean {
         // initialize to public only to be safe
         String dangerZoneNoSolrJoin = null;
 
+        if (user instanceof PrivateUrlUser) {
+            user = GuestUser.get();
+        }
+
         // ----------------------------------------------------
-        // (1) Is this a GuestUser or similar?
+        // (1) Is this a GuestUser?
         // Yes, all set, give back "publicOnly" filter string
         // ----------------------------------------------------
-        if (user instanceof GuestUser || user instanceof PrivateUrlUser) {
+        if (user instanceof GuestUser) {
             return publicOnly;
         }
 
