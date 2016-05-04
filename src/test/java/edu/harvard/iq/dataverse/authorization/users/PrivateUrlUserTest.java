@@ -49,7 +49,7 @@ public class PrivateUrlUserTest {
         String validIdentifier = PrivateUrlUser.PREFIX + 42;
         returnFromValidIdentifier = PrivateUrlUser.identifier2roleAssignee(validIdentifier);
         assertNotNull(returnFromValidIdentifier);
-        assertEquals(":privateUrlForDvObjectId42", returnFromValidIdentifier.getIdentifier());
+        assertEquals(":privateUrl42", returnFromValidIdentifier.getIdentifier());
         assertEquals("Private URL Enabled", returnFromValidIdentifier.getDisplayInfo().getTitle());
         Assert.assertTrue(returnFromValidIdentifier instanceof PrivateUrlUser);
         PrivateUrlUser privateUrlUser42 = (PrivateUrlUser) returnFromValidIdentifier;

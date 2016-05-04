@@ -13,7 +13,7 @@ import edu.harvard.iq.dataverse.util.BundleUtil;
  */
 public class PrivateUrlUser implements User {
 
-    public static final String PREFIX = ":privateUrlForDvObjectId";
+    public static final String PREFIX = ":privateUrl";
 
     /**
      * Use of this method should be limited to

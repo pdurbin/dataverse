@@ -60,7 +60,7 @@ public class PrivateUrlUtilTest {
         String privateUrlToken = null;
         RoleAssignment ra = new RoleAssignment(aRole, anAssignee, dataset, privateUrlToken);
         assertNotNull(PrivateUrlUtil.getDatasetFromRoleAssignment(ra));
-        assertEquals(":privateUrlForDvObjectId42", ra.getAssigneeIdentifier());
+        assertEquals(":privateUrl42", ra.getAssigneeIdentifier());
     }
 
     @Test
@@ -112,7 +112,7 @@ public class PrivateUrlUtilTest {
         RoleAssignment ra = new RoleAssignment(aRole, anAssignee, dataset, privateUrlToken);
         DatasetVersion datasetVersionOut = PrivateUrlUtil.getDraftDatasetVersionFromRoleAssignment(ra);
         assertNotNull(datasetVersionOut);
-        assertEquals(":privateUrlForDvObjectId42", ra.getAssigneeIdentifier());
+        assertEquals(":privateUrl42", ra.getAssigneeIdentifier());
     }
 
     @Test
