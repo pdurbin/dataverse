@@ -51,7 +51,7 @@ public class PrivateUrlServiceBean implements Serializable {
      *
      * @todo This might be a good place for Optional.
      */
-    public RoleAssignment getPrivateUrlRoleAssignment(Dataset dataset) {
+    private RoleAssignment getPrivateUrlRoleAssignment(Dataset dataset) {
         TypedQuery<RoleAssignment> query = em.createNamedQuery(
                 "RoleAssignment.listByAssigneeIdentifier_DefinitionPointId",
                 RoleAssignment.class);
