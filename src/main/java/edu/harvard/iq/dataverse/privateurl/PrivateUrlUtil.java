@@ -4,6 +4,7 @@ import edu.harvard.iq.dataverse.Dataset;
 import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.RoleAssignment;
+import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import java.util.logging.Logger;
 
@@ -75,7 +76,12 @@ public class PrivateUrlUtil {
             Dataset dataset = draft.getDataset();
             if (dataset != null) {
                 String persistentId = dataset.getGlobalId();
-                if (persistentId != null) {
+                /**
+                 * @todo Investigate why dataset.getGlobalId() yields the String
+                 * "null:null/null" when I expect null value. This smells like a
+                 * bug.
+                 */
+                if (!"null:null/null".equals(persistentId)) {
                     String relativeUrl = "/dataset.xhtml?persistentId=" + persistentId + "&version=DRAFT";
                     return relativeUrl;
                 }
@@ -96,6 +102,15 @@ public class PrivateUrlUtil {
         } else {
             return null;
         }
+    }
+
+    static PrivateUrlUser getPrivateUrlUserFromRoleAssignment(RoleAssignment roleAssignment, RoleAssignee roleAssignee) {
+        if (roleAssignment != null) {
+            if (roleAssignee instanceof PrivateUrlUser) {
+                return (PrivateUrlUser) roleAssignee;
+            }
+        }
+        return null;
     }
 
 }

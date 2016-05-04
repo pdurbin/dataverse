@@ -18,6 +18,13 @@ import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 
+/**
+ *
+ * PrivateUrlServiceBean depends on Glassfish and Postgres being available and
+ * it is tested with API tests in DatasetIT. Code that can execute without any
+ * runtime dependencies should be put in PrivateUrlUtil so it can be unit
+ * tested.
+ */
 @Stateless
 @Named
 public class PrivateUrlServiceBean implements Serializable {
@@ -58,6 +65,11 @@ public class PrivateUrlServiceBean implements Serializable {
         }
     }
 
+    /**
+     * @return A RoleAssignment or null.
+     *
+     * @todo This might be a good place for Optional.
+     */
     private RoleAssignment getRoleAssignmentFromPrivateUrlToken(String privateUrlToken) {
         if (privateUrlToken == null) {
             return null;
@@ -76,13 +88,11 @@ public class PrivateUrlServiceBean implements Serializable {
 
     public PrivateUrlUser getUserFromPrivateUrlToken(String requestApiKey) {
         RoleAssignment roleAssignment = getRoleAssignmentFromPrivateUrlToken(requestApiKey);
-        if (roleAssignment != null) {
-            RoleAssignee roleAssignee = roleAssigneeService.getRoleAssignee(roleAssignment.getAssigneeIdentifier());
-            if (roleAssignee instanceof PrivateUrlUser) {
-                return (PrivateUrlUser) roleAssignee;
-            }
+        if (roleAssignment == null) {
+            return null;
         }
-        return null;
+        RoleAssignee roleAssignee = roleAssigneeService.getRoleAssignee(roleAssignment.getAssigneeIdentifier());
+        return PrivateUrlUtil.getPrivateUrlUserFromRoleAssignment(roleAssignment, roleAssignee);
     }
 
     public DatasetVersion getDraftDatasetVersionFromPrivateUrlToken(String token) {

@@ -7,18 +7,15 @@ import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.DataverseRole;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
+import edu.harvard.iq.dataverse.authorization.users.GuestUser;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import org.junit.Before;
-import org.junit.Ignore;
 
 public class PrivateUrlUtilTest {
 
@@ -202,7 +199,13 @@ public class PrivateUrlUtilTest {
          * @todo Investigate why dataset.getGlobalId() yields the String
          * "null:null/null" when I expect null value. This smells like a bug.
          */
-        assertEquals("/dataset.xhtml?persistentId=null:null/null&version=DRAFT", PrivateUrlUtil.getDraftUrl(draft));
+        Exception exception = null;
+        try {
+            PrivateUrlUtil.getDraftUrl(draft);
+        } catch (Exception ex) {
+            exception = ex;
+        }
+        assertNotNull(exception);
     }
 
     @Test
@@ -270,6 +273,36 @@ public class PrivateUrlUtilTest {
         assertNotNull(privateUrl);
         assertEquals(new Long(42), privateUrl.getDataset().getId());
         assertEquals("https://dataverse.example.edu/privateurl.xhtml?token=cd71e9d7-73a7-4ec8-b890-3d00499e8693", privateUrl.getLink());
+    }
+
+    @Test
+    public void testGetPrivateUrlUserFromRoleAssignmentAndAssigneeNull() {
+        PrivateUrlUser privateUrl = PrivateUrlUtil.getPrivateUrlUserFromRoleAssignment(null, null);
+        assertNull(privateUrl);
+    }
+
+    @Test
+    public void testGetPrivateUrlUserFromRoleAssignmentAndAssigneeNonPrivateUrlUser() {
+        DataverseRole aRole = null;
+        RoleAssignee assignee = GuestUser.get();
+        DvObject dataset = new Dataset();
+        String privateUrlToken = "cd71e9d7-73a7-4ec8-b890-3d00499e8693";
+        RoleAssignment assignment = new RoleAssignment(aRole, assignee, dataset, privateUrlToken);
+        PrivateUrlUser privateUrl = PrivateUrlUtil.getPrivateUrlUserFromRoleAssignment(assignment, assignee);
+        assertNull(privateUrl);
+    }
+
+    @Test
+    public void testGetPrivateUrlUserFromRoleAssignmentAndAssigneeSuccess() {
+        DataverseRole aRole = null;
+        PrivateUrlUser privateUrlUser = new PrivateUrlUser(42);
+        RoleAssignee assignee = privateUrlUser;
+        DvObject dataset = new Dataset();
+        dataset.setId(42l);
+        String privateUrlToken = "cd71e9d7-73a7-4ec8-b890-3d00499e8693";
+        RoleAssignment assignment = new RoleAssignment(aRole, assignee, dataset, privateUrlToken);
+        PrivateUrlUser privateUrl = PrivateUrlUtil.getPrivateUrlUserFromRoleAssignment(assignment, assignee);
+        assertNotNull(privateUrl);
     }
 
 }
