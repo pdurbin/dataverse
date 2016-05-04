@@ -232,7 +232,7 @@ public class PublishDatasetCommand extends AbstractCommand<Dataset> {
             }
         }
 
-        PrivateUrl privateUrl = ctxt.privateUrl().getPrivateUrl(savedDataset.getId());
+        PrivateUrl privateUrl = ctxt.privateUrl().getPrivateUrlFromDatasetId(savedDataset.getId());
         if (privateUrl != null) {
             logger.fine("Deleting Private URL for dataset id " + savedDataset.getId());
             savedDataset = ctxt.engine().submit(new DeletePrivateUrlCommand(getRequest(), savedDataset));

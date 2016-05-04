@@ -3,9 +3,7 @@ package edu.harvard.iq.dataverse.privateurl;
 import edu.harvard.iq.dataverse.Dataset;
 import edu.harvard.iq.dataverse.DatasetServiceBean;
 import edu.harvard.iq.dataverse.DatasetVersion;
-import edu.harvard.iq.dataverse.RoleAssigneeServiceBean;
 import edu.harvard.iq.dataverse.RoleAssignment;
-import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.io.Serializable;
@@ -34,35 +32,34 @@ public class PrivateUrlServiceBean implements Serializable {
 
     @EJB
     DatasetServiceBean datasetServiceBean;
-    @EJB
-    RoleAssigneeServiceBean roleAssigneeService;
 
     @EJB
     SystemConfig systemConfig;
 
-    public PrivateUrl getPrivateUrl(Long datasetId) {
-        RoleAssignment roleAssignment = getPrivateUrlRoleAssignment(datasetServiceBean.find(datasetId));
+    /**
+     * @return A PrivateUrl if the dataset has one or null.
+     */
+    public PrivateUrl getPrivateUrlFromDatasetId(long datasetId) {
+        RoleAssignment roleAssignment = getPrivateUrlRoleAssignmentFromDataset(datasetServiceBean.find(datasetId));
         return PrivateUrlUtil.getPrivateUrlFromRoleAssignment(roleAssignment, systemConfig.getDataverseSiteUrl());
     }
 
     /**
-     * @param dataset A non-null dataset;
-     * @return A role assignment for a Private URL, if found, or null.
-     *
-     * @todo This might be a good place for Optional.
+     * @return A PrivateUrlUser if one can be found using the token or null.
      */
-    private RoleAssignment getPrivateUrlRoleAssignment(Dataset dataset) {
-        TypedQuery<RoleAssignment> query = em.createNamedQuery(
-                "RoleAssignment.listByAssigneeIdentifier_DefinitionPointId",
-                RoleAssignment.class);
-        PrivateUrlUser privateUrlUser = new PrivateUrlUser(dataset.getId());
-        query.setParameter("assigneeIdentifier", privateUrlUser.getIdentifier());
-        query.setParameter("definitionPointId", dataset.getId());
-        try {
-            return query.getSingleResult();
-        } catch (NoResultException | NonUniqueResultException ex) {
-            return null;
-        }
+    public PrivateUrlUser getPrivateUrlUserFromToken(String token) {
+        return PrivateUrlUtil.getPrivateUrlUserFromRoleAssignment(getRoleAssignmentFromPrivateUrlToken(token));
+    }
+
+    /**
+     * @return PrivateUrlRedirectData if it can be found using the token or
+     * null.
+     *
+     * @throws java.lang.Exception The Exception that may one day contain useful
+     * information for the user clicking the Private URL.
+     */
+    public PrivateUrlRedirectData getPrivateUrlRedirectDataFromToken(String token) throws Exception {
+        return PrivateUrlUtil.getPrivateUrlRedirectData(getRoleAssignmentFromPrivateUrlToken(token));
     }
 
     /**
@@ -86,21 +83,27 @@ public class PrivateUrlServiceBean implements Serializable {
         }
     }
 
-    public PrivateUrlUser getUserFromPrivateUrlToken(String requestApiKey) {
-        RoleAssignment roleAssignment = getRoleAssignmentFromPrivateUrlToken(requestApiKey);
-        if (roleAssignment == null) {
+    /**
+     * @param dataset A non-null dataset;
+     * @return A role assignment for a Private URL, if found, or null.
+     *
+     * @todo This might be a good place for Optional.
+     */
+    private RoleAssignment getPrivateUrlRoleAssignmentFromDataset(Dataset dataset) {
+        if (dataset == null) {
             return null;
         }
-        RoleAssignee roleAssignee = roleAssigneeService.getRoleAssignee(roleAssignment.getAssigneeIdentifier());
-        return PrivateUrlUtil.getPrivateUrlUserFromRoleAssignment(roleAssignment, roleAssignee);
-    }
-
-    public DatasetVersion getDraftDatasetVersionFromPrivateUrlToken(String token) {
-        return PrivateUrlUtil.getDraftDatasetVersionFromRoleAssignment(getRoleAssignmentFromPrivateUrlToken(token));
-    }
-
-    public PrivateUrlRedirectData getPrivateUrlRedirectData(String token) throws Exception {
-        return PrivateUrlUtil.getPrivateUrlRedirectData(getRoleAssignmentFromPrivateUrlToken(token));
+        TypedQuery<RoleAssignment> query = em.createNamedQuery(
+                "RoleAssignment.listByAssigneeIdentifier_DefinitionPointId",
+                RoleAssignment.class);
+        PrivateUrlUser privateUrlUser = new PrivateUrlUser(dataset.getId());
+        query.setParameter("assigneeIdentifier", privateUrlUser.getIdentifier());
+        query.setParameter("definitionPointId", dataset.getId());
+        try {
+            return query.getSingleResult();
+        } catch (NoResultException | NonUniqueResultException ex) {
+            return null;
+        }
     }
 
 }

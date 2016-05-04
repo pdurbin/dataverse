@@ -34,10 +34,10 @@ public class DeletePrivateUrlCommandTest {
                 return new PrivateUrlServiceBean() {
 
                     @Override
-                    public PrivateUrl getPrivateUrl(Long datasetId) {
-                        if (datasetId.equals(noPrivateUrlToDelete)) {
+                    public PrivateUrl getPrivateUrlFromDatasetId(long datasetId) {
+                        if (datasetId == noPrivateUrlToDelete) {
                             return null;
-                        } else if (datasetId.equals(hasPrivateUrlToDelete)) {
+                        } else if (datasetId == hasPrivateUrlToDelete) {
                             Dataset dataset = new Dataset();
                             dataset.setId(hasPrivateUrlToDelete);
                             String token = null;

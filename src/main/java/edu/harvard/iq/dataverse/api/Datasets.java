@@ -36,6 +36,7 @@ import edu.harvard.iq.dataverse.engine.command.impl.UpdateDatasetVersionCommand;
 import edu.harvard.iq.dataverse.export.DDIExportServiceBean;
 import edu.harvard.iq.dataverse.export.ddi.DdiExportUtil;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrlRedirectData;
 import edu.harvard.iq.dataverse.util.SystemConfig;
 import edu.harvard.iq.dataverse.util.json.JsonParseException;
 import static edu.harvard.iq.dataverse.util.json.JsonPrinter.*;
@@ -585,13 +586,18 @@ public class Datasets extends AbstractApiBean {
             /**
              * @todo Should this be a GetPrivateUrlCommand?
              */
-            PrivateUrl privateUrl = privateUrlSvc.getPrivateUrl(datasetId);
+            PrivateUrl privateUrl = privateUrlSvc.getPrivateUrlFromDatasetId(datasetId);
             if (privateUrl != null) {
-                DatasetVersion draft = privateUrlSvc.getDraftDatasetVersionFromPrivateUrlToken(privateUrl.getToken());
-                if (draft != null) {
-                    return okResponse(json(privateUrl));
-                } else {
-                    return errorResponse(Response.Status.NOT_FOUND, "getDraftDatasetVersionFromPrivateUrlToken returned null.");
+                PrivateUrlRedirectData privateUrlRedirectData = null;
+                try {
+                    privateUrlRedirectData = privateUrlSvc.getPrivateUrlRedirectDataFromToken(privateUrl.getToken());
+                    if (privateUrlRedirectData.getDraftDatasetPageToBeRedirectedTo() != null) {
+                        return okResponse(json(privateUrl));
+                    } else {
+                        return errorResponse(Response.Status.BAD_REQUEST, "getDraftDatasetPageToBeRedirectedTo was null");
+                    }
+                } catch (Exception ex) {
+                    return errorResponse(Response.Status.BAD_REQUEST, "getPrivateUrlRedirectDataFromToken returned an Exception: " + ex);
                 }
             } else {
                 return errorResponse(Response.Status.NOT_FOUND, "No Private URL found for dataset " + datasetId + ".");
@@ -624,7 +630,7 @@ public class Datasets extends AbstractApiBean {
     public Response deletePrivateUrl(@PathParam("id") Long idSupplied) {
         try {
             User user = findUserOrDie();
-            PrivateUrl privateUrl = privateUrlSvc.getPrivateUrl(idSupplied);
+            PrivateUrl privateUrl = privateUrlSvc.getPrivateUrlFromDatasetId(idSupplied);
             if (privateUrl != null) {
                 Dataset dataset = privateUrl.getDataset();
                 execCommand(new DeletePrivateUrlCommand(createDataverseRequest(user), dataset));

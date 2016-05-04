@@ -28,7 +28,7 @@ public class PrivateUrlPage implements Serializable {
 
     public String init() {
         try {
-            PrivateUrlRedirectData privateUrlRedirectData = privateUrlService.getPrivateUrlRedirectData(token);
+            PrivateUrlRedirectData privateUrlRedirectData = privateUrlService.getPrivateUrlRedirectDataFromToken(token);
             String draftDatasetPageToBeRedirectedTo = privateUrlRedirectData.getDraftDatasetPageToBeRedirectedTo() + "&faces-redirect=true";
             PrivateUrlUser privateUrlUser = privateUrlRedirectData.getPrivateUrlUser();
             session.setUser(privateUrlUser);

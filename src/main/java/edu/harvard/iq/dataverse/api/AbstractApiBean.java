@@ -235,7 +235,7 @@ public abstract class AbstractApiBean {
         if (requestApiKey == null) {
             return GuestUser.get();
         }
-        PrivateUrlUser privateUrlUser = privateUrlSvc.getUserFromPrivateUrlToken(requestApiKey);
+        PrivateUrlUser privateUrlUser = privateUrlSvc.getPrivateUrlUserFromToken(requestApiKey);
         if (privateUrlUser != null) {
             return privateUrlUser;
         }

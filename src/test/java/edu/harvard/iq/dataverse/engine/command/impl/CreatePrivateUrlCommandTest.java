@@ -37,15 +37,15 @@ public class CreatePrivateUrlCommandTest {
                 return new PrivateUrlServiceBean() {
 
                     @Override
-                    public PrivateUrl getPrivateUrl(Long datasetId) {
-                        if (datasetId.equals(privateUrlAlreadyExists)) {
+                    public PrivateUrl getPrivateUrlFromDatasetId(long datasetId) {
+                        if (datasetId == privateUrlAlreadyExists) {
                             Dataset dataset = new Dataset();
                             dataset.setId(privateUrlAlreadyExists);
                             String token = null;
                             PrivateUrlUser privateUrlUser = new PrivateUrlUser(datasetId);
                             RoleAssignment roleAssignment = new RoleAssignment(null, privateUrlUser, dataset, token);
                             return new PrivateUrl(roleAssignment, dataset, "FIXME");
-                        } else if (datasetId.equals(latestVersionIsNotDraft)) {
+                        } else if (datasetId == latestVersionIsNotDraft) {
                             return null;
                         } else {
                             return null;

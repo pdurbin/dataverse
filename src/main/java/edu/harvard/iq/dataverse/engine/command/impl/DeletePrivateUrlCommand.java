@@ -37,7 +37,7 @@ public class DeletePrivateUrlCommand extends AbstractCommand<Dataset> {
             logger.info(message);
             throw new IllegalCommandException(message, this);
         }
-        PrivateUrl doomed = ctxt.privateUrl().getPrivateUrl(dataset.getId());
+        PrivateUrl doomed = ctxt.privateUrl().getPrivateUrlFromDatasetId(dataset.getId());
         if (doomed == null) {
             String message = "Dataset id " + dataset.getId() + " doesn't have a Private URL to delete.";
             logger.info(message);
