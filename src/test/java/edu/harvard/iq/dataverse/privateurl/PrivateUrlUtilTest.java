@@ -11,9 +11,10 @@ import edu.harvard.iq.dataverse.authorization.users.GuestUser;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Test;
+import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import org.junit.Test;
 import static org.junit.Assert.assertNull;
 import org.junit.Before;
 
@@ -22,6 +23,49 @@ public class PrivateUrlUtilTest {
     @Before
     public void setUp() {
         new PrivateUrlUtil();
+    }
+
+    @Test
+    public void testIdentifier2roleAssignee() {
+        RoleAssignee returnValueFromEmptyString = null;
+        try {
+            returnValueFromEmptyString = PrivateUrlUtil.identifier2roleAssignee("");
+        } catch (Exception ex) {
+            assertEquals(ex.getClass(), IllegalArgumentException.class);
+            assertEquals(ex.getMessage(), "Could not find dataset id in ''");
+        }
+        assertNull(returnValueFromEmptyString);
+
+        RoleAssignee returnValueFromNonColon = null;
+        String peteIdentifier = "@pete";
+        try {
+            returnValueFromNonColon = PrivateUrlUtil.identifier2roleAssignee(peteIdentifier);
+        } catch (Exception ex) {
+            assertEquals(ex.getClass(), IllegalArgumentException.class);
+            assertEquals(ex.getMessage(), "Could not find dataset id in '" + peteIdentifier + "'");
+        }
+        assertNull(returnValueFromNonColon);
+
+        RoleAssignee returnValueFromNonNumber = null;
+        String nonNumberIdentifier = PrivateUrlUser.PREFIX + "nonNumber";
+        try {
+            returnValueFromNonNumber = PrivateUrlUtil.identifier2roleAssignee(nonNumberIdentifier);
+        } catch (Exception ex) {
+            assertEquals(ex.getClass(), IllegalArgumentException.class);
+            assertEquals(ex.getMessage(), "Could not find dataset id in '" + nonNumberIdentifier + "'");
+        }
+        assertNull(returnValueFromNonNumber);
+
+        RoleAssignee returnFromValidIdentifier = null;
+        String validIdentifier = PrivateUrlUser.PREFIX + 42;
+        returnFromValidIdentifier = PrivateUrlUtil.identifier2roleAssignee(validIdentifier);
+        assertNotNull(returnFromValidIdentifier);
+        assertEquals(":privateUrl42", returnFromValidIdentifier.getIdentifier());
+        assertEquals("Private URL Enabled", returnFromValidIdentifier.getDisplayInfo().getTitle());
+        Assert.assertTrue(returnFromValidIdentifier instanceof PrivateUrlUser);
+        PrivateUrlUser privateUrlUser42 = (PrivateUrlUser) returnFromValidIdentifier;
+        assertEquals(42, privateUrlUser42.getDatasetId());
+
     }
 
     @Test

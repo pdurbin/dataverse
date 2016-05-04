@@ -12,6 +12,7 @@ import edu.harvard.iq.dataverse.authorization.groups.impl.explicit.ExplicitGroup
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.authorization.users.GuestUser;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrlUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -78,7 +79,7 @@ public class RoleAssigneeServiceBean {
                  * "identifier.charAt(0)". :)
                  */
                 if (identifier.startsWith(PrivateUrlUser.PREFIX)) {
-                    return PrivateUrlUser.identifier2roleAssignee(identifier);
+                    return PrivateUrlUtil.identifier2roleAssignee(identifier);
                 } else {
                     return predefinedRoleAssignees.get(identifier);
                 }

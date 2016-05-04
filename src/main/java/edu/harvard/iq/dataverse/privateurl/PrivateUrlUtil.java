@@ -6,11 +6,32 @@ import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
+import static edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser.PREFIX;
 import java.util.logging.Logger;
 
 public class PrivateUrlUtil {
 
     private static final Logger logger = Logger.getLogger(PrivateUrlUtil.class.getCanonicalName());
+
+    /**
+     * Use of this method should be limited to
+     * RoleAssigneeServiceBean.getRoleAssignee.
+     *
+     * @param identifier The identifier is expected to start with the PREFIX as
+     * defined in this class and end with a number for a dataset,
+     * ":privateUrlForDvObjectId42", for example.
+     * @return A valid PrivateUrlUser (which is a RoleAssignee) if a valid
+     * identifer is provided.
+     */
+    public static RoleAssignee identifier2roleAssignee(String identifier) {
+        String[] parts = identifier.split(PREFIX);
+        try {
+            long datasetId = new Long(parts[1]);
+            return new PrivateUrlUser(datasetId);
+        } catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
+            throw new IllegalArgumentException("Could not find dataset id in '" + identifier + "'");
+        }
+    }
 
     /**
      * @todo If there is a use case for this outside the context of Private URL,
