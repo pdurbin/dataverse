@@ -53,6 +53,8 @@ public class PrivateUrlUtil {
     }
 
     /**
+     * @return DatasetVersion if a draft or null.
+     *
      * @todo If there is a use case for this outside the context of Private URL,
      * move this method to somewhere more centralized.
      */
@@ -67,6 +69,7 @@ public class PrivateUrlUtil {
                 return latestVersion;
             }
         }
+        logger.fine("Couldn't find draft, returning null");
         return null;
     }
 
@@ -82,17 +85,34 @@ public class PrivateUrlUtil {
         return null;
     }
 
-    static PrivateUrlRedirectData getPrivateUrlRedirectData(RoleAssignment roleAssignment) throws Exception {
+    /**
+     * @return PrivateUrlRedirectData or null.
+     *
+     * @todo Show the Exception to the user?
+     */
+    public static PrivateUrlRedirectData getPrivateUrlRedirectData(RoleAssignment roleAssignment) {
         PrivateUrlUser privateUrlUser = PrivateUrlUtil.getPrivateUrlUserFromRoleAssignment(roleAssignment);
         String draftDatasetPageToBeRedirectedTo = PrivateUrlUtil.getDraftDatasetPageToBeRedirectedTo(roleAssignment);
-        return new PrivateUrlRedirectData(privateUrlUser, draftDatasetPageToBeRedirectedTo);
+        try {
+            return new PrivateUrlRedirectData(privateUrlUser, draftDatasetPageToBeRedirectedTo);
+        } catch (Exception ex) {
+            logger.info("Exception caught trying to instantiate PrivateUrlRedirectData: " + ex);
+            return null;
+        }
     }
 
-    static String getDraftDatasetPageToBeRedirectedTo(RoleAssignment roleAssignment) throws Exception {
-        return getDraftUrl(getDraftDatasetVersionFromRoleAssignment(roleAssignment));
+    /**
+     * Returns a relative URL or "UNKNOWN."
+     */
+    static String getDraftDatasetPageToBeRedirectedTo(RoleAssignment roleAssignment) {
+        DatasetVersion datasetVersion = getDraftDatasetVersionFromRoleAssignment(roleAssignment);
+        return getDraftUrl(datasetVersion);
     }
 
-    static String getDraftUrl(DatasetVersion draft) throws Exception {
+    /**
+     * Returns a relative URL or "UNKNOWN."
+     */
+    static String getDraftUrl(DatasetVersion draft) {
         if (draft != null) {
             Dataset dataset = draft.getDataset();
             if (dataset != null) {
@@ -108,7 +128,7 @@ public class PrivateUrlUtil {
                 }
             }
         }
-        throw new Exception();
+        return "UNKNOWN";
     }
 
     static PrivateUrl getPrivateUrlFromRoleAssignment(RoleAssignment roleAssignment, String dataverseSiteUrl) {

@@ -4,18 +4,21 @@ import edu.harvard.iq.dataverse.Dataset;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
-import edu.harvard.iq.dataverse.engine.command.AbstractCommand;
+import edu.harvard.iq.dataverse.engine.command.AbstractVoidCommand;
 import edu.harvard.iq.dataverse.engine.command.CommandContext;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.engine.command.RequiredPermissions;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
 import edu.harvard.iq.dataverse.engine.command.exception.IllegalCommandException;
-import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import java.util.List;
 import java.util.logging.Logger;
 
+/**
+ * @todo If RevokeRoleCommand ever returns anything other than void (a boolean
+ * perhaps) pass that value upstream.
+ */
 @RequiredPermissions(Permission.ManageDatasetPermissions)
-public class DeletePrivateUrlCommand extends AbstractCommand<Dataset> {
+public class DeletePrivateUrlCommand extends AbstractVoidCommand {
 
     private static final Logger logger = Logger.getLogger(DeletePrivateUrlCommand.class.getCanonicalName());
 
@@ -27,7 +30,7 @@ public class DeletePrivateUrlCommand extends AbstractCommand<Dataset> {
     }
 
     @Override
-    public Dataset execute(CommandContext ctxt) throws CommandException {
+    protected void executeImpl(CommandContext ctxt) throws CommandException {
         logger.fine("Executing DeletePrivateUrlCommand....");
         if (dataset == null) {
             /**
@@ -37,19 +40,11 @@ public class DeletePrivateUrlCommand extends AbstractCommand<Dataset> {
             logger.info(message);
             throw new IllegalCommandException(message, this);
         }
-        PrivateUrl doomed = ctxt.privateUrl().getPrivateUrlFromDatasetId(dataset.getId());
-        if (doomed == null) {
-            String message = "Dataset id " + dataset.getId() + " doesn't have a Private URL to delete.";
-            logger.info(message);
-            throw new IllegalCommandException(message, this);
-        }
         PrivateUrlUser privateUrlUser = new PrivateUrlUser(dataset.getId());
         List<RoleAssignment> roleAssignments = ctxt.roles().directRoleAssignments(privateUrlUser, dataset);
         for (RoleAssignment roleAssignment : roleAssignments) {
             ctxt.engine().submit(new RevokeRoleCommand(roleAssignment, getRequest()));
         }
-        return dataset;
-
     }
 
 }

@@ -17,6 +17,7 @@ import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
 import static org.junit.Assert.assertNull;
 import org.junit.Before;
+import org.junit.Ignore;
 
 public class PrivateUrlUtilTest {
 
@@ -191,7 +192,22 @@ public class PrivateUrlUtilTest {
     }
 
     @Test
-    public void testGetPrivateUrlRedirectDataSuccess() throws Exception {
+    public void testGetPrivateUrlRedirectDataFail() {
+        DataverseRole aRole = null;
+        long datasetId = 42;
+        PrivateUrlUser privateUrlUser = new PrivateUrlUser(datasetId);
+        RoleAssignee anAssignee = privateUrlUser;
+        Dataset dataset = new Dataset();
+        String privateUrlToken = null;
+        RoleAssignment ra = new RoleAssignment(aRole, anAssignee, dataset, privateUrlToken);
+        ra.setDefinitionPoint(null);
+        PrivateUrlRedirectData privateUrlRedirectData = null;
+        privateUrlRedirectData = PrivateUrlUtil.getPrivateUrlRedirectData(ra);
+        assertNull(privateUrlRedirectData);
+    }
+
+    @Test
+    public void testGetPrivateUrlRedirectDataSuccess() {
         DataverseRole aRole = null;
         long datasetId = 42;
         PrivateUrlUser privateUrlUser = new PrivateUrlUser(datasetId);
@@ -211,27 +227,14 @@ public class PrivateUrlUtilTest {
 
     @Test
     public void testGetDraftUrlDraftNull() {
-        DatasetVersion draft = null;
-        Exception exception = null;
-        try {
-            PrivateUrlUtil.getDraftUrl(draft);
-        } catch (Exception ex) {
-            exception = ex;
-        }
-        assertNotNull(exception);
+        assertEquals("UNKNOWN", PrivateUrlUtil.getDraftUrl(null));
     }
 
     @Test
     public void testGetDraftUrlDatasetNull() {
         DatasetVersion draft = new DatasetVersion();
         draft.setDataset(null);
-        Exception exception = null;
-        try {
-            PrivateUrlUtil.getDraftUrl(draft);
-        } catch (Exception ex) {
-            exception = ex;
-        }
-        assertNotNull(exception);
+        assertEquals("UNKNOWN", PrivateUrlUtil.getDraftUrl(draft));
     }
 
     @Test
@@ -239,17 +242,7 @@ public class PrivateUrlUtilTest {
         DatasetVersion draft = new DatasetVersion();
         Dataset dataset = new Dataset();
         draft.setDataset(dataset);
-        /**
-         * @todo Investigate why dataset.getGlobalId() yields the String
-         * "null:null/null" when I expect null value. This smells like a bug.
-         */
-        Exception exception = null;
-        try {
-            PrivateUrlUtil.getDraftUrl(draft);
-        } catch (Exception ex) {
-            exception = ex;
-        }
-        assertNotNull(exception);
+        assertEquals("UNKNOWN", PrivateUrlUtil.getDraftUrl(draft));
     }
 
     @Test

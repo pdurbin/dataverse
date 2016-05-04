@@ -16,7 +16,6 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public class DeletePrivateUrlCommandTest {
@@ -80,27 +79,11 @@ public class DeletePrivateUrlCommandTest {
         String expected = "Can't delete Private URL. Dataset is null.";
         String actual = null;
         try {
-            Dataset datasetAfterCommand = testEngine.submit(new DeletePrivateUrlCommand(null, dataset));
+            testEngine.submit(new DeletePrivateUrlCommand(null, dataset));
         } catch (CommandException ex) {
             actual = ex.getMessage();
         }
         assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testNoPrivateUrlToDelete() {
-        dataset = new Dataset();
-        dataset.setId(noPrivateUrlToDelete);
-        String expected = "Dataset id " + noPrivateUrlToDelete + " doesn't have a Private URL to delete.";
-        String actual = null;
-        Dataset datasetAfterCommand = null;
-        try {
-            datasetAfterCommand = testEngine.submit(new DeletePrivateUrlCommand(null, dataset));
-        } catch (CommandException ex) {
-            actual = ex.getMessage();
-        }
-        assertEquals(expected, actual);
-        assertNull(datasetAfterCommand);
     }
 
     @Test
@@ -108,14 +91,12 @@ public class DeletePrivateUrlCommandTest {
         dataset = new Dataset();
         dataset.setId(hasPrivateUrlToDelete);
         String actual = null;
-        Dataset datasetAfterCommand = null;
         try {
-            datasetAfterCommand = testEngine.submit(new DeletePrivateUrlCommand(null, dataset));
+            testEngine.submit(new DeletePrivateUrlCommand(null, dataset));
         } catch (CommandException ex) {
             actual = ex.getMessage();
         }
         assertNull(actual);
-        assertNotNull(datasetAfterCommand);
         /**
          * @todo How would we confirm that the role assignement is actually
          * gone? Really all we're testing above is that there was no

@@ -2,11 +2,11 @@ package edu.harvard.iq.dataverse.privateurl;
 
 import edu.harvard.iq.dataverse.Dataset;
 import edu.harvard.iq.dataverse.DatasetServiceBean;
-import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.io.Serializable;
+import java.util.logging.Logger;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.inject.Named;
@@ -26,6 +26,8 @@ import javax.persistence.TypedQuery;
 @Stateless
 @Named
 public class PrivateUrlServiceBean implements Serializable {
+
+    private static final Logger logger = Logger.getLogger(PrivateUrlServiceBean.class.getCanonicalName());
 
     @PersistenceContext(unitName = "VDCNet-ejbPU")
     private EntityManager em;
@@ -54,11 +56,8 @@ public class PrivateUrlServiceBean implements Serializable {
     /**
      * @return PrivateUrlRedirectData if it can be found using the token or
      * null.
-     *
-     * @throws java.lang.Exception The Exception that may one day contain useful
-     * information for the user clicking the Private URL.
      */
-    public PrivateUrlRedirectData getPrivateUrlRedirectDataFromToken(String token) throws Exception {
+    public PrivateUrlRedirectData getPrivateUrlRedirectDataFromToken(String token) {
         return PrivateUrlUtil.getPrivateUrlRedirectData(getRoleAssignmentFromPrivateUrlToken(token));
     }
 
