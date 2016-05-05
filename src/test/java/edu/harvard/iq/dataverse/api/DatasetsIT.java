@@ -19,6 +19,7 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static com.jayway.restassured.path.json.JsonPath.with;
 import static edu.harvard.iq.dataverse.api.UtilIT.API_TOKEN_HTTP_HEADER;
+import edu.harvard.iq.dataverse.authorization.DataverseRole;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import java.util.UUID;
 import static junit.framework.Assert.assertEquals;
@@ -153,6 +154,26 @@ public class DatasetsIT {
         createDatasetResponse.prettyPrint();
         Integer datasetId = JsonPath.from(createDatasetResponse.body().asString()).getInt("data.id");
         System.out.println("dataset id: " + datasetId);
+
+        Response createContributorResponse = UtilIT.createRandomUser();
+        String contributorUsername = UtilIT.getUsernameFromResponse(createContributorResponse);
+        String contributorApiToken = UtilIT.getApiTokenFromResponse(createContributorResponse);
+        UtilIT.getRoleAssignmentsOnDataverse(dataverseAlias, apiToken).prettyPrint();
+        /**
+         * dsContributor only has AddDataset per
+         * scripts/api/data/role-dsContributor.json
+         *
+         * @todo As of this writing the BRD says "This feature will be available
+         * to anyone who has permission to add a dataset in a Dataverse in the
+         * UI and API." Does this requirement need to change?
+         */
+        Response grantRole = UtilIT.grantRoleOnDataverse(dataverseAlias, DataverseRole.DS_CONTRIBUTOR.toString(), contributorUsername, apiToken);
+        grantRole.prettyPrint();
+        assertEquals(OK.getStatusCode(), grantRole.getStatusCode());
+        UtilIT.getRoleAssignmentsOnDataverse(dataverseAlias, apiToken).prettyPrint();
+        Response contributorDoesNotHavePermissionToCreatePrivateUrl = UtilIT.privateUrlCreate(datasetId, contributorApiToken);
+        contributorDoesNotHavePermissionToCreatePrivateUrl.prettyPrint();
+        assertEquals(UNAUTHORIZED.getStatusCode(), contributorDoesNotHavePermissionToCreatePrivateUrl.getStatusCode());
 
         Response getDatasetJson = UtilIT.nativeGet(datasetId, apiToken);
         getDatasetJson.prettyPrint();

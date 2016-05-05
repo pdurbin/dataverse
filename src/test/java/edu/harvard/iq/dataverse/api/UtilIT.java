@@ -450,12 +450,31 @@ public class UtilIT {
         return response;
     }
 
+    static Response getRoleAssignmentsOnDataverse(String dataverseAliasOrId, String apiToken) {
+        String url = "/api/dataverses/" + dataverseAliasOrId + "/assignments";
+        System.out.println("URL: " + url);
+        return given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .get(url);
+    }
+
     static Response getRoleAssignmentsOnDataset(String datasetId, String persistentId, String apiToken) {
         String url = "/api/datasets/" + datasetId + "/assignments";
         System.out.println("URL: " + url);
         return given()
                 .header(API_TOKEN_HTTP_HEADER, apiToken)
                 .get(url);
+    }
+
+    static Response grantRoleOnDataverse(String definitionPoint, String role, String roleAssignee, String apiToken) {
+        JsonObjectBuilder roleBuilder = Json.createObjectBuilder();
+        roleBuilder.add("assignee", "@" + roleAssignee);
+        roleBuilder.add("role", role);
+        JsonObject roleObject = roleBuilder.build();
+        logger.info("Granting role on dataverse \"" + definitionPoint + "\": " + role + "... " + roleObject);
+        return given()
+                .body(roleObject.toString()).contentType(ContentType.JSON)
+                .post("api/dataverses/" + definitionPoint + "/assignments?key=" + apiToken);
     }
 
     static Response grantRoleOnDataset(String definitionPoint, String role, String roleAssignee, String apiToken) {
