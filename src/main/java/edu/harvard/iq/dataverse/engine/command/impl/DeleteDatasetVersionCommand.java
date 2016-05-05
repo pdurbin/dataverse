@@ -71,11 +71,6 @@ public class DeleteDatasetVersionCommand extends AbstractVoidCommand {
                 PrivateUrl privateUrl = ctxt.engine().submit(new GetPrivateUrlCommand(getRequest(), doomed));
                 if (privateUrl != null) {
                     logger.fine("Deleting Private URL for dataset id " + doomed.getId());
-                    /**
-                     * @todo If we try to assign the return value to "doomed"
-                     * the compile says "cannot assign a value to final variable
-                     * doomed". Should we remove "final" from "doomed"?
-                     */
                     ctxt.engine().submit(new DeletePrivateUrlCommand(getRequest(), doomed));
                 }
                 boolean doNormalSolrDocCleanUp = true;
