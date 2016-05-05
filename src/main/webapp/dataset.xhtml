@@ -85,6 +85,8 @@
                                                 </li>
                                             </ul>
                                         </li>
+                                    </ui:fragment>
+                                    <ui:fragment rendered="#{permissionsWrapper.canIssueUpdateDatasetCommand(DatasetPage.dataset)}">
                                         <li>
                                             <p:commandLink id="privateUrl" onclick="PF('privateUrlConfirmation').show()">
                                                 <h:outputText value="#{bundle['dataset.editBtn.itemLabel.privateUrl']}" />

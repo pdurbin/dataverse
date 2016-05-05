@@ -9,7 +9,10 @@ import edu.harvard.iq.dataverse.authorization.DataverseRole;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.users.GuestUser;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
+import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
+import edu.harvard.iq.dataverse.engine.command.impl.CreatePrivateUrlCommand;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
@@ -340,6 +343,14 @@ public class PrivateUrlUtilTest {
         RoleAssignment assignment = new RoleAssignment(aRole, assignee, dataset, privateUrlToken);
         PrivateUrlUser privateUrl = PrivateUrlUtil.getPrivateUrlUserFromRoleAssignment(assignment, assignee);
         assertNotNull(privateUrl);
+    }
+
+    @Test
+    public void testGetRequiredPermissions() {
+        CreatePrivateUrlCommand createPrivateUrlCommand = new CreatePrivateUrlCommand(null, null);
+        CommandException ex = new CommandException(null, createPrivateUrlCommand);
+        List<String> strings = PrivateUrlUtil.getRequiredPermissions(ex);
+        assertEquals(Arrays.asList("ManageDatasetPermissions"), strings);
     }
 
 }

@@ -4,9 +4,15 @@ import edu.harvard.iq.dataverse.Dataset;
 import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.RoleAssignment;
+import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
 import static edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser.PREFIX;
+import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 public class PrivateUrlUtil {
@@ -152,6 +158,23 @@ public class PrivateUrlUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * @return A list of the CamelCase "names" of required permissions, not the
+     * human-readable equivalents.
+     *
+     * @todo Move this to somewhere more central.
+     */
+    public static List<String> getRequiredPermissions(CommandException ex) {
+        List<String> stringsToReturn = new ArrayList<>();
+        Map<String, Set<Permission>> map = ex.getFailedCommand().getRequiredPermissions();
+        map.entrySet().stream().forEach((entry) -> {
+            entry.getValue().stream().forEach((permission) -> {
+                stringsToReturn.add(permission.name());
+            });
+        });
+        return stringsToReturn;
     }
 
 }

@@ -28,6 +28,7 @@ import edu.harvard.iq.dataverse.ingest.IngestServiceBean;
 import edu.harvard.iq.dataverse.metadataimport.ForeignMetadataImportServiceBean;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrlServiceBean;
+import edu.harvard.iq.dataverse.privateurl.PrivateUrlUtil;
 import edu.harvard.iq.dataverse.search.SearchFilesServiceBean;
 import edu.harvard.iq.dataverse.search.SortBy;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
@@ -4332,7 +4333,9 @@ public class DatasetPage implements java.io.Serializable {
             privateUrl = createdPrivateUrl;
             JH.addSuccessMessage(BundleUtil.getStringFromBundle("dataset.privateurl.createdSuccess", Arrays.asList(getPrivateUrlLink(privateUrl))));
         } catch (CommandException ex) {
-            logger.info("Unable to create a Private URL for dataset id " + dataset.getId() + ": " + ex);
+            String msg = BundleUtil.getStringFromBundle("dataset.privateurl.noPermToCreate", PrivateUrlUtil.getRequiredPermissions(ex));
+            logger.info("Unable to create a Private URL for dataset id " + dataset.getId() + ". Message to user: " + msg + " Exception: " + ex);
+            JH.addErrorMessage(msg);
         }
     }
 
