@@ -34,9 +34,6 @@ public class PrivateUrlUser implements User {
      * name from appearing in the corner as well as preventing an account page
      * and MyData from being accessible. The user can still navigate to the home
      * page but can only see published datasets.
-     *
-     * @todo Consider casting the user to Guest when navigating to the home
-     * page.
      */
     @Override
     public boolean isAuthenticated() {

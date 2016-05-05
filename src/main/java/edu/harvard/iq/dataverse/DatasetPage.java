@@ -1585,7 +1585,7 @@ public class DatasetPage implements java.io.Serializable {
         }
         if (session.getUser() instanceof PrivateUrlUser) {
             PrivateUrlUser privateUrlUser = (PrivateUrlUser) session.getUser();
-            if (dataset.getId().equals(privateUrlUser.getDatasetId())) {
+            if (dataset != null && dataset.getId().equals(privateUrlUser.getDatasetId())) {
                 JH.addMessage(FacesMessage.SEVERITY_INFO, BundleUtil.getStringFromBundle("dataset.privateurl.infoMessageReviewer"));
             }
         }
