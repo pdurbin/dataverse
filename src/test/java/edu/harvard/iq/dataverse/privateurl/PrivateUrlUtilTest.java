@@ -20,7 +20,6 @@ import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
 import static org.junit.Assert.assertNull;
 import org.junit.Before;
-import org.junit.Ignore;
 
 public class PrivateUrlUtilTest {
 

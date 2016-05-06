@@ -7,7 +7,6 @@ import edu.harvard.iq.dataverse.RoleAssignment;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser;
-import static edu.harvard.iq.dataverse.authorization.users.PrivateUrlUser.PREFIX;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,22 +20,41 @@ public class PrivateUrlUtil {
 
     /**
      * Use of this method should be limited to
-     * RoleAssigneeServiceBean.getRoleAssignee.
+     * RoleAssigneeServiceBean.getRoleAssignee, which is the centralized place
+     * to return a RoleAssignee (which can be either a User or a Group) when all
+     * you have is the string that is their identifier.
      *
-     * @param identifier The identifier is expected to start with the PREFIX as
-     * defined in this class and end with a number for a dataset,
-     * ":privateUrlForDvObjectId42", for example.
-     * @return A valid PrivateUrlUser (which is a RoleAssignee) if a valid
-     * identifer is provided.
+     * @todo Consider using a new character, something other than ":" as a
+     * namespace for PrivateUrlUser rather than ":" which is for a short list of
+     * unchanging "predefinedRoleAssignees" which consists of
+     * :authenticated-users, :AllUsers, and :guest. A PrivateUrlUser is
+     * something of a different animal in that its identifier will vary based on
+     * the dataset that it is associated with. The number at the end of the
+     * identifier will vary.
+     *
+     * @param identifier The identifier is expected to start with the
+     * PrivateUrlUser.PREFIX and end with a number for a dataset,
+     * ":privateUrl42", for example. The ":" indicates that this is a User
+     * rather than a Group (groups start with "&"). The number at the end of the
+     * identifier of a PrivateUrlUser is all we have to associate the role
+     * assignee identifier with a dataset. If we had the role assignment itself
+     * in our hands, we would simply get the dataset id from
+     * RoleAssignment.getDefinitionPoint and then use it to instantiate a
+     * PrivateUrlUser.
+     *
+     * @return A valid PrivateUrlUser (which like any User or Group is a
+     * RoleAssignee) if a valid identifer is provided or null.
      */
     public static RoleAssignee identifier2roleAssignee(String identifier) {
-        String[] parts = identifier.split(PREFIX);
+        String[] parts = identifier.split(PrivateUrlUser.PREFIX);
+        long datasetId;
         try {
-            long datasetId = new Long(parts[1]);
-            return new PrivateUrlUser(datasetId);
+            datasetId = new Long(parts[1]);
         } catch (ArrayIndexOutOfBoundsException | NumberFormatException ex) {
-            throw new IllegalArgumentException("Could not find dataset id in '" + identifier + "'");
+            logger.fine("Could not find dataset id in '" + identifier + "': " + ex);
+            return null;
         }
+        return new PrivateUrlUser(datasetId);
     }
 
     /**
