@@ -18,6 +18,7 @@ public class EMailValidatorTest {
          * address?
          */
         assertEquals(true, EMailValidator.isEmailValid("trailingWhitespace@mailinator.com ", null));
+        assertEquals(false, EMailValidator.isEmailValid("elisah.da mota@example.com", null));
         assertEquals(false, EMailValidator.isEmailValid("pete1@mailinator.com;pete2@mailinator.com", null));
         boolean issue2998resolved = false;
         /**
