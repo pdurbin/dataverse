@@ -4,8 +4,11 @@ import edu.harvard.iq.dataverse.Dataset;
 import edu.harvard.iq.dataverse.DatasetServiceBean;
 import edu.harvard.iq.dataverse.Dataverse;
 import edu.harvard.iq.dataverse.DataverseServiceBean;
+import edu.harvard.iq.dataverse.EjbDataverseEngine;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
+import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
+import edu.harvard.iq.dataverse.engine.command.impl.ListDataverseContentCommand;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -32,6 +35,8 @@ public class CollectionListManagerImpl implements CollectionListManager {
     DataverseServiceBean dataverseService;
     @EJB
     DatasetServiceBean datasetService;
+    @EJB
+    EjbDataverseEngine commandEngine;
     @Inject
     SwordAuth swordAuth;
     @Inject
@@ -64,9 +69,21 @@ public class CollectionListManagerImpl implements CollectionListManager {
                      * And should we only show datasets at the current level or
                      * should we show datasets that are in sub-dataverses as
                      * well?
+                     *
+                     * @todo Get rid of these findByOwnerId calls here and in
+                     * other places they are used such as DataversePage.java and
+                     * SearchIncludeFragment.java. Use the permissions system
+                     * instead.
                      */
                     List childDvObjects = dataverseService.findByOwnerId(dv.getId());
                     childDvObjects.addAll(datasetService.findByOwnerId(dv.getId()));
+                    if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
+                        try {
+                            childDvObjects = commandEngine.submit(new ListDataverseContentCommand(dvReq, dv));
+                        } catch (CommandException ex) {
+                            throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "user " + user.getDisplayInfo().getTitle() + " is not authorized to list datasets in dataverse " + dv.getAlias());
+                        }
+                    }
                     List<Dataset> datasets = new ArrayList<>();
                     for (Object object : childDvObjects) {
                         if (object instanceof Dataset) {

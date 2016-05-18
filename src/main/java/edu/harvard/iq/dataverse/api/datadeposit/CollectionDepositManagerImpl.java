@@ -7,6 +7,7 @@ import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.Dataverse;
 import edu.harvard.iq.dataverse.DataverseServiceBean;
 import edu.harvard.iq.dataverse.EjbDataverseEngine;
+import edu.harvard.iq.dataverse.PermissionServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
 import edu.harvard.iq.dataverse.engine.command.impl.CreateDatasetCommand;
@@ -40,6 +41,8 @@ public class CollectionDepositManagerImpl implements CollectionDepositManager {
     DataverseServiceBean dataverseService;
     @EJB
     DatasetServiceBean datasetService;
+    @EJB
+    PermissionServiceBean permissionService;
     @Inject
     SwordAuth swordAuth;
     @Inject
@@ -54,16 +57,16 @@ public class CollectionDepositManagerImpl implements CollectionDepositManager {
     SwordServiceBean swordService;
     @EJB
     SettingsServiceBean settingsService;
-    
+
     private HttpServletRequest request;
-    
+
     @Override
     public DepositReceipt createNew(String collectionUri, Deposit deposit, AuthCredentials authCredentials, SwordConfiguration config)
             throws SwordError, SwordServerException, SwordAuthException {
 
         AuthenticatedUser user = swordAuth.auth(authCredentials);
-        DataverseRequest dvReq = new DataverseRequest( user, request);
-        
+        DataverseRequest dvReq = new DataverseRequest(user, request);
+
         urlManager.processUrl(collectionUri);
         String dvAlias = urlManager.getTargetIdentifier();
         if (urlManager.getTargetType().equals("dataverse") && dvAlias != null) {
@@ -93,12 +96,15 @@ public class CollectionDepositManagerImpl implements CollectionDepositManager {
 
                         Dataset dataset = new Dataset();
                         dataset.setOwner(dvThatWillOwnDataset);
+                        if (!permissionService.isUserAllowedOn(user, new CreateDatasetCommand(dataset, dvReq, false), dataset)) {
+                            throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "user " + user.getDisplayInfo().getTitle() + " is not authorized to create a dataset in this dataverse.");
+                        }
                         String nonNullDefaultIfKeyNotFound = "";
                         String protocol = settingsService.getValueForKey(SettingsServiceBean.Key.Protocol, nonNullDefaultIfKeyNotFound);
                         String authority = settingsService.getValueForKey(SettingsServiceBean.Key.Authority, nonNullDefaultIfKeyNotFound);
                         String separator = settingsService.getValueForKey(SettingsServiceBean.Key.DoiSeparator, nonNullDefaultIfKeyNotFound);
                         dataset.setProtocol(protocol);
-                        dataset.setAuthority(authority); 
+                        dataset.setAuthority(authority);
                         dataset.setDoiSeparator(separator);
                         dataset.setIdentifier(datasetService.generateIdentifierSequence(protocol, authority, separator));
                         logger.log(Level.FINE, "DS Deposit identifier: {0}", dataset.getIdentifier());
@@ -106,7 +112,7 @@ public class CollectionDepositManagerImpl implements CollectionDepositManager {
 
                         String foreignFormat = SwordUtil.DCTERMS;
                         try {
-                            
+
                             importGenericService.importXML(deposit.getSwordEntry().toString(), foreignFormat, newDatasetVersion);
                         } catch (Exception ex) {
                             throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "problem calling importXML: " + ex);
@@ -188,7 +194,7 @@ public class CollectionDepositManagerImpl implements CollectionDepositManager {
             throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "Could not determine target type or identifier from URL: " + collectionUri);
         }
     }
-    
+
     public void setRequest(HttpServletRequest request) {
         this.request = request;
     }

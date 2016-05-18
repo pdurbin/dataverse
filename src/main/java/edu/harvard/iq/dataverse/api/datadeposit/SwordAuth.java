@@ -27,6 +27,7 @@ public class SwordAuth extends AbstractApiBean {
     DataverseRoleServiceBean roleService;
     @EJB
     UserServiceBean userService;
+    public static boolean experimentalSwordAuthPermChangeForIssue1070Enabled = false;
 
     public AuthenticatedUser auth(AuthCredentials authCredentials) throws SwordAuthException, SwordServerException {
 
@@ -63,6 +64,9 @@ public class SwordAuth extends AbstractApiBean {
      * in DVN 3.x.
      */
     boolean hasAccessToModifyDataverse(DataverseRequest dataverseRequest, Dataverse dataverse) throws SwordError {
+        if (experimentalSwordAuthPermChangeForIssue1070Enabled) {
+            return true;
+        }
         boolean authorized = false;
 
         /**

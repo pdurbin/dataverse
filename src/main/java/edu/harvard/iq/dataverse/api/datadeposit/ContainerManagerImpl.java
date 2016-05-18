@@ -7,6 +7,7 @@ import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.Dataverse;
 import edu.harvard.iq.dataverse.DataverseServiceBean;
 import edu.harvard.iq.dataverse.EjbDataverseEngine;
+import edu.harvard.iq.dataverse.PermissionServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.engine.command.Command;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
@@ -18,6 +19,7 @@ import edu.harvard.iq.dataverse.engine.command.impl.PublishDataverseCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.UpdateDatasetCommand;
 import edu.harvard.iq.dataverse.api.imports.ImportGenericServiceBean;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
+import edu.harvard.iq.dataverse.engine.command.impl.GetDraftDatasetVersionCommand;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +59,8 @@ public class ContainerManagerImpl implements ContainerManager {
     EntityManager em;
     @EJB
     ImportGenericServiceBean importGenericService;
+    @EJB
+    PermissionServiceBean permissionService;
     @Inject
     SwordAuth swordAuth;
     @Inject
@@ -65,7 +69,7 @@ public class ContainerManagerImpl implements ContainerManager {
     @EJB
     SwordServiceBean swordService;
     private HttpServletRequest httpRequest;
-    
+
     @Override
     public DepositReceipt getEntry(String uri, Map<String, String> map, AuthCredentials authCredentials, SwordConfiguration swordConfiguration) throws SwordServerException, SwordError, SwordAuthException {
         AuthenticatedUser user = swordAuth.auth(authCredentials);
@@ -81,6 +85,9 @@ public class ContainerManagerImpl implements ContainerManager {
                 if (dataset != null) {
                     Dataverse dvThatOwnsDataset = dataset.getOwner();
                     if (swordAuth.hasAccessToModifyDataverse(dvReq, dvThatOwnsDataset)) {
+                        if (!permissionService.isUserAllowedOn(user, new GetDraftDatasetVersionCommand(dvReq, dataset), dataset)) {
+                            throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to retrieve entry for " + dataset.getGlobalId());
+                        }
                         ReceiptGenerator receiptGenerator = new ReceiptGenerator();
                         String baseUrl = urlManager.getHostnamePlusBaseUrlPath(uri);
                         DepositReceipt depositReceipt = receiptGenerator.createDatasetReceipt(baseUrl, dataset);
@@ -130,6 +137,14 @@ public class ContainerManagerImpl implements ContainerManager {
                     SwordUtil.datasetLockCheck(dataset);
                     Dataverse dvThatOwnsDataset = dataset.getOwner();
                     if (swordAuth.hasAccessToModifyDataverse(dvReq, dvThatOwnsDataset)) {
+                        if (!permissionService.isUserAllowedOn(user, new UpdateDatasetCommand(dataset, dvReq), dataset)) {
+                            /**
+                             * @todo A more sane error here would be something
+                             * like "User not authorized to edit dataset
+                             * metadata."
+                             */
+                            throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to modify dataverse " + dvThatOwnsDataset.getAlias());
+                        }
                         DatasetVersion datasetVersion = dataset.getEditVersion();
                         // erase all metadata before creating populating dataset version
                         List<DatasetField> emptyDatasetFields = new ArrayList<>();
@@ -233,6 +248,9 @@ public class ContainerManagerImpl implements ContainerManager {
                             } else {
                                 throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "Operation not valid for dataset " + dataset.getGlobalId() + " in state " + datasetVersionState);
                             }
+                            /**
+                             * @todo Reformat else below properly.
+                             */
                         } else {
                             // dataset has never been published, this is just a sanity check (should always be draft)
                             if (datasetVersionState.equals(DatasetVersion.VersionState.DRAFT)) {
@@ -390,6 +408,5 @@ public class ContainerManagerImpl implements ContainerManager {
     public void setHttpRequest(HttpServletRequest httpRequest) {
         this.httpRequest = httpRequest;
     }
-    
-    
+
 }
