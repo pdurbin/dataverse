@@ -3,13 +3,16 @@ package edu.harvard.iq.dataverse.api;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.path.json.JsonPath;
 import com.jayway.restassured.response.Response;
+import edu.harvard.iq.dataverse.GlobalId;
 import edu.harvard.iq.dataverse.api.datadeposit.SwordAuth;
 import edu.harvard.iq.dataverse.api.datadeposit.SwordConfigurationImpl;
+import edu.harvard.iq.dataverse.authorization.DataverseRole;
 import java.util.List;
 import java.util.logging.Logger;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 import static javax.ws.rs.core.Response.Status.CREATED;
 import static javax.ws.rs.core.Response.Status.FORBIDDEN;
+import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
 import static javax.ws.rs.core.Response.Status.METHOD_NOT_ALLOWED;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.NO_CONTENT;
@@ -32,6 +35,7 @@ public class SwordIT {
         RestAssured.baseURI = UtilIT.getRestAssuredBaseUri();
         Response createUser = UtilIT.createRandomUser();
         superuser = UtilIT.getUsernameFromResponse(createUser);
+        apiTokenSuperuser = UtilIT.getApiTokenFromResponse(createUser);
         String apitoken = UtilIT.getApiTokenFromResponse(createUser);
         UtilIT.makeSuperUser(superuser).then().assertThat().statusCode(OK.getStatusCode());
         Response checkRootDataverse = UtilIT.listDatasetsViaSword(rootDataverseAlias, apitoken);
@@ -47,6 +51,7 @@ public class SwordIT {
     }
 
     private static final String rootDataverseAlias = "root";
+    private static String apiTokenSuperuser;
 
     @Test
     public void testServiceDocument() {
@@ -296,6 +301,103 @@ public class SwordIT {
         UtilIT.deleteUser(username);
         UtilIT.deleteUser(usernameNoPrivs);
 
+    }
+
+    /**
+     * This test requires the root dataverse to have been published already. We
+     * assume the default, out-of-the-box configuration that the answer to the
+     * question "What should be the default role for someone adding datasets to
+     * this dataverse?" is "Contributor" rather than "Curator".
+     */
+    @Test
+    public void testCreateAndDeleteDatasetInRoot() {
+        Response createUser = UtilIT.createRandomUser();
+        String username = UtilIT.getUsernameFromResponse(createUser);
+        String apiToken = UtilIT.getApiTokenFromResponse(createUser);
+
+        String datasetTitle = "Dataset In Root";
+        Response createDatasetUnAuthSword = UtilIT.createDatasetViaSwordApi(rootDataverseAlias, datasetTitle, apiToken);
+        createDatasetUnAuthSword.prettyPrint();
+        createDatasetUnAuthSword.then().assertThat()
+                .statusCode(BAD_REQUEST.getStatusCode());
+
+        Response createDatasetUnAuthNative = UtilIT.createRandomDatasetViaNativeApi(rootDataverseAlias, apiToken);
+        createDatasetUnAuthNative.prettyPrint();
+        createDatasetUnAuthNative.then().assertThat()
+                .statusCode(UNAUTHORIZED.getStatusCode());
+
+        Response grantRole = UtilIT.grantRoleOnDataverse(rootDataverseAlias, DataverseRole.DS_CONTRIBUTOR.toString(), username, apiTokenSuperuser);
+        grantRole.prettyPrint();
+        grantRole.then().assertThat()
+                .body("data._roleAlias", equalTo("dsContributor"))
+                .statusCode(OK.getStatusCode());
+
+        String persistentId = null;
+        Integer datasetId = null;
+        String protocol;
+        String authority;
+        String identifier = null;
+        if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
+            Response createDataset = UtilIT.createDatasetViaSwordApi(rootDataverseAlias, datasetTitle, apiToken);
+            createDataset.prettyPrint();
+            createDataset.then().assertThat()
+                    .statusCode(CREATED.getStatusCode());
+            persistentId = UtilIT.getDatasetPersistentIdFromResponse(createDataset);
+            GlobalId globalId = new GlobalId(persistentId);
+            protocol = globalId.getProtocol();
+            authority = globalId.getAuthority();
+            identifier = globalId.getIdentifier();
+        } else {
+            Response createDataset = UtilIT.createRandomDatasetViaNativeApi(rootDataverseAlias, apiToken);
+            createDataset.prettyPrint();
+            createDataset.then().assertThat()
+                    .statusCode(CREATED.getStatusCode());
+            datasetId = UtilIT.getDatasetIdFromResponse(createDataset);
+            Response getDatasetJson = UtilIT.nativeGet(datasetId, apiToken);
+            getDatasetJson.prettyPrint();
+            getDatasetJson.then().assertThat().statusCode(OK.getStatusCode());
+            /**
+             * @todo Shouldn't there be an easier way to get the persistent ID
+             * from a dataset via the native API? All as one string would be
+             * nice.
+             */
+            protocol = JsonPath.from(getDatasetJson.getBody().asString()).getString("data.protocol");
+            authority = JsonPath.from(getDatasetJson.getBody().asString()).getString("data.authority");
+            identifier = JsonPath.from(getDatasetJson.getBody().asString()).getString("data.identifier");
+            persistentId = protocol + ":" + authority + "/" + identifier;
+        }
+
+        Response rootDataverseContents = UtilIT.showDataverseContents(rootDataverseAlias, apiToken);
+        rootDataverseContents.prettyPrint();
+        System.out.println("identifier: " + identifier);
+        assertTrue(rootDataverseContents.body().asString().contains(identifier));
+
+        if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
+            Response listDatasetsAtRoot = UtilIT.listDatasetsViaSword(rootDataverseAlias, apiToken);
+            listDatasetsAtRoot.prettyPrint();
+            listDatasetsAtRoot.then().assertThat().statusCode(OK.getStatusCode());
+            assertTrue(listDatasetsAtRoot.body().asString().contains(identifier));
+        } else {
+            Response listDatasetsAtRoot = UtilIT.listDatasetsViaSword(rootDataverseAlias, apiToken);
+            listDatasetsAtRoot.prettyPrint();
+            listDatasetsAtRoot.then().assertThat()
+                    .statusCode(BAD_REQUEST.getStatusCode())
+                    .body("error.summary", equalTo("user " + username + " " + username + " is not authorized to list datasets in dataverse " + rootDataverseAlias));
+        }
+
+        if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
+            Response deleteDatasetResponse = UtilIT.deleteLatestDatasetVersionViaSwordApi(persistentId, apiToken);
+            deleteDatasetResponse.prettyPrint();
+            assertEquals(204, deleteDatasetResponse.getStatusCode());
+        } else {
+            Response deleteResponse = UtilIT.deleteDatasetViaNativeApi(datasetId, apiToken);
+            deleteResponse.prettyPrint();
+            deleteResponse.then().assertThat().statusCode(OK.getStatusCode());
+        }
+
+        UtilIT.deleteUser(username);
+
+//        UtilIT.listDatasetsViaSword(rootDataverseAlias, apiTokenSuperuser).prettyPrint();
     }
 
     /**

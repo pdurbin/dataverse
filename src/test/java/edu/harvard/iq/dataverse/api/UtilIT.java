@@ -153,6 +153,12 @@ public class UtilIT {
         return createDataverse(alias, apiToken);
     }
 
+    static Response showDataverseContents(String alias, String apiToken) {
+        return given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .when().get("/api/dataverses/" + alias + "/contents");
+    }
+
     static Response createRandomDatasetViaNativeApi(String dataverseAlias, String apiToken) {
         String jsonIn = getDatasetJson();
         Response createDatasetResponse = given()
@@ -368,6 +374,24 @@ public class UtilIT {
                 .auth().basic(apiToken, EMPTY_STRING)
                 .header("In-Progress", "false")
                 .post(swordConfiguration.getBaseUrlPathCurrent() + "/edit/dataverse/" + alias);
+    }
+
+    static Response nativeGet(Integer datasetId, String apiToken) {
+        Response response = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .get("/api/datasets/" + datasetId);
+        return response;
+    }
+
+    static Response grantRoleOnDataverse(String definitionPoint, String role, String roleAssignee, String apiToken) {
+        JsonObjectBuilder roleBuilder = Json.createObjectBuilder();
+        roleBuilder.add("assignee", "@" + roleAssignee);
+        roleBuilder.add("role", role);
+        JsonObject roleObject = roleBuilder.build();
+        logger.info("Granting role on dataverse \"" + definitionPoint + "\": " + role + "... " + roleObject);
+        return given()
+                .body(roleObject.toString()).contentType(ContentType.JSON)
+                .post("api/dataverses/" + definitionPoint + "/assignments?key=" + apiToken);
     }
 
     static Response makeSuperUser(String username) {
