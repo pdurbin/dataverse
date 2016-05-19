@@ -15,6 +15,7 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.NO_CONTENT;
 import static javax.ws.rs.core.Response.Status.OK;
 import static org.hamcrest.CoreMatchers.equalTo;
+import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -24,18 +25,28 @@ import org.junit.Test;
 public class SwordIT {
 
     private static final Logger logger = Logger.getLogger(SwordIT.class.getCanonicalName());
+    private static String superuser;
 
     @BeforeClass
     public static void setUpClass() {
         RestAssured.baseURI = UtilIT.getRestAssuredBaseUri();
+        Response createUser = UtilIT.createRandomUser();
+        superuser = UtilIT.getUsernameFromResponse(createUser);
+        String apitoken = UtilIT.getApiTokenFromResponse(createUser);
+        UtilIT.makeSuperUser(superuser).then().assertThat().statusCode(OK.getStatusCode());
+        Response checkRootDataverse = UtilIT.listDatasetsViaSword(rootDataverseAlias, apitoken);
+        checkRootDataverse.prettyPrint();
+        checkRootDataverse.then().assertThat()
+                .statusCode(OK.getStatusCode());
+        boolean rootDataverseHasBeenReleased = checkRootDataverse.getBody().xmlPath().getBoolean("feed.dataverseHasBeenReleased");
+        if (!rootDataverseHasBeenReleased) {
+            logger.info("Many of these SWORD tests require that the root dataverse has been published. Publish the root dataverse and then re-run these tests.");
+            System.exit(666);
+        }
+
     }
 
-    /**
-     * @todo Run tests after dropping database which will probably result in
-     * needing to add a note that the root dataverse is assumed to be published
-     * for these tests to pass.
-     */
-    private final String rootDataverseAlias = "root";
+    private static final String rootDataverseAlias = "root";
 
     @Test
     public void testServiceDocument() {
@@ -64,6 +75,7 @@ public class SwordIT {
              */
             assertEquals(200, deleteUser1Response.getStatusCode());
         }
+        UtilIT.deleteUser(username);
 
     }
 
@@ -81,6 +93,7 @@ public class SwordIT {
     public void testCreateDataverseCreateDatasetUploadFileDownloadFileEditTitle() {
 
         Response createUser = UtilIT.createRandomUser();
+        String username = UtilIT.getUsernameFromResponse(createUser);
         String apiToken = UtilIT.getApiTokenFromResponse(createUser);
 
         Response createDataverseResponse = UtilIT.createRandomDataverse(apiToken);
@@ -280,8 +293,14 @@ public class SwordIT {
         deleteDataverse1Response.prettyPrint();
         assertEquals(200, deleteDataverse1Response.getStatusCode());
 
+        UtilIT.deleteUser(username);
+        UtilIT.deleteUser(usernameNoPrivs);
+
     }
 
+    /**
+     * This test requires the root dataverse to have been published already.
+     */
     @Test
     public void testCreateDatasetPublishDestroy() {
         Response createUser = UtilIT.createRandomUser();
@@ -306,8 +325,6 @@ public class SwordIT {
         attemptToPublishDatasetInUnpublishedDataverse.then().assertThat()
                 .statusCode(BAD_REQUEST.getStatusCode());
 
-//        Response publishRootDataverse = UtilIT.publishDataverseViaSword(rootDataverseAlias, apiToken);
-//        publishRootDataverse.prettyPrint();
         Response listDatasetsResponse = UtilIT.listDatasetsViaSword(rootDataverseAlias, apiToken);
         System.out.println("BEGIN");
         listDatasetsResponse.prettyPrint();
@@ -418,9 +435,14 @@ public class SwordIT {
         deleteDataverseResponse.prettyPrint();
         assertEquals(200, deleteDataverseResponse.getStatusCode());
 
+        UtilIT.deleteUser(username);
+        UtilIT.deleteUser(usernameNoPrivs);
+
     }
 
     /**
+     * This test requires the root dataverse to have been published already.
+     *
      * Test the following issues:
      *
      * - https://github.com/IQSS/dataverse/issues/1784
@@ -621,6 +643,13 @@ public class SwordIT {
         deleteDataverse3Response.prettyPrint();
         assertEquals(200, deleteDataverse3Response.getStatusCode());
 
+        UtilIT.deleteUser(username);
+
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+        UtilIT.deleteUser(superuser);
     }
 
 }
