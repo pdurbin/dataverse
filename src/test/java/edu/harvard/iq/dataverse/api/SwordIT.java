@@ -377,12 +377,55 @@ public class SwordIT {
             listDatasetsAtRoot.prettyPrint();
             listDatasetsAtRoot.then().assertThat().statusCode(OK.getStatusCode());
             assertTrue(listDatasetsAtRoot.body().asString().contains(identifier));
+
+            Response atomEntry = UtilIT.getSwordAtomEntry(persistentId, apiToken);
+            atomEntry.prettyPrint();
+            atomEntry.then().assertThat()
+                    .statusCode(OK.getStatusCode())
+                    /**
+                     * @todo It's a bug to show "https://localhost:8080" in the
+                     * response. It should be either "http://localhost:8080" or
+                     * "https://localhost:8181". Fix this and remove the
+                     * "replace" hack below.
+                     */
+                    .body("entry.id", equalTo(RestAssured.baseURI.replace("http", "https") + "/dvn/api/data-deposit/v1.1/swordv2/edit/study/" + persistentId));
+
+            Response statement = UtilIT.getSwordStatement(persistentId, apiToken);
+            statement.prettyPrint();
+            statement.then().assertThat()
+                    .statusCode(OK.getStatusCode())
+                    .body("feed.title", equalTo(datasetTitle));
+
         } else {
+            /**
+             * This is basically all the stuff that's broken right now
+             * permissions-wise for SWORD. Someone who has been made a
+             * "Contributor" for a dataset should be able to do all these things
+             * since they are allowed by the Native API. See also
+             * https://github.com/IQSS/dataverse/issues/1070 and
+             * https://github.com/IQSS/dataverse/issues/2495
+             */
             Response listDatasetsAtRoot = UtilIT.listDatasetsViaSword(rootDataverseAlias, apiToken);
             listDatasetsAtRoot.prettyPrint();
             listDatasetsAtRoot.then().assertThat()
                     .statusCode(BAD_REQUEST.getStatusCode())
                     .body("error.summary", equalTo("user " + username + " " + username + " is not authorized to list datasets in dataverse " + rootDataverseAlias));
+
+            Response atomEntry = UtilIT.getSwordAtomEntry(persistentId, apiToken);
+            atomEntry.prettyPrint();
+            atomEntry.then().assertThat()
+                    .statusCode(BAD_REQUEST.getStatusCode())
+                    .body("error.summary", equalTo("User " + username + " " + username + " is not authorized to retrieve entry for " + persistentId));
+
+            Response statement = UtilIT.getSwordStatement(persistentId, apiToken);
+            statement.prettyPrint();
+            statement.then().assertThat()
+                    .statusCode(BAD_REQUEST.getStatusCode())
+                    .body("error.summary", equalTo("user " + username + " " + username + " is not authorized to view dataset with global ID " + persistentId));
+
+            /**
+             * @todo What else is potentially broken? File uploads? More?
+             */
         }
 
         if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
