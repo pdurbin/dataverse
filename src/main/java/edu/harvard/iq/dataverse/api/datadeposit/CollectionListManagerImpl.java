@@ -71,6 +71,11 @@ public class CollectionListManagerImpl implements CollectionListManager {
                     String baseUrl = urlManager.getHostnamePlusBaseUrlPath(iri.toString());
                     List<Dataset> datasets = datasetService.findByOwnerId(dv.getId());
                     for (Dataset dataset : datasets) {
+                        /**
+                         * @todo Will this be performant enough with production
+                         * data, say in the root dataverse? Remove this todo if
+                         * there are no complaints. :)
+                         */
                         if (!permissionService.isUserAllowedOn(user, new UpdateDatasetCommand(dataset, dvReq), dataset)) {
                             continue;
                         }
