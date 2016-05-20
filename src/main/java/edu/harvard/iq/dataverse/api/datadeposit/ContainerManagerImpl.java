@@ -137,10 +137,6 @@ public class ContainerManagerImpl implements ContainerManager {
                     SwordUtil.datasetLockCheck(dataset);
                     Dataverse dvThatOwnsDataset = dataset.getOwner();
                     if (!permissionService.isUserAllowedOn(user, new UpdateDatasetCommand(dataset, dvReq), dataset)) {
-                        /**
-                         * @todo A more sane error here would be something like
-                         * "User not authorized to edit dataset metadata."
-                         */
                         throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to modify dataverse " + dvThatOwnsDataset.getAlias());
                     }
                     if (swordAuth.hasAccessToModifyDataverse(dvReq, dvThatOwnsDataset)) {

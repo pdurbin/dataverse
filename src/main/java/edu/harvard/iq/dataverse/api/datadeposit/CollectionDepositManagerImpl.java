@@ -12,6 +12,7 @@ import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
 import edu.harvard.iq.dataverse.engine.command.impl.CreateDatasetCommand;
 import edu.harvard.iq.dataverse.api.imports.ImportGenericServiceBean;
+import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import java.util.logging.Level;
@@ -76,7 +77,9 @@ public class CollectionDepositManagerImpl implements CollectionDepositManager {
             Dataverse dvThatWillOwnDataset = dataverseService.findByAlias(dvAlias);
 
             if (dvThatWillOwnDataset != null) {
-
+                if (!permissionService.requestOn(dvReq, dvThatWillOwnDataset).has(Permission.AddDataset)) {
+                    throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "user " + user.getDisplayInfo().getTitle() + " is not authorized to create a dataset in this dataverse.");
+                }
                 if (swordAuth.hasAccessToModifyDataverse(dvReq, dvThatWillOwnDataset)) {
 
                     logger.log(Level.FINE, "multipart: {0}", deposit.isMultipart());
@@ -96,9 +99,6 @@ public class CollectionDepositManagerImpl implements CollectionDepositManager {
 
                         Dataset dataset = new Dataset();
                         dataset.setOwner(dvThatWillOwnDataset);
-                        if (!permissionService.isUserAllowedOn(user, new CreateDatasetCommand(dataset, dvReq, false), dataset)) {
-                            throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "user " + user.getDisplayInfo().getTitle() + " is not authorized to create a dataset in this dataverse.");
-                        }
                         String nonNullDefaultIfKeyNotFound = "";
                         String protocol = settingsService.getValueForKey(SettingsServiceBean.Key.Protocol, nonNullDefaultIfKeyNotFound);
                         String authority = settingsService.getValueForKey(SettingsServiceBean.Key.Authority, nonNullDefaultIfKeyNotFound);

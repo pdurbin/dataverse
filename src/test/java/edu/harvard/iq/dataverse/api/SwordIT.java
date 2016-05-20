@@ -41,6 +41,8 @@ public class SwordIT {
 
     private static final Logger logger = Logger.getLogger(SwordIT.class.getCanonicalName());
     private static String superuser;
+    private static final String rootDataverseAlias = "root";
+    private static String apiTokenSuperuser;
 
     @BeforeClass
     public static void setUpClass() {
@@ -61,9 +63,6 @@ public class SwordIT {
         }
 
     }
-
-    private static final String rootDataverseAlias = "root";
-    private static String apiTokenSuperuser;
 
     @Test
     public void testServiceDocument() {
@@ -525,6 +524,11 @@ public class SwordIT {
                     .body("error.summary", equalTo("User " + username + " " + username + " is not authorized to modify dataverse " + rootDataverseAlias));
 
         }
+
+        Response listDatasetsAtRootAsSuperuser = UtilIT.listDatasetsViaSword(rootDataverseAlias, apiTokenSuperuser);
+        listDatasetsAtRootAsSuperuser.prettyPrint();
+        listDatasetsAtRootAsSuperuser.then().assertThat().statusCode(OK.getStatusCode());
+        assertTrue(listDatasetsAtRootAsSuperuser.body().asString().contains(identifier));
 
         Response rootDataverseContents = UtilIT.showDataverseContents(rootDataverseAlias, apiTokenContributor);
         rootDataverseContents.prettyPrint();

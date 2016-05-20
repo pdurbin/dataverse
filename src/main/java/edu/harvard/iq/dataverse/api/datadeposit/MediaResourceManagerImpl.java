@@ -84,7 +84,8 @@ public class MediaResourceManagerImpl implements MediaResourceManager {
                      * @todo Add Dataverse 4 style permission check here. Is
                      * there a Command we use for downloading files as zip?
                      */
-                    if (swordAuth.hasAccessToModifyDataverse(dvReq, dvThatOwnsDataset)) {
+                    boolean authorized = false;
+                    if (authorized) {
                         /**
                          * @todo Zip file download is being implemented in
                          * https://github.com/IQSS/dataverse/issues/338
@@ -154,7 +155,9 @@ public class MediaResourceManagerImpl implements MediaResourceManager {
                             Dataverse dataverseThatOwnsFile = datasetThatOwnsFile.getOwner();
                             /**
                              * @todo it would be nice to have this check higher
-                             * up. Do we really need the file ID?
+                             * up. Do we really need the file ID? Should the
+                             * last argument to isUserAllowedOn be changed from
+                             * "dataset" to "fileToDelete"?
                              */
                             if (!permissionService.isUserAllowedOn(user, new UpdateDatasetCommand(dataset, dvReq, fileToDelete), dataset)) {
                                 throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to modify " + dataverseThatOwnsFile.getAlias());
