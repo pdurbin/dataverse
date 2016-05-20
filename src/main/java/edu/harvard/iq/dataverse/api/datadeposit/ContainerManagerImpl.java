@@ -224,6 +224,12 @@ public class ContainerManagerImpl implements ContainerManager {
                     Dataset dataset = dataset = datasetService.findByGlobalId(globalId);
                     if (dataset != null) {
                         Dataverse dvThatOwnsDataset = dataset.getOwner();
+                        /**
+                         * We are checking if DeleteDatasetVersionCommand can be
+                         * called even though DeleteDatasetCommand can be called
+                         * when a dataset hasn't been published. They should be
+                         * equivalent in terms of a permission check.
+                         */
                         if (!permissionService.isUserAllowedOn(user, new DeleteDatasetVersionCommand(dvRequest, dataset), dataset)) {
                             throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to modify " + dvThatOwnsDataset.getAlias());
                         }
@@ -251,7 +257,9 @@ public class ContainerManagerImpl implements ContainerManager {
                                 throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "Operation not valid for dataset " + dataset.getGlobalId() + " in state " + datasetVersionState);
                             }
                             /**
-                             * @todo Reformat else below properly.
+                             * @todo Reformat else below properly so you can
+                             * just reformat the whole file in Netbeans or
+                             * similar.
                              */
                         } else {
                             // dataset has never been published, this is just a sanity check (should always be draft)

@@ -5,6 +5,7 @@ import edu.harvard.iq.dataverse.DatasetServiceBean;
 import edu.harvard.iq.dataverse.Dataverse;
 import edu.harvard.iq.dataverse.DataverseServiceBean;
 import edu.harvard.iq.dataverse.EjbDataverseEngine;
+import edu.harvard.iq.dataverse.PermissionServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
@@ -37,6 +38,8 @@ public class CollectionListManagerImpl implements CollectionListManager {
     DatasetServiceBean datasetService;
     @EJB
     EjbDataverseEngine commandEngine;
+    @EJB
+    PermissionServiceBean permissionService;
     @Inject
     SwordAuth swordAuth;
     @Inject
@@ -55,21 +58,14 @@ public class CollectionListManagerImpl implements CollectionListManager {
             Dataverse dv = dataverseService.findByAlias(dvAlias);
 
             if (dv != null) {
+                if (!permissionService.isUserAllowedOn(user, new ListDataverseContentCommand(dvReq, dv), dv)) {
+                    throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "user " + user.getDisplayInfo().getTitle() + " is not authorized to list datasets in dataverse " + dv.getAlias());
+                }
                 if (swordAuth.hasAccessToModifyDataverse(dvReq, dv)) {
                     Abdera abdera = new Abdera();
                     Feed feed = abdera.newFeed();
                     feed.setTitle(dv.getName());
                     /**
-                     * @todo For the supplied dataverse, should we should only
-                     * the datasets that are *owned* by the user? Probably not!
-                     * We should be using the permission system? Show the
-                     * equivalent of datasets the user is "admin" on? What
-                     * permission should we check?
-                     *
-                     * And should we only show datasets at the current level or
-                     * should we show datasets that are in sub-dataverses as
-                     * well?
-                     *
                      * @todo Get rid of these findByOwnerId calls here and in
                      * other places they are used such as DataversePage.java and
                      * SearchIncludeFragment.java. Use the permissions system
@@ -77,8 +73,24 @@ public class CollectionListManagerImpl implements CollectionListManager {
                      */
                     List childDvObjects = dataverseService.findByOwnerId(dv.getId());
                     childDvObjects.addAll(datasetService.findByOwnerId(dv.getId()));
+                    /**
+                     * @todo Since we are changing the implementation (using
+                     * ListDataverseContentCommand), should we add a feature
+                     * flag to revert to the old behavior if necessary? Maybe!
+                     */
                     if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
                         try {
+                            /**
+                             * ListDataverseContentCommand gives us more than we
+                             * need since it returns both dataverses and
+                             * datasets that are direct children of a dataverse.
+                             *
+                             * @todo Write a new ListDirectChildDatasetsCommand
+                             * or similar? All we want are direct dataset
+                             * children since that's how we first implemented it
+                             * in DVN 3.x (where there was no tree of
+                             * dataverses).
+                             */
                             childDvObjects = commandEngine.submit(new ListDataverseContentCommand(dvReq, dv));
                         } catch (CommandException ex) {
                             throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "user " + user.getDisplayInfo().getTitle() + " is not authorized to list datasets in dataverse " + dv.getAlias());
