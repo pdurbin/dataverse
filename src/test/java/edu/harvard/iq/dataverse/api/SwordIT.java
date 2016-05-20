@@ -20,6 +20,7 @@ import static javax.ws.rs.core.Response.Status.OK;
 import static org.hamcrest.CoreMatchers.equalTo;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -283,11 +284,13 @@ public class SwordIT {
 
         Response deleteDatasetResponse = UtilIT.deleteLatestDatasetVersionViaSwordApi(persistentId, apiToken);
         deleteDatasetResponse.prettyPrint();
-        assertEquals(204, deleteDatasetResponse.getStatusCode());
+        deleteDatasetResponse.then().assertThat()
+                .statusCode(NO_CONTENT.getStatusCode());
 
-        Response deleteDataverse1Response = UtilIT.deleteDataverse(dataverseAlias, apiToken);
-        deleteDataverse1Response.prettyPrint();
-        assertEquals(200, deleteDataverse1Response.getStatusCode());
+        Response deleteDataverse = UtilIT.deleteDataverse(dataverseAlias, apiToken);
+        deleteDataverse.prettyPrint();
+        deleteDataverse.then().assertThat()
+                .statusCode(OK.getStatusCode());
 
         UtilIT.deleteUser(username);
         UtilIT.deleteUser(usernameNoPrivs);
@@ -326,6 +329,10 @@ public class SwordIT {
         // prevent this variable from being used again in this test
         apitTokenNotYetContributor = null;
 
+        Response randomUnprivUser = UtilIT.createRandomUser();
+        String apiTokenNoPrivs = UtilIT.getApiTokenFromResponse(randomUnprivUser);
+        String usernameNoPrivs = UtilIT.getUsernameFromResponse(randomUnprivUser);
+
         String persistentId = null;
         Integer datasetId = null;
         String protocol;
@@ -348,6 +355,17 @@ public class SwordIT {
             listDatasetsAtRoot.prettyPrint();
             listDatasetsAtRoot.then().assertThat().statusCode(OK.getStatusCode());
             assertTrue(listDatasetsAtRoot.body().asString().contains(identifier));
+
+            Response listDatasetsAtRootNoPrivs = UtilIT.listDatasetsViaSword(rootDataverseAlias, apiTokenNoPrivs);
+            listDatasetsAtRootNoPrivs.prettyPrint();
+            listDatasetsAtRootNoPrivs.then().assertThat()
+                    .statusCode(BAD_REQUEST.getStatusCode())
+                    .body("error.summary", equalTo("user " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to list datasets in dataverse " + rootDataverseAlias));
+            /**
+             * Not just anyone should be able to see your dataset, only those
+             * with edit access.
+             */
+            assertFalse(listDatasetsAtRootNoPrivs.body().asString().contains(identifier));
 
             Response atomEntry = UtilIT.getSwordAtomEntry(persistentId, apiTokenContributor);
             atomEntry.prettyPrint();
@@ -452,6 +470,13 @@ public class SwordIT {
                     .statusCode(BAD_REQUEST.getStatusCode())
                     .body("error.summary", equalTo("user " + username + " " + username + " is not authorized to list datasets in dataverse " + rootDataverseAlias));
 
+            Response listDatasetsAtRootNoPrivs = UtilIT.listDatasetsViaSword(rootDataverseAlias, apiTokenNoPrivs);
+            listDatasetsAtRootNoPrivs.prettyPrint();
+            listDatasetsAtRootNoPrivs.then().assertThat()
+                    .statusCode(BAD_REQUEST.getStatusCode())
+                    .body("error.summary", equalTo("user " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to list datasets in dataverse " + rootDataverseAlias));
+            assertFalse(listDatasetsAtRootNoPrivs.body().asString().contains(identifier));
+
             Response atomEntry = UtilIT.getSwordAtomEntry(persistentId, apiTokenContributor);
             atomEntry.prettyPrint();
             atomEntry.then().assertThat()
@@ -521,8 +546,15 @@ public class SwordIT {
         if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
             Response deleteDatasetResponse = UtilIT.deleteLatestDatasetVersionViaSwordApi(persistentId, apiTokenContributor);
             deleteDatasetResponse.prettyPrint();
-            assertEquals(NO_CONTENT.getStatusCode(), deleteDatasetResponse.getStatusCode());
+            deleteDatasetResponse.then().assertThat()
+                    .statusCode(NO_CONTENT.getStatusCode());
         } else {
+            Response deleteDatasetResponse = UtilIT.deleteLatestDatasetVersionViaSwordApi(persistentId, apiTokenContributor);
+            deleteDatasetResponse.prettyPrint();
+            deleteDatasetResponse.then().assertThat()
+                    .statusCode(BAD_REQUEST.getStatusCode())
+                    .body("error.summary", equalTo("User " + username + " " + username + " is not authorized to modify " + rootDataverseAlias));
+
             Response deleteResponse = UtilIT.deleteDatasetViaNativeApi(datasetId, apiTokenContributor);
             deleteResponse.prettyPrint();
             deleteResponse.then().assertThat().statusCode(OK.getStatusCode());
@@ -561,24 +593,16 @@ public class SwordIT {
                 .statusCode(BAD_REQUEST.getStatusCode());
 
         Response listDatasetsResponse = UtilIT.listDatasetsViaSword(rootDataverseAlias, apiToken);
-        System.out.println("BEGIN");
         listDatasetsResponse.prettyPrint();
-        System.out.println("END");
-        if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
-            listDatasetsResponse.then().assertThat()
-                    .statusCode(OK.getStatusCode())
-                    .body("feed.dataverseHasBeenReleased", equalTo("true"));
-        } else {
-            /**
-             * See also SWORD: not authorized when dataset is in root dataverse
-             * https://github.com/IQSS/dataverse/issues/2495 and "SWORD access
-             * failed - not authorized" at
-             * https://groups.google.com/d/msg/dataverse-community/G9TMVnhab5A/Z7fffd0fCgAJ
-             */
-            listDatasetsResponse.then().assertThat()
-                    .statusCode(BAD_REQUEST.getStatusCode())
-                    .body("error.summary", equalTo("user " + username + " " + username + " is not authorized to list datasets in dataverse " + rootDataverseAlias));
-        }
+        /**
+         * See also SWORD: not authorized when dataset is in root dataverse
+         * https://github.com/IQSS/dataverse/issues/2495 and "SWORD access
+         * failed - not authorized" at
+         * https://groups.google.com/d/msg/dataverse-community/G9TMVnhab5A/Z7fffd0fCgAJ
+         */
+        listDatasetsResponse.then().assertThat()
+                .statusCode(BAD_REQUEST.getStatusCode())
+                .body("error.summary", equalTo("user " + username + " " + username + " is not authorized to list datasets in dataverse " + rootDataverseAlias));
 
         Response randomUnprivUser = UtilIT.createRandomUser();
         String apiTokenNoPrivs = UtilIT.getApiTokenFromResponse(randomUnprivUser);
@@ -620,6 +644,18 @@ public class SwordIT {
         attemptToDeletePublishedDataset.prettyPrint();
         attemptToDeletePublishedDataset.then().assertThat()
                 .statusCode(METHOD_NOT_ALLOWED.getStatusCode());
+
+        String newTitle = "A New Hope";
+        Response updateTitle = UtilIT.updateDatasetTitleViaSword(persistentId, newTitle, apiToken);
+        updateTitle.prettyPrint();
+        updateTitle.then().assertThat()
+                .statusCode(OK.getStatusCode())
+                .body("entry.treatment", equalTo("no treatment information available"));
+
+        Response deletePostPublicationDraft = UtilIT.deleteLatestDatasetVersionViaSwordApi(persistentId, apiToken);
+        deletePostPublicationDraft.prettyPrint();
+        deletePostPublicationDraft.then().assertThat()
+                .statusCode(NO_CONTENT.getStatusCode());
 
         /**
          * @todo This can probably be removed now that
