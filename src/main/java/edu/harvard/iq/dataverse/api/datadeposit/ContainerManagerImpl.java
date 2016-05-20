@@ -224,8 +224,11 @@ public class ContainerManagerImpl implements ContainerManager {
                 if (globalId != null) {
                     Dataset dataset = dataset = datasetService.findByGlobalId(globalId);
                     if (dataset != null) {
-                        SwordUtil.datasetLockCheck(dataset);
                         Dataverse dvThatOwnsDataset = dataset.getOwner();
+                        if (!permissionService.isUserAllowedOn(user, new DeleteDatasetVersionCommand(dvRequest, dataset), dataset)) {
+                            throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to modify " + dvThatOwnsDataset.getAlias());
+                        }
+                        SwordUtil.datasetLockCheck(dataset);
                         if (!swordAuth.hasAccessToModifyDataverse(dvRequest, dvThatOwnsDataset)) {
                             throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to modify " + dvThatOwnsDataset.getAlias());
                         }
@@ -302,7 +305,11 @@ public class ContainerManagerImpl implements ContainerManager {
                         throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "Could not find dataset based on global id (" + globalId + ") in URL: " + uri);
                     }
                     if (dataset != null) {
+                        boolean justForPermCheck = false;
                         Dataverse dvThatOwnsDataset = dataset.getOwner();
+                        if (!permissionService.isUserAllowedOn(user, new PublishDatasetCommand(dataset, dvRequest, justForPermCheck), dataset)) {
+                            throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to modify dataverse " + dvThatOwnsDataset.getAlias());
+                        }
                         if (swordAuth.hasAccessToModifyDataverse(dvRequest, dvThatOwnsDataset)) {
                             if (!deposit.isInProgress()) {
                                 /**

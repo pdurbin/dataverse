@@ -282,14 +282,8 @@ public class SwordIT {
                  * @todo It would be nice if this could be UNAUTHORIZED or
                  * FORBIDDEN rather than BAD_REQUEST.
                  */
-                .statusCode(BAD_REQUEST.getStatusCode());
-
-        String deleteDatasetUnauth = deleteDatasetUnAuth.getBody().xmlPath().get("error.summary");
-        if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
-            assertTrue(deleteDatasetUnauth.endsWith(" is missing permissions [DeleteDatasetDraft] on Object " + newTitle));
-        } else {
-            assertTrue(deleteDatasetUnauth.equals("User " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to modify " + dataverseAlias));
-        }
+                .statusCode(BAD_REQUEST.getStatusCode())
+                .body("error.summary", equalTo("User " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to modify " + dataverseAlias));
 
         Response deleteDatasetResponse = UtilIT.deleteLatestDatasetVersionViaSwordApi(persistentId, apiToken);
         deleteDatasetResponse.prettyPrint();
@@ -403,6 +397,24 @@ public class SwordIT {
                 assertTrue(ex.getClass().getName().equals(ArrayIndexOutOfBoundsException.class.getName()));
             }
 
+            String newTitle = "A New Hope";
+            Response updateTitle = UtilIT.updateDatasetTitleViaSword(persistentId, newTitle, apiTokenContributor);
+            updateTitle.prettyPrint();
+            updateTitle.then().assertThat()
+                    .statusCode(OK.getStatusCode())
+                    .body("entry.treatment", equalTo("no treatment information available"));
+
+            Response statementWithUpdatedTitle = UtilIT.getSwordStatement(persistentId, apiTokenContributor);
+            statementWithUpdatedTitle.prettyPrint();
+            statementWithUpdatedTitle.then().assertThat()
+                    .statusCode(OK.getStatusCode())
+                    .body("feed.title", equalTo(newTitle));
+
+            Response nativeGetToGetId = UtilIT.nativeGetUsingPersistentId(persistentId, apiTokenContributor);
+            nativeGetToGetId.then().assertThat()
+                    .statusCode(OK.getStatusCode());
+            datasetId = JsonPath.from(nativeGetToGetId.body().asString()).getInt("data.id");
+
         } else {
             /**
              * This is basically all the stuff that's broken right now
@@ -415,7 +427,10 @@ public class SwordIT {
 
             /**
              * We have to create the dataset via the native API since we can't
-             * create it via SWORD.
+             * create it via SWORD. It would be awfully nice if we could easily
+             * set the title to the "datasetTitle" variable but it's a long
+             * string of JSON that's hard coded rather than being built on the
+             * fly.
              */
             Response createDataset = UtilIT.createRandomDatasetViaNativeApi(rootDataverseAlias, apiTokenContributor);
             createDataset.prettyPrint();
@@ -481,12 +496,31 @@ public class SwordIT {
                     .body("feed.title", equalTo("Darwin's Finches"))
                     .body("feed.entry[0].summary", equalTo("Resource Part"));
 
+            String newTitle = "A New Hope";
+            Response updateTitle = UtilIT.updateDatasetTitleViaSword(persistentId, newTitle, apiTokenContributor);
+            updateTitle.prettyPrint();
+            updateTitle.then().assertThat()
+                    .statusCode(BAD_REQUEST.getStatusCode())
+                    .body("error.summary", equalTo("User " + username + " " + username + " is not authorized to modify dataverse " + rootDataverseAlias));
+
         }
 
         Response rootDataverseContents = UtilIT.showDataverseContents(rootDataverseAlias, apiTokenContributor);
         rootDataverseContents.prettyPrint();
-        System.out.println("identifier: " + identifier);
+        logger.info("We expect to find \"" + identifier + "\" from the persistent ID to be present.");
         assertTrue(rootDataverseContents.body().asString().contains(identifier));
+
+        Response publishShouldFailForContributorViaSword = UtilIT.publishDatasetViaSword(persistentId, apiTokenContributor);
+        publishShouldFailForContributorViaSword.prettyPrint();
+        publishShouldFailForContributorViaSword.then().assertThat()
+                .statusCode(BAD_REQUEST.getStatusCode())
+                .body("error.summary", equalTo("User " + username + " " + username + " is not authorized to modify dataverse " + rootDataverseAlias));
+
+        Response publishShouldFailForContributorViaNative = UtilIT.publishDatasetViaNativeApi(datasetId, "major", apiTokenContributor);
+        publishShouldFailForContributorViaNative.prettyPrint();
+        publishShouldFailForContributorViaNative.then().assertThat()
+                .statusCode(UNAUTHORIZED.getStatusCode())
+                .body("message", equalTo("User @" + username + " is not permitted to perform requested action."));
 
         if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
             Response deleteDatasetResponse = UtilIT.deleteLatestDatasetVersionViaSwordApi(persistentId, apiTokenContributor);
@@ -583,13 +617,8 @@ public class SwordIT {
                  * @todo It would be nice if this could be UNAUTHORIZED or
                  * FORBIDDEN rather than BAD_REQUEST.
                  */
-                .statusCode(BAD_REQUEST.getStatusCode());
-        String publishDatasetError = publishDatsetUnAuth.getBody().xmlPath().get("error.summary");
-        if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
-            assertTrue(publishDatasetError.endsWith(" is missing permissions [PublishDataset] on Object " + datasetTitle));
-        } else {
-            assertTrue(publishDatasetError.equals("User " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to modify dataverse " + dataverseAlias));
-        }
+                .statusCode(BAD_REQUEST.getStatusCode())
+                .body("error.summary", equalTo("User " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to modify dataverse " + dataverseAlias));
 
         Response publishDataset = UtilIT.publishDatasetViaSword(persistentId, apiToken);
         publishDataset.prettyPrint();
@@ -619,13 +648,6 @@ public class SwordIT {
         Response makeSuperuserRespone = UtilIT.makeSuperUser(username);
         makeSuperuserRespone.then().assertThat()
                 .statusCode(OK.getStatusCode());
-
-        Response listDatasetsResponseAsRoot = UtilIT.listDatasetsViaSword(rootDataverseAlias, apiToken);
-        /**
-         * @todo Why is it that even a superuser can't see any datsets in the
-         * root?
-         */
-        listDatasetsResponseAsRoot.prettyPrint();
 
         Response destroyDataset = UtilIT.destroyDataset(datasetId, apiToken);
         destroyDataset.prettyPrint();
