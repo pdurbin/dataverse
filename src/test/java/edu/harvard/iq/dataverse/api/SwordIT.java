@@ -26,6 +26,16 @@ import static org.junit.Assert.assertTrue;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/**
+ * In all these tests you should never see something like "[long string exposing
+ * internal user details] ...is missing permissions [AddDataset] on Object"
+ * which is an indication that we have failed to put a permission check in place
+ * and failed to write a human-readable response.
+ *
+ * @todo Add tests for "Member" role after "createAssignment" in Datasets.java
+ * is real. "grantRoleOnDataset" in UtilIT.java is not used despite being in
+ * https://github.com/IQSS/dataverse/pull/3111
+ */
 public class SwordIT {
 
     private static final Logger logger = Logger.getLogger(SwordIT.class.getCanonicalName());
@@ -120,10 +130,8 @@ public class SwordIT {
                  * @todo It would be nice if this could be UNAUTHORIZED or
                  * FORBIDDEN rather than BAD_REQUEST.
                  */
-                .statusCode(BAD_REQUEST.getStatusCode());
-        String createDatasetError = createDatasetShouldFail.getBody().xmlPath().get("error.summary");
-//        assertTrue(createDatasetError.endsWith(" is missing permissions [AddDataset] on Object " + dataverseAlias));
-        assertTrue(createDatasetError.equals("user " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to create a dataset in this dataverse."));
+                .statusCode(BAD_REQUEST.getStatusCode())
+                .body("error.summary", equalTo("user " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to create a dataset in this dataverse."));
 
         /**
          * "Clients MUST NOT require a Collection Feed Document for deposit
@@ -176,14 +184,8 @@ public class SwordIT {
                  * @todo It would be nice if this could be UNAUTHORIZED or
                  * FORBIDDEN rather than BAD_REQUEST.
                  */
-                .statusCode(BAD_REQUEST.getStatusCode());
-        String uploadFileError = uploadFileUnAuth.getBody().xmlPath().get("error.summary");
-        System.out.println("errro: " + uploadFileError);
-        if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
-            assertTrue(uploadFileError.endsWith(" is missing permissions [EditDataset] on Object " + initialDatasetTitle));
-        } else {
-            assertTrue(uploadFileError.equals("user " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to modify dataset with global ID " + persistentId));
-        }
+                .statusCode(BAD_REQUEST.getStatusCode())
+                .body("error.summary", equalTo("user " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to modify dataset with global ID " + persistentId));
 
         Response uploadFile1 = UtilIT.uploadRandomFile(persistentId, apiToken);
         uploadFile1.prettyPrint();
@@ -236,14 +238,8 @@ public class SwordIT {
                  * @todo It would be nice if this could be UNAUTHORIZED or
                  * FORBIDDEN rather than BAD_REQUEST.
                  */
-                .statusCode(BAD_REQUEST.getStatusCode());
-
-        String deleteFileError = uploadFileUnAuth.getBody().xmlPath().get("error.summary");
-        if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
-            assertTrue(deleteFileError.endsWith(" is missing permissions [EditDataset] on Object " + initialDatasetTitle));
-        } else {
-            assertTrue(deleteFileError.equals("user " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to modify dataset with global ID " + persistentId));
-        }
+                .statusCode(BAD_REQUEST.getStatusCode())
+                .body("error.summary", equalTo("User " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to modify " + dataverseAlias));
 
         Response deleteFile = UtilIT.deleteFile(fileId, apiToken);
         deleteFile.prettyPrint();
@@ -525,7 +521,7 @@ public class SwordIT {
         if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
             Response deleteDatasetResponse = UtilIT.deleteLatestDatasetVersionViaSwordApi(persistentId, apiTokenContributor);
             deleteDatasetResponse.prettyPrint();
-            assertEquals(204, deleteDatasetResponse.getStatusCode());
+            assertEquals(NO_CONTENT.getStatusCode(), deleteDatasetResponse.getStatusCode());
         } else {
             Response deleteResponse = UtilIT.deleteDatasetViaNativeApi(datasetId, apiTokenContributor);
             deleteResponse.prettyPrint();
@@ -595,13 +591,8 @@ public class SwordIT {
                  * @todo It would be nice if this could be UNAUTHORIZED or
                  * FORBIDDEN rather than BAD_REQUEST.
                  */
-                .statusCode(BAD_REQUEST.getStatusCode());
-        String publishDataverseError = publishDataverseUnAuth.getBody().xmlPath().get("error.summary");
-        if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
-            assertTrue(publishDataverseError.endsWith(" is missing permissions [PublishDataverse] on Object " + dataverseAlias));
-        } else {
-            assertTrue(publishDataverseError.equals("User " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to modify dataverse " + dataverseAlias));
-        }
+                .statusCode(BAD_REQUEST.getStatusCode())
+                .body("error.summary", equalTo("User " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to modify dataverse " + dataverseAlias));
 
         Response publishDataverse = UtilIT.publishDataverseViaSword(dataverseAlias, apiToken);
         publishDataverse.prettyPrint();

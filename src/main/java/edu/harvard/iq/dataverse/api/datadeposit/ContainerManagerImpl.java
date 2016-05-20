@@ -83,11 +83,11 @@ public class ContainerManagerImpl implements ContainerManager {
                 String globalId = urlManager.getTargetIdentifier();
                 Dataset dataset = datasetService.findByGlobalId(globalId);
                 if (dataset != null) {
+                    if (!permissionService.isUserAllowedOn(user, new GetDraftDatasetVersionCommand(dvReq, dataset), dataset)) {
+                        throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to retrieve entry for " + dataset.getGlobalId());
+                    }
                     Dataverse dvThatOwnsDataset = dataset.getOwner();
                     if (swordAuth.hasAccessToModifyDataverse(dvReq, dvThatOwnsDataset)) {
-                        if (!permissionService.isUserAllowedOn(user, new GetDraftDatasetVersionCommand(dvReq, dataset), dataset)) {
-                            throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to retrieve entry for " + dataset.getGlobalId());
-                        }
                         ReceiptGenerator receiptGenerator = new ReceiptGenerator();
                         String baseUrl = urlManager.getHostnamePlusBaseUrlPath(uri);
                         DepositReceipt depositReceipt = receiptGenerator.createDatasetReceipt(baseUrl, dataset);
@@ -136,15 +136,14 @@ public class ContainerManagerImpl implements ContainerManager {
                 if (dataset != null) {
                     SwordUtil.datasetLockCheck(dataset);
                     Dataverse dvThatOwnsDataset = dataset.getOwner();
+                    if (!permissionService.isUserAllowedOn(user, new UpdateDatasetCommand(dataset, dvReq), dataset)) {
+                        /**
+                         * @todo A more sane error here would be something like
+                         * "User not authorized to edit dataset metadata."
+                         */
+                        throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to modify dataverse " + dvThatOwnsDataset.getAlias());
+                    }
                     if (swordAuth.hasAccessToModifyDataverse(dvReq, dvThatOwnsDataset)) {
-                        if (!permissionService.isUserAllowedOn(user, new UpdateDatasetCommand(dataset, dvReq), dataset)) {
-                            /**
-                             * @todo A more sane error here would be something
-                             * like "User not authorized to edit dataset
-                             * metadata."
-                             */
-                            throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to modify dataverse " + dvThatOwnsDataset.getAlias());
-                        }
                         DatasetVersion datasetVersion = dataset.getEditVersion();
                         // erase all metadata before creating populating dataset version
                         List<DatasetField> emptyDatasetFields = new ArrayList<>();
@@ -370,6 +369,9 @@ public class ContainerManagerImpl implements ContainerManager {
                 if (dvAlias != null) {
                     Dataverse dvToRelease = dataverseService.findByAlias(dvAlias);
                     if (dvToRelease != null) {
+                        if (!permissionService.isUserAllowedOn(user, new PublishDataverseCommand(dvRequest, dvToRelease), dvToRelease)) {
+                            throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to modify dataverse " + dvAlias);
+                        }
                         if (!swordAuth.hasAccessToModifyDataverse(dvRequest, dvToRelease)) {
                             throw new SwordError(UriRegistry.ERROR_BAD_REQUEST, "User " + user.getDisplayInfo().getTitle() + " is not authorized to modify dataverse " + dvAlias);
                         }
