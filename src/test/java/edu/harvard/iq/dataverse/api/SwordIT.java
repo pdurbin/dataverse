@@ -565,6 +565,7 @@ public class SwordIT {
         }
 
         UtilIT.deleteUser(username);
+        UtilIT.deleteUser(usernameNoPrivs);
 
 //        UtilIT.listDatasetsViaSword(rootDataverseAlias, apiTokenSuperuser).prettyPrint();
     }
