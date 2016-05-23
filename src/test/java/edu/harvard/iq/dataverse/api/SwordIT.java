@@ -80,6 +80,19 @@ public class SwordIT {
                 .statusCode(OK.getStatusCode())
                 .body("service.version", equalTo(swordConfiguration.generatorVersion()));
 
+        String collection = serviceDocumentResponse.getBody().xmlPath().get("service.workspace.collection").toString();
+        System.out.println("collection: " + collection);
+        if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
+            /**
+             * We assume that you have configured your installation to allow the
+             * ":authenticated-users" groups to create datasets in the root
+             * dataverse via the "fullContributor" role or similar.
+             */
+            assertTrue(serviceDocumentResponse.body().asString().contains("swordv2/collection/dataverse/root"));
+        } else {
+            assertFalse(serviceDocumentResponse.body().asString().contains("swordv2/collection/dataverse/root"));
+        }
+
         Response deleteUser1Response = UtilIT.deleteUser(username);
         deleteUser1Response.prettyPrint();
         boolean issue2825Resolved = false;
@@ -300,7 +313,9 @@ public class SwordIT {
      * This test requires the root dataverse to have been published already. We
      * assume the default, out-of-the-box configuration that the answer to the
      * question "What should be the default role for someone adding datasets to
-     * this dataverse?" is "Contributor" rather than "Curator".
+     * this dataverse?" is "Contributor" rather than "Curator". We are
+     * permitting both dataverse and datasets to be created in the root
+     * dataverse (:authenticated-users gets fullContributor at root).
      */
     @Test
     public void testCreateAndDeleteDatasetInRoot() {
@@ -309,15 +324,6 @@ public class SwordIT {
         String apitTokenNotYetContributor = UtilIT.getApiTokenFromResponse(createUser);
 
         String datasetTitle = "Dataset In Root";
-        Response createDatasetUnAuthSword = UtilIT.createDatasetViaSwordApi(rootDataverseAlias, datasetTitle, apitTokenNotYetContributor);
-        createDatasetUnAuthSword.prettyPrint();
-        createDatasetUnAuthSword.then().assertThat()
-                .statusCode(BAD_REQUEST.getStatusCode());
-
-        Response createDatasetUnAuthNative = UtilIT.createRandomDatasetViaNativeApi(rootDataverseAlias, apitTokenNotYetContributor);
-        createDatasetUnAuthNative.prettyPrint();
-        createDatasetUnAuthNative.then().assertThat()
-                .statusCode(UNAUTHORIZED.getStatusCode());
 
         Response grantRole = UtilIT.grantRoleOnDataverse(rootDataverseAlias, DataverseRole.DS_CONTRIBUTOR.toString(), username, apiTokenSuperuser);
         grantRole.prettyPrint();
@@ -358,11 +364,16 @@ public class SwordIT {
             Response listDatasetsAtRootNoPrivs = UtilIT.listDatasetsViaSword(rootDataverseAlias, apiTokenNoPrivs);
             listDatasetsAtRootNoPrivs.prettyPrint();
             listDatasetsAtRootNoPrivs.then().assertThat()
-                    .statusCode(BAD_REQUEST.getStatusCode())
-                    .body("error.summary", equalTo("user " + usernameNoPrivs + " " + usernameNoPrivs + " is not authorized to list datasets in dataverse " + rootDataverseAlias));
+                    .statusCode(OK.getStatusCode())
+                    /**
+                     * Because the root dataverse allows anyone to create
+                     * datasets in it, we allow anyone to see via SWORD if the
+                     * dataverse has been published...
+                     */
+                    .body("feed.dataverseHasBeenReleased", equalTo("true"));
             /**
-             * Not just anyone should be able to see your dataset, only those
-             * with edit access.
+             * ... but not just anyone should be able to see your dataset, only
+             * those with edit access.
              */
             assertFalse(listDatasetsAtRootNoPrivs.body().asString().contains(identifier));
 
@@ -596,18 +607,6 @@ public class SwordIT {
         attemptToPublishDatasetInUnpublishedDataverse.prettyPrint();
         attemptToPublishDatasetInUnpublishedDataverse.then().assertThat()
                 .statusCode(BAD_REQUEST.getStatusCode());
-
-        Response listDatasetsResponse = UtilIT.listDatasetsViaSword(rootDataverseAlias, apiToken);
-        listDatasetsResponse.prettyPrint();
-        /**
-         * See also SWORD: not authorized when dataset is in root dataverse
-         * https://github.com/IQSS/dataverse/issues/2495 and "SWORD access
-         * failed - not authorized" at
-         * https://groups.google.com/d/msg/dataverse-community/G9TMVnhab5A/Z7fffd0fCgAJ
-         */
-        listDatasetsResponse.then().assertThat()
-                .statusCode(BAD_REQUEST.getStatusCode())
-                .body("error.summary", equalTo("user " + username + " " + username + " is not authorized to list datasets in dataverse " + rootDataverseAlias));
 
         Response randomUnprivUser = UtilIT.createRandomUser();
         String apiTokenNoPrivs = UtilIT.getApiTokenFromResponse(randomUnprivUser);
