@@ -69,7 +69,7 @@ curl examples
 Retrieve SWORD service document
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The service document enumerates the dataverses ("collections" from a SWORD perspective) the user can deposit data into. The "collectionPolicy" element for each dataverse contains the Terms of Use. Any user with an API token can use this API endpoint.
+The service document enumerates the dataverses ("collections" from a SWORD perspective) the user can deposit data into. The "collectionPolicy" element for each dataverse contains the Terms of Use. Any user with an API token can use this API endpoint. Institution-wide Shibboleth groups are not respected because membership in such a group can only be set via a browser.
 
 ``curl -u $API_TOKEN: https://$HOSTNAME/dvn/api/data-deposit/v1.1/swordv2/service-document``
 
@@ -121,7 +121,7 @@ Dublin Core Terms (DC Terms) Qualified Mapping - Dataverse DB Element Crosswalk
 List datasets in a dataverse
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You must have permission to add datasets in a dataverse (the dataverse should appear in the service document) to list the datasets inside.
+You must have permission to add datasets in a dataverse (the dataverse should appear in the service document) to list the datasets inside. Institution-wide Shibboleth groups are not respected because membership in such a group can only be set via a browser.
 
 ``curl -u $API_TOKEN: https://$HOSTNAME/dvn/api/data-deposit/v1.1/swordv2/collection/dataverse/$DATAVERSE_ALIAS``
 

@@ -82,16 +82,12 @@ public class SwordIT {
 
         String collection = serviceDocumentResponse.getBody().xmlPath().get("service.workspace.collection").toString();
         System.out.println("collection: " + collection);
-        if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
-            /**
-             * We assume that you have configured your installation to allow the
-             * ":authenticated-users" groups to create datasets in the root
-             * dataverse via the "fullContributor" role or similar.
-             */
-            assertTrue(serviceDocumentResponse.body().asString().contains("swordv2/collection/dataverse/root"));
-        } else {
-            assertFalse(serviceDocumentResponse.body().asString().contains("swordv2/collection/dataverse/root"));
-        }
+        /**
+         * We assume that you have configured your installation to allow the
+         * ":authenticated-users" groups to create datasets in the root
+         * dataverse via the "fullContributor" role or similar.
+         */
+        assertTrue(serviceDocumentResponse.body().asString().contains("swordv2/collection/dataverse/root"));
 
         Response deleteUser1Response = UtilIT.deleteUser(username);
         deleteUser1Response.prettyPrint();
@@ -321,18 +317,9 @@ public class SwordIT {
     public void testCreateAndDeleteDatasetInRoot() {
         Response createUser = UtilIT.createRandomUser();
         String username = UtilIT.getUsernameFromResponse(createUser);
-        String apitTokenNotYetContributor = UtilIT.getApiTokenFromResponse(createUser);
+        String apiTokenContributor = UtilIT.getApiTokenFromResponse(createUser);
 
         String datasetTitle = "Dataset In Root";
-
-        Response grantRole = UtilIT.grantRoleOnDataverse(rootDataverseAlias, DataverseRole.DS_CONTRIBUTOR.toString(), username, apiTokenSuperuser);
-        grantRole.prettyPrint();
-        grantRole.then().assertThat()
-                .body("data._roleAlias", equalTo("dsContributor"))
-                .statusCode(OK.getStatusCode());
-        String apiTokenContributor = apitTokenNotYetContributor;
-        // prevent this variable from being used again in this test
-        apitTokenNotYetContributor = null;
 
         Response randomUnprivUser = UtilIT.createRandomUser();
         String apiTokenNoPrivs = UtilIT.getApiTokenFromResponse(randomUnprivUser);

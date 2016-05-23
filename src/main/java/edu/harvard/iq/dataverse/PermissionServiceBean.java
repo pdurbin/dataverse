@@ -9,6 +9,7 @@ import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.groups.Group;
 import edu.harvard.iq.dataverse.authorization.groups.GroupServiceBean;
+import edu.harvard.iq.dataverse.authorization.groups.GroupUtil;
 import edu.harvard.iq.dataverse.authorization.groups.impl.builtin.AuthenticatedUsers;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.authorization.users.User;
@@ -378,36 +379,16 @@ public class PermissionServiceBean {
      * @return The list of dataverses {@code user} has permission {@code permission} on.
      */
     public List<Dataverse> getDataversesUserHasPermissionOn(AuthenticatedUser user, Permission permission) {
+        Set<Group> groups = groupService.groupsFor(user);
+        String identifiers = GroupUtil.getAllIdentifiersForUser(user, groups);
         /**
-         * @todo What about groups? And how can we make this more performant?
+         * @todo Are there any strings in identifiers that would break this SQL
+         * query?
          */
-        Query nativeQuery = em.createNativeQuery("SELECT id FROM dvobject WHERE dtype = 'Dataverse' and id in (select definitionpoint_id from roleassignment where assigneeidentifier in ('" + user.getIdentifier() + "'));");
+        String query = "SELECT id FROM dvobject WHERE dtype = 'Dataverse' and id in (select definitionpoint_id from roleassignment where assigneeidentifier in (" + identifiers + "));";
+        logger.fine("query: " + query);
+        Query nativeQuery = em.createNativeQuery(query);
         List<Integer> dataverseIdsToCheck = nativeQuery.getResultList();
-        if (SwordAuth.experimentalSwordAuthPermChangeForIssue1070Enabled) {
-            /**
-             * @todo What about other groups besides ":authenticated-users"?
-             * Explict groups? Shib groups? We shouldn't need to worry about IP
-             * Groups because they're read-only (not able to add datasets).
-             */
-            Query nativeQueryAuthUsersGroup = em.createNativeQuery("SELECT id FROM dvobject WHERE dtype = 'Dataverse' and id in (select definitionpoint_id from roleassignment where assigneeidentifier in ('" + AuthenticatedUsers.get().getIdentifier() + "'));");
-            List<Integer> dataverseIdsToCheckAuthUsersGroup = nativeQueryAuthUsersGroup.getResultList();
-            dataverseIdsToCheck.addAll(dataverseIdsToCheckAuthUsersGroup);
-            /**
-             * @todo consider trying to use
-             * roleAssigneeService.getAssigneeAndRoleIdListFor
-             */
-//            List<Object[]> results = roleAssigneeService.getAssigneeAndRoleIdListFor(user, null);
-//            System.out.println("BEGIN for");
-//            for (Object[] ra : results) {
-//                Long dvId = (Long) ra[0];
-//                System.out.println("found " + dvId);
-//                Dataverse dataverse = dataverseService.find(dvId);
-//                if (userOn(user, dataverse).has(permission)) {
-//                    dataversesUserHasPermissionOn.add(dataverse);
-//                }
-//            }
-//            System.out.println("END for");
-        }
         List<Dataverse> dataversesUserHasPermissionOn = new LinkedList<>();
         for (int dvIdAsInt : dataverseIdsToCheck) {
             Dataverse dataverse = dataverseService.find(Long.valueOf(dvIdAsInt));
