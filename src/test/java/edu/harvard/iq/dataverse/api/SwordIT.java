@@ -6,7 +6,6 @@ import com.jayway.restassured.response.Response;
 import edu.harvard.iq.dataverse.GlobalId;
 import edu.harvard.iq.dataverse.api.datadeposit.SwordAuth;
 import edu.harvard.iq.dataverse.api.datadeposit.SwordConfigurationImpl;
-import edu.harvard.iq.dataverse.authorization.DataverseRole;
 import java.util.List;
 import java.util.logging.Logger;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
@@ -18,6 +17,7 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.NO_CONTENT;
 import static javax.ws.rs.core.Response.Status.OK;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.Matchers.endsWith;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -47,6 +47,10 @@ public class SwordIT {
     @BeforeClass
     public static void setUpClass() {
         RestAssured.baseURI = UtilIT.getRestAssuredBaseUri();
+        boolean testAgainstDev1 = false;
+        if (testAgainstDev1) {
+            RestAssured.baseURI = "https://dev1.dataverse.org";
+        }
         Response createUser = UtilIT.createRandomUser();
         superuser = UtilIT.getUsernameFromResponse(createUser);
         apiTokenSuperuser = UtilIT.getApiTokenFromResponse(createUser);
@@ -336,7 +340,9 @@ public class SwordIT {
             Response createDataset = UtilIT.createDatasetViaSwordApi(rootDataverseAlias, datasetTitle, apiTokenContributor);
             createDataset.prettyPrint();
             createDataset.then().assertThat()
-                    .statusCode(CREATED.getStatusCode());
+                    .statusCode(CREATED.getStatusCode())
+                    .body("entry.treatment", equalTo("no treatment information available"));
+
             persistentId = UtilIT.getDatasetPersistentIdFromResponse(createDataset);
             GlobalId globalId = new GlobalId(persistentId);
             protocol = globalId.getProtocol();
@@ -368,13 +374,7 @@ public class SwordIT {
             atomEntry.prettyPrint();
             atomEntry.then().assertThat()
                     .statusCode(OK.getStatusCode())
-                    /**
-                     * @todo It's a bug to show "https://localhost:8080" in the
-                     * response. It should be either "http://localhost:8080" or
-                     * "https://localhost:8181". Fix this and remove the
-                     * "replace" hack below.
-                     */
-                    .body("entry.id", equalTo(RestAssured.baseURI.replace("http", "https") + "/dvn/api/data-deposit/v1.1/swordv2/edit/study/" + persistentId));
+                    .body("entry.id", endsWith(persistentId));
 
             Response uploadFile = UtilIT.uploadRandomFile(persistentId, apiTokenContributor);
             uploadFile.prettyPrint();
@@ -384,8 +384,11 @@ public class SwordIT {
             statementContainingFile.prettyPrint();
             statementContainingFile.then().assertThat()
                     .statusCode(OK.getStatusCode())
+                    .body("feed.id", endsWith(persistentId))
                     .body("feed.title", equalTo(datasetTitle))
-                    .body("feed.entry[0].summary", equalTo("Resource Part"));
+                    .body("feed.author.name", equalTo("Lastname, Firstname"))
+                    .body("feed.entry[0].summary", equalTo("Resource Part"))
+                    .body("feed.entry[0].id", endsWith("trees.png"));
 
             String firstAndOnlyFileIdAsString = statementContainingFile.getBody().xmlPath().get("feed.entry[0].id").toString().split("/")[10];
             Response deleteFile = UtilIT.deleteFile(Integer.parseInt(firstAndOnlyFileIdAsString), apiTokenContributor);

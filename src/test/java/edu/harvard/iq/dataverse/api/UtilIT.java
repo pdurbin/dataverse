@@ -187,7 +187,7 @@ public class UtilIT {
     }
 
     static Response createDatasetViaSwordApi(String dataverseToCreateDatasetIn, String title, String apiToken) {
-        String xmlIn = getDatasetXml(title, getRandomIdentifier(), getRandomIdentifier());
+        String xmlIn = getDatasetXml(title, "Lastname, Firstname", getRandomIdentifier());
         return createDatasetViaSwordApiFromXML(dataverseToCreateDatasetIn, xmlIn, apiToken);
     }
 
