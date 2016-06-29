@@ -10,6 +10,8 @@ import java.util.logging.Logger;
 import javax.json.Json;
 import javax.json.JsonObjectBuilder;
 import static junit.framework.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.Matchers.containsString;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,6 +27,83 @@ public class BuiltinUsersIT {
     @BeforeClass
     public static void setUp() {
         RestAssured.baseURI = UtilIT.getRestAssuredBaseUri();
+    }
+
+    @Test
+    public void testDisableAccount() throws InterruptedException {
+
+        String email = null;
+        Response createUserWhoWillBeDisabled = createUser(getRandomUsername(), "firstName", "lastName", email);
+        createUserWhoWillBeDisabled.prettyPrint();
+        createUserWhoWillBeDisabled.then().assertThat()
+                .statusCode(200);
+
+        long userIdToBeDisabled = JsonPath.from(createUserWhoWillBeDisabled.body().asString()).getLong("data.authenticatedUser.id");
+        String userToBeDisabledApiToken = JsonPath.from(createUserWhoWillBeDisabled.body().asString()).getString("data.apiToken");
+        String usernameToBeDisabled = JsonPath.from(createUserWhoWillBeDisabled.body().asString()).getString("data.user.userName");
+
+        Response getApiToken = getApiTokenUsingUsername(usernameToBeDisabled, usernameToBeDisabled);
+        getApiToken.then().assertThat()
+                .statusCode(200);
+
+        Response createDataverse = UtilIT.createRandomDataverse(userToBeDisabledApiToken);
+        createDataverse.prettyPrint();
+        createDataverse.then().assertThat()
+                .statusCode(201);
+        String dataverseAlias = JsonPath.from(createDataverse.body().asString()).getString("data.alias");
+
+        UtilIT.deleteDataverse(dataverseAlias, userToBeDisabledApiToken).then().assertThat()
+                .statusCode(200);
+
+        Response createSuperuser = createUser(getRandomUsername(), "firstName", "lastName", email);
+        createSuperuser.prettyPrint();
+        createSuperuser.then().assertThat()
+                .statusCode(200);
+
+        String superuserUsername = JsonPath.from(createSuperuser.body().asString()).getString("data.user.userName");
+        String superuserApiToken = JsonPath.from(createSuperuser.body().asString()).getString("data.apiToken");
+
+        Response makeSuperUser = UtilIT.makeSuperUser(superuserUsername);
+        makeSuperUser.then().assertThat()
+                .statusCode(200);
+
+        Response attemptToDisableSelf = UtilIT.lockUser(userIdToBeDisabled, userToBeDisabledApiToken);
+        attemptToDisableSelf.prettyPrint();
+        attemptToDisableSelf.then().assertThat()
+                .statusCode(403)
+                .body("message", equalTo("Superusers only."));
+
+        /**
+         * @todo how do we push out the expiration date after 10 invalid logins?
+         */
+        long numSecondsToLock = 3;
+        Response lockUser = UtilIT.lockAccount(userIdToBeDisabled, numSecondsToLock, superuserApiToken);
+        lockUser.prettyPrint();
+        lockUser.then().assertThat()
+                .statusCode(200)
+                .body("message", equalTo("User id " + userIdToBeDisabled + " has been locked for " + numSecondsToLock + " seconds."));
+
+        Response createDataverseShouldFail = UtilIT.createRandomDataverse(userToBeDisabledApiToken);
+        createDataverseShouldFail.prettyPrint();
+        createDataverseShouldFail.then().assertThat()
+                .statusCode(401)
+                .body("message", containsString("account for user id " + userIdToBeDisabled + " is locked until"));
+
+        Response getApiTokenShouldFail = getApiTokenUsingUsername(usernameToBeDisabled, usernameToBeDisabled);
+        getApiTokenShouldFail.prettyPrint();
+        getApiTokenShouldFail.then().assertThat()
+                .statusCode(403)
+                .body("message", containsString("account for user id " + userIdToBeDisabled + " is locked until"));;
+
+        Thread.sleep(numSecondsToLock * 1000);
+
+        Response createDataverseShouldWorkAgain = UtilIT.createRandomDataverse(userToBeDisabledApiToken);
+        createDataverseShouldWorkAgain.prettyPrint();
+        createDataverseShouldWorkAgain.then().assertThat()
+                .statusCode(201);
+
+        UtilIT.lockUser(userIdToBeDisabled, superuserApiToken).
+                then().assertThat().statusCode(200);
     }
 
     @Test

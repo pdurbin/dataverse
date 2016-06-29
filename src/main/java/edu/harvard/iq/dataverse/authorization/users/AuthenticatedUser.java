@@ -73,6 +73,19 @@ public class AuthenticatedUser implements User, Serializable {
     private boolean superuser;
 
     /**
+     * The time at which the user's account is no longer locked.
+     */
+    private Timestamp lockedUntil;
+
+    public Timestamp getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public void setLockedUntil(Timestamp lockedUntil) {
+        this.lockedUntil = lockedUntil;
+    }
+
+    /**
      * @todo Remove? Check for accuracy? For Solr JOINs we used to care about
      * the modification times of users but now we don't index users at all.
      */

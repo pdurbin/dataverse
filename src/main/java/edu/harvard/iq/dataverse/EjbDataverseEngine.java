@@ -7,6 +7,8 @@ import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUserServi
 import edu.harvard.iq.dataverse.engine.DataverseEngine;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.groups.impl.explicit.ExplicitGroupServiceBean;
+import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
+import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.engine.command.Command;
 import edu.harvard.iq.dataverse.engine.command.CommandContext;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
@@ -23,6 +25,8 @@ import javax.inject.Named;
 import edu.harvard.iq.dataverse.search.SolrIndexServiceBean;
 import edu.harvard.iq.dataverse.search.savedsearch.SavedSearchServiceBean;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -178,6 +182,23 @@ public class EjbDataverseEngine {
                             + " on Object " + dvo.accept(DvObject.NamePrinter),
                             aCommand,
                             required, dvo);
+                }
+                /**
+                 * @todo Would it make more sense to have a user.isDisabled or
+                 * user.isExpired method?
+                 */
+                User user = dvReq.getUser();
+                if (user instanceof AuthenticatedUser) {
+                    AuthenticatedUser authenticatedUser = (AuthenticatedUser) user;
+                    Timestamp lockedUntil = authenticatedUser.getLockedUntil();
+                    if (lockedUntil != null) {
+                        Timestamp now = new Timestamp(new Date().getTime());
+                        if (lockedUntil.after(now)) {
+                            throw new PermissionException(aCommand.getClass().getSimpleName() + " can't be executed because it's " + now + " but account for user id " + authenticatedUser.getId() + " is locked until " + lockedUntil + ".",
+                                    aCommand,
+                                    required, dvo);
+                        }
+                    }
                 }
             }
             try {

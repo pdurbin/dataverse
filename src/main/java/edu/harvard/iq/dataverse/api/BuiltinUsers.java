@@ -26,6 +26,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import static edu.harvard.iq.dataverse.util.json.JsonPrinter.json;
 import static edu.harvard.iq.dataverse.util.json.JsonPrinter.jsonForAuthUser;
+import java.util.Date;
 
 /**
  * REST API bean for managing {@link BuiltinUser}s.
@@ -60,11 +61,28 @@ public class BuiltinUsers extends AbstractApiBean {
         }
         if ( u == null ) return badRequest("Bad username or password");
         
+        /**
+         * @todo Don't call `check` directly here. Call
+         * AuthenticationServiceBean.authenticate instead.
+         */
         boolean passwordOk = PasswordEncryption.getVersion(u.getPasswordEncryptionVersion())
                                             .check(password, u.getEncryptedPassword() );
         if ( ! passwordOk ) return badRequest("Bad username or password");
         
         AuthenticatedUser authUser = authSvc.lookupUser(BuiltinAuthenticationProvider.PROVIDER_ID, u.getUserName());
+        Timestamp lockedUntil = authUser.getLockedUntil();
+        if (lockedUntil != null) {
+            /**
+             * @todo Refactor this "after" logic? Used in 3 places already?
+             */
+            Timestamp now = new Timestamp(new Date().getTime());
+            if (lockedUntil.after(now)) {
+                /**
+                 * @todo review error message
+                 */
+                return errorResponse(Status.FORBIDDEN, "It's " + now + " but account for user id " + authUser.getId() + " is locked until " + lockedUntil + ".");
+            }
+        }
         
         ApiToken t = authSvc.findApiTokenByUser(authUser);
         

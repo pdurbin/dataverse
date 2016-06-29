@@ -316,9 +316,13 @@ public abstract class AbstractApiBean {
             throw new WrappedResponse( ex, errorResponse(Response.Status.BAD_REQUEST, ex.getMessage() ) );
           
         } catch (PermissionException ex) {
-            throw new WrappedResponse(errorResponse(Response.Status.UNAUTHORIZED, 
-                                                    "User " + cmd.getRequest().getUser().getIdentifier() + " is not permitted to perform requested action.") );
-            
+            /**
+             * @todo Check if adding ex.getLocalizedMessage() will introduce too
+             * much detail. Are we trying to avoid showing the message (the
+             * cause) to the user?
+             */
+            throw new WrappedResponse(errorResponse(Response.Status.UNAUTHORIZED,
+                    "User " + cmd.getRequest().getUser().getIdentifier() + " is not permitted to perform requested action: " + ex.getLocalizedMessage()));
         } catch (CommandException ex) {
             Logger.getLogger(AbstractApiBean.class.getName()).log(Level.SEVERE, "Error while executing command " + cmd, ex);
             throw new WrappedResponse(ex, errorResponse(Status.INTERNAL_SERVER_ERROR, ex.getMessage()));

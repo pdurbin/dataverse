@@ -28,7 +28,13 @@ public class AuthenticationResponse {
                .setStatus( Status.FAIL )
                .setMessage(message);
     }
-    
+
+    public static AuthenticationResponse makeLocked(String message) {
+        return new AuthenticationResponse()
+                .setStatus(Status.LOCKED)
+                .setMessage(message);
+    }
+
     public static AuthenticationResponse makeError( String message, Throwable t ) {
         return new AuthenticationResponse()
                .setStatus( Status.ERROR )
@@ -45,7 +51,10 @@ public class AuthenticationResponse {
         
         /** Authentication failed (e.g wrong password) */
         FAIL,
-        
+        /**
+         * Account disabled
+         */
+        LOCKED,
         /** Can't authenticate (e.g database is down) */
         ERROR
     }

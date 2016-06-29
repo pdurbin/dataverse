@@ -17,9 +17,9 @@ import java.util.logging.Level;
 import edu.harvard.iq.dataverse.api.datadeposit.SwordConfigurationImpl;
 import com.jayway.restassured.path.xml.XmlPath;
 import org.junit.Test;
+import java.util.List;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.path.xml.XmlPath.from;
-import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -446,6 +446,20 @@ public class UtilIT {
                 .header(API_TOKEN_HTTP_HEADER, apiToken)
                 .body(data)
                 .put("/api/admin/authenticatedUsers/convert/builtin2shib");
+        return response;
+    }
+
+    static Response lockUser(long userIdToLock, String apiToken) {
+        Response response = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .put("/api/admin/authenticatedUsers/id/" + userIdToLock + "/lock");
+        return response;
+    }
+
+    static Response lockAccount(long userIdToLock, long secondsToLockOut, String apiToken) {
+        Response response = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .put("/api/admin/authenticatedUsers/id/" + userIdToLock + "/lock/" + secondsToLockOut);
         return response;
     }
 

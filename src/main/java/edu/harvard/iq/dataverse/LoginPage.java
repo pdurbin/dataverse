@@ -174,6 +174,9 @@ public class LoginPage implements java.io.Serializable {
                 case FAIL:
                     JsfHelper.addErrorMessage(BundleUtil.getStringFromBundle("login.builtin.invalidUsernameEmailOrPassword"));
                     return null;
+                case LOCKED:
+                    JsfHelper.addErrorMessage(response.getMessage());
+                    return null;
                 case ERROR:
                     /**
                      * @todo How do we exercise this part of the code? Something

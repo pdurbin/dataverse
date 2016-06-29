@@ -18,8 +18,12 @@ import edu.harvard.iq.dataverse.authorization.providers.echo.EchoAuthenticationP
 import edu.harvard.iq.dataverse.authorization.providers.shib.ShibAuthenticationProvider;
 import edu.harvard.iq.dataverse.authorization.users.ApiToken;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
+import edu.harvard.iq.dataverse.util.BundleUtil;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -268,6 +272,25 @@ public class AuthenticationServiceBean {
         if ( resp.getStatus() == AuthenticationResponse.Status.SUCCESS ) {
             // yay! see if we already have this user.
             AuthenticatedUser user = lookupUser(authenticationProviderId, resp.getUserId());
+
+            /**
+             * @todo Someday move this logic to
+             * BuiltinAuthenticationProvider.authenticate so that we don't make
+             * sure the user knows his password before telling him his account
+             * is disabled. Call AuthenticationResponse.makeDisabled within that
+             * method instead.
+             */
+            if (user != null) {
+                Timestamp lockedUntil = user.getLockedUntil();
+                if (lockedUntil != null) {
+                    Timestamp now = new Timestamp(new Date().getTime());
+                    if (lockedUntil.after(now)) {
+                        resp = AuthenticationResponse.makeLocked(BundleUtil.getStringFromBundle("login.builtin.accountLocked", Arrays.asList(lockedUntil.toString())));
+                        logger.info("Login attempt by user id " + user.getId() + " (" + user.getIdentifier() + ") that is locked until " + lockedUntil + ".");
+                        throw new AuthenticationFailedException(resp, "Authentication Failed: " + resp.getMessage());
+                    }
+                }
+            }
 
             /**
              * @todo Why does a method called "authenticate" have the potential
@@ -573,6 +596,25 @@ public class AuthenticationServiceBean {
         em.persist(authenticatedUser);
         em.flush();
         return builtinUser;
+    }
+
+    public AuthenticatedUser lockUser(Long id) throws ParseException {
+        AuthenticatedUser userToDisable = findByID(id);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy");
+        Date date = simpleDateFormat.parse("9999");
+        Timestamp forever = new Timestamp(date.getTime());
+        userToDisable.setLockedUntil(forever);
+        return save(userToDisable);
+    }
+
+    public AuthenticatedUser lockUser(Long id, long seconds) {
+        AuthenticatedUser userToLock = findByID(id);
+        long nowInMilliseconds = new Date().getTime();
+        long ONE_SECOND_IN_MILLISECONDS = 1000;
+        long futureInMilliseconds = nowInMilliseconds + (seconds * ONE_SECOND_IN_MILLISECONDS);
+        Timestamp lockedUntil = new Timestamp(new Date(futureInMilliseconds).getTime());
+        userToLock.setLockedUntil(lockedUntil);
+        return save(userToLock);
     }
 
 }
