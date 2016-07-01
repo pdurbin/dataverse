@@ -63,11 +63,26 @@ public class BuiltinUsers extends AbstractApiBean {
         
         /**
          * @todo Don't call `check` directly here. Call
-         * AuthenticationServiceBean.authenticate instead.
+         * AuthenticationServiceBean.authenticate instead. We are prototyping
+         * the recordBadLoginAttempt logic here but it needs to be put in a much
+         * more central location.
          */
         boolean passwordOk = PasswordEncryption.getVersion(u.getPasswordEncryptionVersion())
                                             .check(password, u.getEncryptedPassword() );
-        if ( ! passwordOk ) return badRequest("Bad username or password");
+        if (!passwordOk) {
+            BuiltinUser updatedUser = builtinUserSvc.recordBadLoginAttempt(u);
+            if (updatedUser.getBadLogins() < BuiltinUserServiceBean.numBadLoginsRequiredToLockAccount) {
+                return badRequest("Bad username or password");
+            } else {
+                /**
+                 * @todo Add the timestamp, I guess.
+                 */
+                return badRequest("Bad username or password. Account has been locked until FIXME.");
+            }
+        } else {
+            BuiltinUser updatedUser = builtinUserSvc.resetBadLoginAttempts(u);
+            logger.fine("Builtin user id " + updatedUser.getId() + " successiveInvalidLoginAttempts reset to " + updatedUser.getBadLogins());
+        }
         
         AuthenticatedUser authUser = authSvc.lookupUser(BuiltinAuthenticationProvider.PROVIDER_ID, u.getUserName());
         Timestamp lockedUntil = authUser.getLockedUntil();

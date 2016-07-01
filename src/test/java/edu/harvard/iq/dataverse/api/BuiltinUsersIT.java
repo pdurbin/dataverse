@@ -5,6 +5,7 @@ import static com.jayway.restassured.RestAssured.given;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.path.json.JsonPath;
 import com.jayway.restassured.response.Response;
+import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUserServiceBean;
 import java.util.UUID;
 import java.util.logging.Logger;
 import javax.json.Json;
@@ -29,6 +30,53 @@ public class BuiltinUsersIT {
     @BeforeClass
     public static void setUp() {
         RestAssured.baseURI = UtilIT.getRestAssuredBaseUri();
+    }
+
+    /**
+     * @todo We're simulating a password guessing attack here by using the API
+     * token lookup endpoint but are there other ways to easily test this? Is it
+     * time to start trying to use https://www.cypress.io for automated API
+     * testing? Or just use Selenium?
+     */
+    @Test
+    public void testPasswordGuessingAttack() {
+        String email = null;
+        Response createUserToBeAttacked = createUser(getRandomUsername(), "firstName", "lastName", email);
+        createUserToBeAttacked.prettyPrint();
+        createUserToBeAttacked.then().assertThat()
+                .statusCode(200);
+
+        long userIdUnderAttack = JsonPath.from(createUserToBeAttacked.body().asString()).getLong("data.authenticatedUser.id");
+        String usernameUnderAttack = JsonPath.from(createUserToBeAttacked.body().asString()).getString("data.user.userName");
+        String apiToken = JsonPath.from(createUserToBeAttacked.body().asString()).getString("data.apiToken");
+        int numAttemptsNeededToLockAccountMinusOne = BuiltinUserServiceBean.numBadLoginsRequiredToLockAccount - 1;
+
+        for (int i = 0; i < numAttemptsNeededToLockAccountMinusOne; i++) {
+            Response getApiTokenShouldFail = getApiTokenUsingUsername(usernameUnderAttack, "guess" + i);
+            getApiTokenShouldFail.prettyPrint();
+            getApiTokenShouldFail.then().assertThat()
+                    .statusCode(400)
+                    .body("message", equalTo("Bad username or password"));
+        }
+        Response attemptShouldLockAccount = getApiTokenUsingUsername(usernameUnderAttack, "guess" + numAttemptsNeededToLockAccountMinusOne + 1);
+        attemptShouldLockAccount.prettyPrint();
+        attemptShouldLockAccount.then().assertThat()
+                .statusCode(400)
+                /**
+                 * @todo Add the timestamp, I guess.
+                 */
+                .body("message", equalTo("Bad username or password. Account has been locked until FIXME."));
+
+        Response shouldShowAlreadyLockedResponse = getApiTokenUsingUsername(usernameUnderAttack, "wrongPassword");
+        shouldShowAlreadyLockedResponse.prettyPrint();
+        shouldShowAlreadyLockedResponse.then().assertThat()
+                .statusCode(400)
+                /**
+                 * @todo Add the timestamp, I guess. Should this message be
+                 * different than above?
+                 */
+                .body("message", equalTo("Bad username or password. Account has been locked until FIXME."));
+
     }
 
     @Test
