@@ -617,4 +617,10 @@ public class AuthenticationServiceBean {
         return save(userToLock);
     }
 
+    public AuthenticatedUser unlockUser(Long id) {
+        AuthenticatedUser userToUnlock = findByID(id);
+        userToUnlock.setLockedUntil(null);
+        return save(userToUnlock);
+    }
+
 }

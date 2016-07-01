@@ -11,6 +11,8 @@ import javax.json.Json;
 import javax.json.JsonObjectBuilder;
 import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.Matchers.containsString;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -77,11 +79,11 @@ public class BuiltinUsersIT {
          * @todo how do we push out the expiration date after 10 invalid logins?
          */
         long numSecondsToLock = 3;
-        Response lockUser = UtilIT.lockAccount(userIdToBeDisabled, numSecondsToLock, superuserApiToken);
-        lockUser.prettyPrint();
-        lockUser.then().assertThat()
+        Response lockUserTemporarily = UtilIT.lockAccount(userIdToBeDisabled, numSecondsToLock, superuserApiToken);
+        lockUserTemporarily.prettyPrint();
+        lockUserTemporarily.then().assertThat()
                 .statusCode(200)
-                .body("message", equalTo("User id " + userIdToBeDisabled + " has been locked for " + numSecondsToLock + " seconds."));
+                .body("data.message", equalTo("User id " + userIdToBeDisabled + " has been locked for " + numSecondsToLock + " seconds."));
 
         Response createDataverseShouldFail = UtilIT.createRandomDataverse(userToBeDisabledApiToken);
         createDataverseShouldFail.prettyPrint();
@@ -98,12 +100,45 @@ public class BuiltinUsersIT {
         Thread.sleep(numSecondsToLock * 1000);
 
         Response createDataverseShouldWorkAgain = UtilIT.createRandomDataverse(userToBeDisabledApiToken);
-        createDataverseShouldWorkAgain.prettyPrint();
+//        createDataverseShouldWorkAgain.prettyPrint();
         createDataverseShouldWorkAgain.then().assertThat()
                 .statusCode(201);
 
-        UtilIT.lockUser(userIdToBeDisabled, superuserApiToken).
-                then().assertThat().statusCode(200);
+        Response lockUserIndefinitely = UtilIT.lockUser(userIdToBeDisabled, superuserApiToken);
+        lockUserIndefinitely.prettyPrint();
+        lockUserIndefinitely.then().assertThat()
+                .statusCode(200)
+                .body("data.message", equalTo("User id " + userIdToBeDisabled + " has been locked indefinitely."));
+
+        Response createDataverseShouldFailLockedIndefinitely = UtilIT.createRandomDataverse(userToBeDisabledApiToken);
+//        createDataverseShouldFailLockedIndefinitely.prettyPrint();
+        createDataverseShouldFailLockedIndefinitely.then().assertThat()
+                .statusCode(401)
+                .body("message", containsString("account for user id " + userIdToBeDisabled + " is locked until"));
+
+        Response userLockedIndefinitely = getUserFromDatabase(usernameToBeDisabled);
+        userLockedIndefinitely.prettyPrint();
+        userLockedIndefinitely.then().assertThat()
+                .statusCode(200)
+                .body("data.lockedUntil", startsWith("9999"));
+
+        Response unlockUser = UtilIT.unlockUser(userIdToBeDisabled, superuserApiToken);
+        unlockUser.prettyPrint();
+        unlockUser.then().assertThat()
+                .statusCode(200)
+                .body("data.message", equalTo("User id " + userIdToBeDisabled + " has been unlocked."));
+
+        Response createDataverseShouldWorkOnceAgain = UtilIT.createRandomDataverse(userToBeDisabledApiToken);
+//        createDataverseShouldWorkOnceAgain.prettyPrint();
+        createDataverseShouldWorkOnceAgain.then().assertThat()
+                .statusCode(201);
+
+        Response userNoLongerLocked = getUserFromDatabase(usernameToBeDisabled);
+        userNoLongerLocked.prettyPrint();
+        userNoLongerLocked.then().assertThat()
+                .statusCode(200)
+                .body("data.lockedUntil", nullValue());
+
     }
 
     @Test

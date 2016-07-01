@@ -33,6 +33,7 @@ import javax.ws.rs.core.Response;
 
 import static edu.harvard.iq.dataverse.util.json.NullSafeJsonBuilder.jsonObjectBuilder;
 import static edu.harvard.iq.dataverse.util.json.JsonPrinter.*;
+import java.text.ParseException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,9 +43,6 @@ import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response.Status;
-import static edu.harvard.iq.dataverse.api.AbstractApiBean.errorResponse;
-import static edu.harvard.iq.dataverse.api.AbstractApiBean.errorResponse;
-import static edu.harvard.iq.dataverse.api.AbstractApiBean.errorResponse;
 /**
  * Where the secure, setup API calls live.
  * @author michael
@@ -281,8 +279,12 @@ public class Admin extends AbstractApiBean {
         } catch (WrappedResponse ex) {
             return errorResponse(Response.Status.FORBIDDEN, "Superusers only.");
         }
-        AuthenticatedUser lockedUser = authSvc.lockUser(id);
-        return errorResponse(Status.OK, "User id " + id + " has been disabled (locked).");
+        try {
+            AuthenticatedUser lockedUser = authSvc.lockUser(id);
+            return okResponse("User id " + id + " has been locked indefinitely.");
+        } catch (ParseException ex) {
+            return errorResponse(Status.INTERNAL_SERVER_ERROR, "Couldn't lock user: " + ex.getLocalizedMessage());
+        }
     }
 
     /**
@@ -301,10 +303,25 @@ public class Admin extends AbstractApiBean {
             return errorResponse(Response.Status.FORBIDDEN, "Superusers only.");
         }
         AuthenticatedUser lockedUser = authSvc.lockUser(id, seconds);
-        return errorResponse(Status.OK, "User id " + id + " has been locked for " + seconds + " seconds.");
+        return okResponse("User id " + id + " has been locked for " + seconds + " seconds.");
     }
 
-    
+    @PUT
+    @Path("authenticatedUsers/id/{id}/unlock")
+    public Response unlockUser(@PathParam("id") Long id) {
+        try {
+            AuthenticatedUser user = findAuthenticatedUserOrDie();
+            if (!user.isSuperuser()) {
+                return errorResponse(Response.Status.FORBIDDEN, "Superusers only.");
+            }
+        } catch (WrappedResponse ex) {
+            return errorResponse(Response.Status.FORBIDDEN, "Superusers only.");
+        }
+        AuthenticatedUser unlockedUser = authSvc.unlockUser(id);
+        return okResponse("User id " + id + " has been unlocked.");
+    }
+
+
     /**
      * curl -X PUT -d "shib@mailinator.com"
      * http://localhost:8080/api/admin/authenticatedUsers/id/11/convertShibToBuiltIn
