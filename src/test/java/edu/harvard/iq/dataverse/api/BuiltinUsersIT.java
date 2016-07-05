@@ -62,20 +62,13 @@ public class BuiltinUsersIT {
         attemptShouldLockAccount.prettyPrint();
         attemptShouldLockAccount.then().assertThat()
                 .statusCode(400)
-                /**
-                 * @todo Add the timestamp, I guess.
-                 */
-                .body("message", equalTo("Bad username or password. Account has been locked until FIXME."));
+                .body("message", startsWith("Bad username or password. Locking account until"));
 
         Response shouldShowAlreadyLockedResponse = getApiTokenUsingUsername(usernameUnderAttack, "wrongPassword");
         shouldShowAlreadyLockedResponse.prettyPrint();
         shouldShowAlreadyLockedResponse.then().assertThat()
                 .statusCode(400)
-                /**
-                 * @todo Add the timestamp, I guess. Should this message be
-                 * different than above?
-                 */
-                .body("message", equalTo("Bad username or password. Account has been locked until FIXME."));
+                .body("message", startsWith("Account has been locked until"));
 
     }
 
@@ -142,8 +135,8 @@ public class BuiltinUsersIT {
         Response getApiTokenShouldFail = getApiTokenUsingUsername(usernameToBeDisabled, usernameToBeDisabled);
         getApiTokenShouldFail.prettyPrint();
         getApiTokenShouldFail.then().assertThat()
-                .statusCode(403)
-                .body("message", containsString("account for user id " + userIdToBeDisabled + " is locked until"));;
+                .statusCode(400)
+                .body("message", startsWith("Your account has been locked until"));;
 
         Thread.sleep(numSecondsToLock * 1000);
 

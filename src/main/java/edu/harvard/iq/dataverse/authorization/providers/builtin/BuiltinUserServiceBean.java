@@ -162,7 +162,7 @@ public class BuiltinUserServiceBean {
         int badlogins = builtinUser.getBadLogins();
         builtinUser.setBadLogins(badlogins + 1);
         BuiltinUser savedBuiltinUser = save(builtinUser);
-        if (savedBuiltinUser.getBadLogins() > numBadLoginsRequiredToLockAccount) {
+        if (savedBuiltinUser.getBadLogins() >= numBadLoginsRequiredToLockAccount) {
             long secondsInAnHour = 3600;
             AuthenticatedUser au = authenticationService.lookupUser(BuiltinAuthenticationProvider.PROVIDER_ID, builtinUser.getUserName());
             Long auId = au.getId();

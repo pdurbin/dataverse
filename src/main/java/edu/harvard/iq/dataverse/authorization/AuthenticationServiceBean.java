@@ -84,7 +84,7 @@ public class AuthenticationServiceBean {
         
         // First, set up the factories
         try {
-            registerProviderFactory( new BuiltinAuthenticationProviderFactory(builtinUserServiceBean) );
+            registerProviderFactory( new BuiltinAuthenticationProviderFactory(builtinUserServiceBean, this) );
             registerProviderFactory( new EchoAuthenticationProviderFactory() );
             /**
              * Register shib provider factory here. Test enable/disable via Admin API, etc.
@@ -620,6 +620,10 @@ public class AuthenticationServiceBean {
     public AuthenticatedUser unlockUser(Long id) {
         AuthenticatedUser userToUnlock = findByID(id);
         userToUnlock.setLockedUntil(null);
+        BuiltinUser builtinUser = builtinUserServiceBean.findByUserName(userToUnlock.getUserIdentifier());
+        if (builtinUser != null) {
+            BuiltinUser savedBuiltinUser = builtinUserServiceBean.resetBadLoginAttempts(builtinUser);
+        }
         return save(userToUnlock);
     }
 

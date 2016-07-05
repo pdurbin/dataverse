@@ -4,6 +4,7 @@ import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.authorization.AuthenticationProviderDisplayInfo;
 import edu.harvard.iq.dataverse.authorization.AuthenticationRequest;
 import edu.harvard.iq.dataverse.authorization.AuthenticationResponse;
+import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
 import edu.harvard.iq.dataverse.authorization.CredentialsAuthenticationProvider;
 import edu.harvard.iq.dataverse.authorization.UserLister;
 import edu.harvard.iq.dataverse.authorization.groups.GroupProvider;
@@ -13,6 +14,7 @@ import java.util.List;
 import static edu.harvard.iq.dataverse.authorization.CredentialsAuthenticationProvider.Credential;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.groups.Group;
+import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.passwordreset.PasswordResetException;
 import edu.harvard.iq.dataverse.util.BundleUtil;
@@ -32,9 +34,11 @@ public class BuiltinAuthenticationProvider implements CredentialsAuthenticationP
     private static List<Credential> CREDENTIALS_LIST;
       
     final BuiltinUserServiceBean bean;
+    final AuthenticationServiceBean authSvc;
 
-    public BuiltinAuthenticationProvider( BuiltinUserServiceBean aBean ) {
+    public BuiltinAuthenticationProvider( BuiltinUserServiceBean aBean, AuthenticationServiceBean asb ) {
         bean = aBean;
+        authSvc = asb;
         KEY_USERNAME_OR_EMAIL = BundleUtil.getStringFromBundle("login.builtin.credential.usernameOrEmail");
         KEY_PASSWORD = BundleUtil.getStringFromBundle("login.builtin.credential.password");
         CREDENTIALS_LIST = Arrays.asList(new Credential(KEY_USERNAME_OR_EMAIL), new Credential(KEY_PASSWORD, true));
@@ -59,11 +63,21 @@ public class BuiltinAuthenticationProvider implements CredentialsAuthenticationP
     public AuthenticationResponse authenticate( AuthenticationRequest authReq ) {
         BuiltinUser u = bean.findByUsernameOrEmail(authReq.getCredential(KEY_USERNAME_OR_EMAIL) );
         if ( u == null ) return AuthenticationResponse.makeFail("Bad username, email address, or password");
+
+        AuthenticatedUser authenticatedUser = authSvc.getAuthenticatedUser(u.getUserName());
         
+        if (u.getBadLogins() >= BuiltinUserServiceBean.numBadLoginsRequiredToLockAccount) {
+            return AuthenticationResponse.makeLocked("Account has been locked until " + authenticatedUser.getLockedUntil() + ".");
+        }
         boolean userAuthenticated = PasswordEncryption.getVersion(u.getPasswordEncryptionVersion())
                                             .check(authReq.getCredential(KEY_PASSWORD), u.getEncryptedPassword() );
-        if ( ! userAuthenticated ) {
-            return AuthenticationResponse.makeFail("Bad username or password");
+        if (!userAuthenticated) {
+            BuiltinUser updatedUser = bean.recordBadLoginAttempt(u);
+            if (updatedUser.getBadLogins() < BuiltinUserServiceBean.numBadLoginsRequiredToLockAccount) {
+                return AuthenticationResponse.makeFail("Bad username or password");
+            } else {
+                return AuthenticationResponse.makeLocked("Bad username or password. Locking account until " + authenticatedUser.getLockedUntil() + ".");
+            }
         }
         
         

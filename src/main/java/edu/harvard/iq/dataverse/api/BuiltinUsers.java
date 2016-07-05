@@ -1,14 +1,17 @@
 package edu.harvard.iq.dataverse.api;
 
 import edu.harvard.iq.dataverse.actionlogging.ActionLogRecord;
+import static edu.harvard.iq.dataverse.api.AbstractApiBean.errorResponse;
+import edu.harvard.iq.dataverse.authorization.AuthenticationRequest;
 import edu.harvard.iq.dataverse.authorization.UserRecordIdentifier;
+import edu.harvard.iq.dataverse.authorization.exceptions.AuthenticationFailedException;
 import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinAuthenticationProvider;
 import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUser;
 import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUserServiceBean;
 import edu.harvard.iq.dataverse.authorization.providers.builtin.PasswordEncryption;
 import edu.harvard.iq.dataverse.authorization.users.ApiToken;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
-import edu.harvard.iq.dataverse.util.json.JsonPrinter;
+import edu.harvard.iq.dataverse.util.BundleUtil;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.logging.Level;
@@ -26,7 +29,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import static edu.harvard.iq.dataverse.util.json.JsonPrinter.json;
 import static edu.harvard.iq.dataverse.util.json.JsonPrinter.jsonForAuthUser;
-import java.util.Date;
 
 /**
  * REST API bean for managing {@link BuiltinUser}s.
@@ -39,11 +41,14 @@ public class BuiltinUsers extends AbstractApiBean {
     private static final Logger logger = Logger.getLogger(BuiltinUsers.class.getName());
 
     private static final String API_KEY_IN_SETTINGS = "BuiltinUsers.KEY";
+
     /**
      * Users have not requested the ability to retrieve their API token using
      * their email address but we could. Here's the issue for which we are
      * enabling login via email address:
      * https://github.com/IQSS/dataverse/issues/2115
+     *
+     * This is potentially useful in API/integration testing.
      */
     public static boolean retrievingApiTokenViaEmailEnabled = false;
 
@@ -52,56 +57,24 @@ public class BuiltinUsers extends AbstractApiBean {
 
     @GET
     @Path("{username}/api-token")
-    public Response getApiToken( @PathParam("username") String username, @QueryParam("password") String password ) {
-        BuiltinUser u = null;
-        if (retrievingApiTokenViaEmailEnabled) {
-            u = builtinUserSvc.findByUsernameOrEmail(username);
-        } else {
-            u = builtinUserSvc.findByUserName(username);
-        }
-        if ( u == null ) return badRequest("Bad username or password");
-        
+    public Response getApiToken(@PathParam("username") String username, @QueryParam("password") String password) {
+        AuthenticationRequest authReq = new AuthenticationRequest();
         /**
-         * @todo Don't call `check` directly here. Call
-         * AuthenticationServiceBean.authenticate instead. We are prototyping
-         * the recordBadLoginAttempt logic here but it needs to be put in a much
-         * more central location.
+         * @todo Should this really be coming from a bundle like this? Added
+         * because that's what BuiltinAuthenticationProvider does.
          */
-        boolean passwordOk = PasswordEncryption.getVersion(u.getPasswordEncryptionVersion())
-                                            .check(password, u.getEncryptedPassword() );
-        if (!passwordOk) {
-            BuiltinUser updatedUser = builtinUserSvc.recordBadLoginAttempt(u);
-            if (updatedUser.getBadLogins() < BuiltinUserServiceBean.numBadLoginsRequiredToLockAccount) {
-                return badRequest("Bad username or password");
-            } else {
-                /**
-                 * @todo Add the timestamp, I guess.
-                 */
-                return badRequest("Bad username or password. Account has been locked until FIXME.");
-            }
-        } else {
-            BuiltinUser updatedUser = builtinUserSvc.resetBadLoginAttempts(u);
-            logger.fine("Builtin user id " + updatedUser.getId() + " successiveInvalidLoginAttempts reset to " + updatedUser.getBadLogins());
+        authReq.putCredential(BundleUtil.getStringFromBundle("login.builtin.credential.usernameOrEmail"), username);
+        authReq.putCredential(BundleUtil.getStringFromBundle("login.builtin.credential.password"), password);
+        String credentialsAuthProviderId = BuiltinAuthenticationProvider.PROVIDER_ID;
+        AuthenticatedUser authUser;
+        try {
+//        authReq.setIpAddress( dvRequestService.getDataverseRequest().getSourceAddress() );
+            authUser = authSvc.authenticate(credentialsAuthProviderId, authReq);
+            ApiToken t = authSvc.findApiTokenByUser(authUser);
+            return (t != null) ? okResponse(t.getTokenString()) : notFound("User " + username + " does not have an API token");
+        } catch (AuthenticationFailedException ex) {
+            return errorResponse(Response.Status.BAD_REQUEST, ex.getResponse().getMessage());
         }
-        
-        AuthenticatedUser authUser = authSvc.lookupUser(BuiltinAuthenticationProvider.PROVIDER_ID, u.getUserName());
-        Timestamp lockedUntil = authUser.getLockedUntil();
-        if (lockedUntil != null) {
-            /**
-             * @todo Refactor this "after" logic? Used in 3 places already?
-             */
-            Timestamp now = new Timestamp(new Date().getTime());
-            if (lockedUntil.after(now)) {
-                /**
-                 * @todo review error message
-                 */
-                return errorResponse(Status.FORBIDDEN, "It's " + now + " but account for user id " + authUser.getId() + " is locked until " + lockedUntil + ".");
-            }
-        }
-        
-        ApiToken t = authSvc.findApiTokenByUser(authUser);
-        
-        return (t != null ) ? okResponse(t.getTokenString()) : notFound("User " + username + " does not have an API token");
     }
     
     /**
