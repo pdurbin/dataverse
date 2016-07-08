@@ -520,5 +520,14 @@ public class Admin extends AbstractApiBean {
         }
         return okResponse(msg);
     }
+    
+    @Path("confirmEmail/{token}")
+    @GET
+    public Response getConfirmEmailToken(@PathParam("token") String token) {
+        
+        
+        return null;
+    }
+    
 
 }

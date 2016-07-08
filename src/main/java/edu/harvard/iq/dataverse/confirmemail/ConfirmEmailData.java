@@ -20,9 +20,9 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
- * @todo Confirm proper transition from builtinuser to authenticateduser
- *       before removing the import
+ * 
  * @author bsilverstein
+ * @todo: Make the feature restrict a user until they are confirmed
  */
 
 @Table(indexes = {@Index(columnList="token")
@@ -55,8 +55,7 @@ public class ConfirmEmailData implements Serializable{
     @Column(nullable = false)
     private Timestamp expires;
     
-    public ConfirmEmailData() {
-    }
+    
 
     public ConfirmEmailData(AuthenticatedUser anAuthenticatedUser) {
         authenticatedUser = anAuthenticatedUser;
@@ -64,13 +63,13 @@ public class ConfirmEmailData implements Serializable{
         long nowInMilliseconds = new Date().getTime();
         created = new Timestamp(nowInMilliseconds);
         long ONE_MINUTE_IN_MILLISECONDS = 60000;
-        /** @todo: not utilize getMinutesUntilPasswordResetTokenExpires -- 
-        *   maybe consolidate the method in SystemConfig to just be about tokens 
-        *   rather than duplicate and re-brand the same method
-        *   @todo: make the token's time before expiration way longer
+        /** 
+        * @todo: make the token's time before expiration way longer
+        * 
+        * @todo: use database setting instead of jvm option for line 75 configurable expiration value
         */
         
-        long futureInMilliseconds = nowInMilliseconds + (SystemConfig.getMinutesUntilPasswordResetTokenExpires() * ONE_MINUTE_IN_MILLISECONDS);
+        long futureInMilliseconds = nowInMilliseconds + (SystemConfig.getMinutesUntilConfirmEmailTokenExpires() * ONE_MINUTE_IN_MILLISECONDS);
         expires = new Timestamp(new Date(futureInMilliseconds).getTime());
     }
 

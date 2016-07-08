@@ -80,7 +80,7 @@ public class ConfirmEmailPage implements java.io.Serializable {
             if (confirmEmailData != null) {
                 user = confirmEmailData.getAuthenticatedUser();
             } else {
-                FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Password Reset Link", "Your password reset link is not valid."));
+                FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Confirm Email Link", "Your email confirmation link is not valid."));
             }
         }
     }
@@ -100,31 +100,33 @@ public class ConfirmEmailPage implements java.io.Serializable {
             } else {                
                 logger.log(Level.INFO, "Couldn''t find single account using {0}", emailAddress);
             }
-            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Password Reset Initiated", ""));
-        } catch (ConfirmEmailException ex) {
-            /**
-             * @todo do we really need a special exception for this??
-             */
-            logger.log(Level.WARNING, "Error While resetting password: " + ex.getMessage(), ex);
+            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Email Confirmation Initiated", ""));
+        } catch (ConfirmEmailException ex) {            
+            logger.log(Level.WARNING, "Error While confirming email: " + ex.getMessage(), ex);
         }
         return "";
     }
     //Huge mess below! Need to figure out what's up with this
-//    public String confirmEmail() {
+//    public String confirmEmail() throws ConfirmEmailException {
 //        ConfirmEmailInitResponse response;
 //        response = confirmEmailService.sendConfirm(user, false);
-//        if (response.isConfirmed()) {
+//        try { if (response.isEmailFound()) {
 //            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, response.getMessageSummary(), response.getMessageDetail()));
 //            String authProviderId = AuthenticationProvider.PROVIDER_ID;
-//            AuthenticatedUser au = authSvc.lookupUser(builtinAuthProviderId, user.getUserName());
+//            AuthenticatedUser au = authSvc.lookupUser(builtinAuthProviderId, user.getUserIdentifier());
 //            session.setUser(au);
 //            return "/dataverse.xhtml?alias=" + dataverseService.findRootDataverse().getAlias() + "faces-redirect=true";
 //        } else {
 //            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, response.getMessageSummary(), response.getMessageDetail()));
 //            return null;
 //        }
-//    }
 //    
+//        } catch(Exception ex) { 
+//            String msg = "Unable to save token for " + user.getEmail();
+//            throw new ConfirmEmailException(msg, ex);
+//        }
+//    }
+    
     public String getToken() {
         return token;
     }

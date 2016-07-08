@@ -58,7 +58,7 @@ import javax.ws.rs.core.Response.Status;
  */
 public abstract class AbstractApiBean {
     
-    private static final Logger logger = Logger.getLogger(AbstractApiBean.class.getName());
+    static final Logger logger = Logger.getLogger(AbstractApiBean.class.getName());
     private static final String DATAVERSE_KEY_HEADER_NAME = "X-Dataverse-key";
     
     /**

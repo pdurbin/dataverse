@@ -70,8 +70,26 @@ public class AuthenticatedUser implements User, Serializable {
     private String position;
     private String lastName;
     private String firstName;
+    private String confirmToken;
+    @Column(nullable = true)
+    private Timestamp emailConfirmed;
+
+    public Timestamp getEmailConfirmed() {
+        return emailConfirmed;
+    }
+
+    public void setEmailConfirmed(Timestamp emailConfirmed) {
+        this.emailConfirmed = emailConfirmed;
+    }
     private boolean superuser;
 
+    public String getConfirmToken() {
+        return confirmToken;
+    }
+    
+    public void setConfirmToken(String confirmToken){
+        this.confirmToken = confirmToken;
+    }
     /**
      * @todo Remove? Check for accuracy? For Solr JOINs we used to care about
      * the modification times of users but now we don't index users at all.
@@ -118,7 +136,7 @@ public class AuthenticatedUser implements User, Serializable {
         setEmail(inf.getEmailAddress());
         setAffiliation( inf.getAffiliation() );
         setPosition( inf.getPosition());
-
+        
     }
     
     @Override
@@ -241,5 +259,7 @@ public class AuthenticatedUser implements User, Serializable {
     public void setShibIdentityProvider(String shibIdentityProvider) {
         this.shibIdentityProvider = shibIdentityProvider;
     }
+    
+
     
 }

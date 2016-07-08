@@ -68,7 +68,7 @@ public class BuiltinUsersIT {
         // the backend will trim the email address
         String emailExpected = email.trim();
         assertEquals(emailExpected, emailActual);
-    }
+    } 
 
     @Test
     public void testLeadingWhitespaceInUsername() {
@@ -113,7 +113,7 @@ public class BuiltinUsersIT {
         }
 
     }
-
+    
     private Response createUser(String username, String firstName, String lastName, String email) {
         String userAsJson = getUserAsJsonString(username, firstName, lastName, email);
         String password = getPassword(userAsJson);
