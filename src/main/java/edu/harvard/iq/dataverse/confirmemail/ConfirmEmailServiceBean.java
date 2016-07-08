@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ejb.EJB;
+import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.NonUniqueResultException;
@@ -19,6 +20,7 @@ import javax.persistence.TypedQuery;
  * 
  * @author bsilverstein
  */
+@Stateless
 public class ConfirmEmailServiceBean {
     
     private static final Logger logger = Logger.getLogger(ConfirmEmailServiceBean.class.getCanonicalName());
@@ -211,6 +213,12 @@ public class ConfirmEmailServiceBean {
             logger.info("Caught exception trying to delete token " + token + " - " + ex);
             return false;
         }
+    }
+
+    public ConfirmEmailData createToken(AuthenticatedUser au) {
+        ConfirmEmailData confirmEmailData = new ConfirmEmailData(au);
+        em.persist(confirmEmailData);
+        return confirmEmailData;
     }
     
 }    
