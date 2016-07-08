@@ -27,7 +27,7 @@ import org.hibernate.validator.constraints.NotBlank;
  */
 
 @ViewScoped
-@Named("PasswordResetPage")
+@Named("ConfirmEmailPage")
 public class ConfirmEmailPage implements java.io.Serializable {
 
     private static final Logger logger = Logger.getLogger(ConfirmEmailPage.class.getCanonicalName());

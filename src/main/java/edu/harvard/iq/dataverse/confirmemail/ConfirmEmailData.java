@@ -105,5 +105,14 @@ public class ConfirmEmailData implements Serializable{
     public void setId(Long id) {
         this.id = id;
     }
-    
+
+    /**
+     * This is only here because it has to be: "The class should have a no-arg,
+     * public or protected constructor." Please use the constructor that takes
+     * arguments.
+     */
+    @Deprecated
+    public ConfirmEmailData() {
+    }
+
 }
