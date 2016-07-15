@@ -70,7 +70,6 @@ public class AuthenticatedUser implements User, Serializable {
     private String position;
     private String lastName;
     private String firstName;
-    private String confirmToken;
     @Column(nullable = true)
     private Timestamp emailConfirmed;
 
@@ -83,13 +82,6 @@ public class AuthenticatedUser implements User, Serializable {
     }
     private boolean superuser;
 
-    public String getConfirmToken() {
-        return confirmToken;
-    }
-    
-    public void setConfirmToken(String confirmToken){
-        this.confirmToken = confirmToken;
-    }
     /**
      * @todo Remove? Check for accuracy? For Solr JOINs we used to care about
      * the modification times of users but now we don't index users at all.

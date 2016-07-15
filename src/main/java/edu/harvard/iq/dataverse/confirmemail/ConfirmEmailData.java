@@ -64,8 +64,6 @@ public class ConfirmEmailData implements Serializable{
         created = new Timestamp(nowInMilliseconds);
         long ONE_MINUTE_IN_MILLISECONDS = 60000;
         /** 
-        * @todo: make the token's time before expiration way longer
-        * 
         * @todo: use database setting instead of jvm option for line 75 configurable expiration value
         */
         

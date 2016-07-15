@@ -20,8 +20,6 @@ import javax.inject.Named;
 import org.hibernate.validator.constraints.NotBlank;
 
 /**
- * @todo: Figure out what's going on with confirmEmail method
- *        Determine whether actionlog recording will stay or not
  *        
  * @author bsilverstein
  */
@@ -34,7 +32,7 @@ public class ConfirmEmailPage implements java.io.Serializable {
 
     @EJB
     ConfirmEmailServiceBean confirmEmailService;
-    @EJB //maybe make a shib and builtin user service then divide later?
+    @EJB 
     AuthenticationServiceBean dataverseUserService;
     @EJB
     DataverseServiceBean dataverseService;    

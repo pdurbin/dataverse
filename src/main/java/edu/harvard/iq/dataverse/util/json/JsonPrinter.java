@@ -87,8 +87,8 @@ public class JsonPrinter {
                 .add("superuser", authenticatedUser.isSuperuser())
                 .add("affiliation", authenticatedUser.getAffiliation())
                 .add("position", authenticatedUser.getPosition())
-                .add("persistentUserId", authenticatedUser.getAuthenticatedUserLookup().getPersistentUserId())
-                .add("confirmToken", authenticatedUser.getConfirmToken())
+                .add("persistentUserId", authenticatedUser.getAuthenticatedUserLookup().getPersistentUserId())                
+                .add("emailLastConfirmed", authenticatedUser.getEmailConfirmed())
                 .add("authenticationProviderId", authenticatedUser.getAuthenticatedUserLookup().getAuthenticationProviderId());
     }
     
