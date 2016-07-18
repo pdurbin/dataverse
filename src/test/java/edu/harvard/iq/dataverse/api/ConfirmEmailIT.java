@@ -7,20 +7,29 @@ import com.jayway.restassured.path.json.JsonPath;
 import com.jayway.restassured.response.Response;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.confirmemail.ConfirmEmailData;
-import edu.harvard.iq.dataverse.util.json.JsonPrinter;
 import java.util.UUID;
 import java.util.logging.Logger;
 import javax.json.Json;
 import javax.json.JsonObjectBuilder;
-import static edu.harvard.iq.dataverse.util.json.JsonPrinter.jsonForAuthUser;
-import static junit.framework.Assert.assertEquals;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 
 /**
  *
  * @author bsilverstein
  * @todo: Develop test to reflect access restrictions without confirmation
+ *
+ * Next steps:
+ *
+ * - 1. Switch from POST to confirmemail.xhtml
+ *
+ * - 2. Change first email to say, "please click to confirm your email."
+ *
+ * - 3. Show on user page if has been email confirmed (see mockups).
+ *
  */
 public class ConfirmEmailIT {
 
@@ -42,12 +51,12 @@ public class ConfirmEmailIT {
     @Test
     public void testConfirm() {
         //  Can't seem to get timestamp to appear in authenticated user Json output
-        
+
         String email = null;
 
         Response createUserToConfirm = createUser(getRandomUsername(), "firstName", "lastName", email);
         createUserToConfirm.prettyPrint();
-        // do not expose confirm email token to user, just in email URL
+        // TODO: do not expose confirm email token to user, just in email URL
         String confirmEmailToken = JsonPath.from(createUserToConfirm.body().asString()).getString("data.confirmEmailToken");
         createUserToConfirm.then().assertThat()
                 .statusCode(200);
@@ -56,40 +65,71 @@ public class ConfirmEmailIT {
         long userIdToConfirm = JsonPath.from(createUserToConfirm.body().asString()).getLong("data.authenticatedUser.id");
         String userToConfirmApiToken = JsonPath.from(createUserToConfirm.body().asString()).getString("data.apiToken");
         String usernameToConfirm = JsonPath.from(createUserToConfirm.body().asString()).getString("data.user.userName");
-        Response getApiToken = getApiTokenUsingUsername(usernameToConfirm, usernameToConfirm);
-        getApiToken.then().assertThat()
+//        Response getApiToken = getApiTokenUsingUsername(usernameToConfirm, usernameToConfirm);
+//        getApiToken.then().assertThat()
+//                .statusCode(200);
+        String junkToken = "noSuchToken";
+
+        Response createSuperuser = createUser(getRandomUsername(), "super", "user", email);
+        createSuperuser.then().assertThat()
                 .statusCode(200);
-        String token = "noSuchToken";
+        String superuserUsername = JsonPath.from(createSuperuser.body().asString()).getString("data.user.userName");
+        String superUserApiToken = JsonPath.from(createUserToConfirm.body().asString()).getString("data.apiToken");
+
+        UtilIT.makeSuperUser(superuserUsername);
+        createSuperuser.then().assertThat()
+                .statusCode(200);
 
         /**
          * @todo: Superuser GET confirm email token based on user's database ID
          * (primary key). This can answer questions the superuser may have, such
          * as, "Did the user's token expire?"
          */
-        
         Response getConfirmEmailData = given()
                 .get("/api/admin/confirmEmail/" + 42);
-        
+
         Response noSuchToken = given()
-                .post("/api/admin/confirmEmail/" + token);
+                .post("/api/admin/confirmEmail/" + junkToken);
         noSuchToken.prettyPrint();
         noSuchToken.then().assertThat()
-                .statusCode(404);
-        // [X] todo assert "Invalid token: noSuchToken" and 404
+                .statusCode(404)
+                .body("message", equalTo("Invalid token: " + junkToken));
+
+        System.out.println("not confirmed yet");
+        Response getUserWithoutConfirmedEmail = UtilIT.getAuthenticatedUser(usernameToConfirm, superUserApiToken);
+        getUserWithoutConfirmedEmail.prettyPrint();
+        getUserWithoutConfirmedEmail.then().assertThat()
+                .statusCode(200)
+                .body("data.emailLastConfirmed", nullValue());
+
         /**
          *
          * User will call a second method within admin API to POST token to new
          * endpoint /api/admin/confirmEmail/{token}
          *
          */
-
         System.out.println("real token: " + confirmEmailToken);
         // This is simulating the user clicking the URL from their email client.
         Response confirmEmail = given()
                 .post("/api/admin/confirmEmail/" + confirmEmailToken);
         confirmEmail.prettyPrint();
+        confirmEmail.then().assertThat()
+                .statusCode(200);
 
-        //todo: superuser checks that email has been confirmed based on user id
+        /**
+         * @todo Switch over to this instead of the POST above, once it's
+         * working.
+         */
+//        Response confirmEmailViaBrowser = given()
+//                .get("/confirmemail.xhtml?token=" + confirmEmailToken);
+//        confirmEmailViaBrowser.then().assertThat()
+//                .statusCode(200);
+        Response getUserWithConfirmedEmail = UtilIT.getAuthenticatedUser(usernameToConfirm, superUserApiToken);
+        getUserWithConfirmedEmail.prettyPrint();
+        getUserWithConfirmedEmail.then().assertThat()
+                .statusCode(200)
+                // Checking that it's 2016 or whatever. Not y3k compliant! 
+                .body("data.emailLastConfirmed", startsWith("2"));
     }
 
     private Response createUser(String username, String firstName, String lastName, String email) {
