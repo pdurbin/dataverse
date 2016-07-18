@@ -42,9 +42,7 @@ public class ConfirmEmailIT {
     @Test
     public void testConfirm() {
         //  Can't seem to get timestamp to appear in authenticated user Json output
-        /**
-         *
-         */
+        
         String email = null;
 
         Response createUserToConfirm = createUser(getRandomUsername(), "firstName", "lastName", email);
@@ -54,7 +52,7 @@ public class ConfirmEmailIT {
         createUserToConfirm.then().assertThat()
                 .statusCode(200);
 
-        //redundant?    
+        //redundant?  
         long userIdToConfirm = JsonPath.from(createUserToConfirm.body().asString()).getLong("data.authenticatedUser.id");
         String userToConfirmApiToken = JsonPath.from(createUserToConfirm.body().asString()).getString("data.apiToken");
         String usernameToConfirm = JsonPath.from(createUserToConfirm.body().asString()).getString("data.user.userName");
@@ -68,13 +66,16 @@ public class ConfirmEmailIT {
          * (primary key). This can answer questions the superuser may have, such
          * as, "Did the user's token expire?"
          */
-//        Response getConfirmEmailData = given()
-//                .get("/api/admin/confirmEmail/" + 42);
+        
+        Response getConfirmEmailData = given()
+                .get("/api/admin/confirmEmail/" + 42);
         
         Response noSuchToken = given()
                 .post("/api/admin/confirmEmail/" + token);
         noSuchToken.prettyPrint();
-        // todo assert "Invalid token: noSuchToken" and 404
+        noSuchToken.then().assertThat()
+                .statusCode(404);
+        // [X] todo assert "Invalid token: noSuchToken" and 404
         /**
          *
          * User will call a second method within admin API to POST token to new

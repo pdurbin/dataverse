@@ -35,6 +35,8 @@ import javax.ws.rs.core.Response;
 
 import static edu.harvard.iq.dataverse.util.json.NullSafeJsonBuilder.jsonObjectBuilder;
 import static edu.harvard.iq.dataverse.util.json.JsonPrinter.*;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -523,10 +525,12 @@ public class Admin extends AbstractApiBean {
         return okResponse(msg);
     }
     
+    //should the path for this method refer instead to the auth user ID?
     @Path("confirmEmail/{token}")
     @GET
     public Response getConfirmEmailToken(@PathParam("token") String token) {
-        
+        ConfirmEmailExecResponse confirmEmailExecResponse = confirmEmailSvc.processToken(token);
+        ConfirmEmailData confirmEmailData = confirmEmailExecResponse.getConfirmEmailData();
         
         return null;
     }
@@ -541,7 +545,10 @@ public class Admin extends AbstractApiBean {
         if (confirmEmailData == null) {
             return errorResponse(Status.NOT_FOUND, "Invalid token: " + token);
         }
+        long nowInMilliseconds = new Date().getTime();
+        Timestamp emailConfirmed = new Timestamp(nowInMilliseconds);
         AuthenticatedUser authenticatedUser = confirmEmailData.getAuthenticatedUser();
+        authenticatedUser.setEmailConfirmed(emailConfirmed);
             return okResponse(jsonForAuthUser(authenticatedUser));
 //        return okResponse("found user " +authenticatedUser.getId());
     }
