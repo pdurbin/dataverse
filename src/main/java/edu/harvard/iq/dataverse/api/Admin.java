@@ -534,13 +534,17 @@ public class Admin extends AbstractApiBean {
         
         return null;
     }
-    
+
+    /**
+     * This is just for testing the confirm email feature and is used in
+     * integration tests. We may delete this endpoint entirely if we can test
+     * everything via the xhtml file.
+     */
     @Path("confirmEmail/{token}")
     @POST
     public Response confirmTheEmail(@PathParam("token") String token) {
-        System.out.println("Calling processToken");
+        // TODO: move as much logic as possible to a central place like confirmEmailSvc.processToken
         ConfirmEmailExecResponse confirmEmailExecResponse = confirmEmailSvc.processToken(token);
-        System.out.println("Done calling processToken");
         ConfirmEmailData confirmEmailData = confirmEmailExecResponse.getConfirmEmailData();
         if (confirmEmailData == null) {
             return errorResponse(Status.NOT_FOUND, "Invalid token: " + token);
@@ -549,8 +553,7 @@ public class Admin extends AbstractApiBean {
         Timestamp emailConfirmed = new Timestamp(nowInMilliseconds);
         AuthenticatedUser authenticatedUser = confirmEmailData.getAuthenticatedUser();
         authenticatedUser.setEmailConfirmed(emailConfirmed);
-            return okResponse(jsonForAuthUser(authenticatedUser));
-//        return okResponse("found user " +authenticatedUser.getId());
+        return okResponse("Email confirmed.");
     }
 
 }
