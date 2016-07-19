@@ -56,7 +56,13 @@ import javax.validation.ValidatorFactory;
 @Singleton
 public class AuthenticationServiceBean {
     private static final Logger logger = Logger.getLogger(AuthenticationServiceBean.class.getName());
-    
+
+    /**
+     * @todo Make this configurable. Don't hard code it as "three strikes and
+     * you're out."
+     */
+    static public int numBadLoginsRequiredToLockAccount = 3;
+
     /**
      * Where all registered authentication providers live.
      */
@@ -620,11 +626,19 @@ public class AuthenticationServiceBean {
     public AuthenticatedUser unlockUser(Long id) {
         AuthenticatedUser userToUnlock = findByID(id);
         userToUnlock.setLockedUntil(null);
-        BuiltinUser builtinUser = builtinUserServiceBean.findByUserName(userToUnlock.getUserIdentifier());
-        if (builtinUser != null) {
-            BuiltinUser savedBuiltinUser = builtinUserServiceBean.resetBadLoginAttempts(builtinUser);
-        }
+        userToUnlock.setBadLogins(0);
         return save(userToUnlock);
+    }
+
+    public AuthenticatedUser recordBadLoginAttempt(AuthenticatedUser authenticatedUser) {
+        int badlogins = authenticatedUser.getBadLogins();
+        authenticatedUser.setBadLogins(badlogins + 1);
+        AuthenticatedUser savedAuthenticatedUser = save(authenticatedUser);
+        if (authenticatedUser.getBadLogins() >= numBadLoginsRequiredToLockAccount) {
+            long secondsInAnHour = 3600;
+            savedAuthenticatedUser = lockUser(authenticatedUser.getId(), secondsInAnHour);
+        }
+        return savedAuthenticatedUser;
     }
 
 }

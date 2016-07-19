@@ -66,14 +66,14 @@ public class BuiltinAuthenticationProvider implements CredentialsAuthenticationP
 
         AuthenticatedUser authenticatedUser = authSvc.getAuthenticatedUser(u.getUserName());
         
-        if (u.getBadLogins() >= BuiltinUserServiceBean.numBadLoginsRequiredToLockAccount) {
+        if (authenticatedUser.getBadLogins() >= AuthenticationServiceBean.numBadLoginsRequiredToLockAccount) {
             return AuthenticationResponse.makeLocked("Account has been locked until " + authenticatedUser.getLockedUntil() + ".");
         }
         boolean userAuthenticated = PasswordEncryption.getVersion(u.getPasswordEncryptionVersion())
                                             .check(authReq.getCredential(KEY_PASSWORD), u.getEncryptedPassword() );
         if (!userAuthenticated) {
-            BuiltinUser updatedUser = bean.recordBadLoginAttempt(u);
-            if (updatedUser.getBadLogins() < BuiltinUserServiceBean.numBadLoginsRequiredToLockAccount) {
+            AuthenticatedUser updatedUser = authSvc.recordBadLoginAttempt(authenticatedUser);
+            if (updatedUser.getBadLogins() < AuthenticationServiceBean.numBadLoginsRequiredToLockAccount) {
                 return AuthenticationResponse.makeFail("Bad username or password");
             } else {
                 return AuthenticationResponse.makeLocked("Bad username or password. Locking account until " + authenticatedUser.getLockedUntil() + ".");

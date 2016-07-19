@@ -62,25 +62,7 @@ public class BuiltinUser implements Serializable {
     private String encryptedPassword;
     private String affiliation;
     private String position;
-    /**
-     * Successive invalid login attempts.
-     *
-     * @todo Should this field be on AuthenticatedUser instead?
-     *
-     * @todo It would be sort of nice to make this nullable=false but that would
-     * require a SQL update to populate it with 0 initially.
-     */
-    @Column(nullable = true)
-    private int badLogins;
-
-    public int getBadLogins() {
-        return badLogins;
-    }
-
-    public void setBadLogins(int badLogins) {
-        this.badLogins = badLogins;
-    }
-
+    
     public void updateEncryptedPassword( String encryptedPassword, int algorithmVersion ) {
         setEncryptedPassword(encryptedPassword);
         setPasswordEncryptionVersion(algorithmVersion);

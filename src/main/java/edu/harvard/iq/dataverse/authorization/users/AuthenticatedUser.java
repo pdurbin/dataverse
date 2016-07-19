@@ -76,15 +76,14 @@ public class AuthenticatedUser implements User, Serializable {
      * The time at which the user's account is no longer locked.
      */
     private Timestamp lockedUntil;
-
-    public Timestamp getLockedUntil() {
-        return lockedUntil;
-    }
-
-    public void setLockedUntil(Timestamp lockedUntil) {
-        this.lockedUntil = lockedUntil;
-    }
-
+    /**
+     * Successive invalid login attempts.
+     *
+     * @todo It would be sort of nice to make this nullable=false but that would
+     * require a SQL update to populate it with 0 initially.
+     */
+    @Column(nullable = true)
+    private int badLogins;
     /**
      * @todo Remove? Check for accuracy? For Solr JOINs we used to care about
      * the modification times of users but now we don't index users at all.
@@ -204,6 +203,22 @@ public class AuthenticatedUser implements User, Serializable {
 
     public void setSuperuser(boolean superuser) {
         this.superuser = superuser;
+    }
+
+    public Timestamp getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public void setLockedUntil(Timestamp lockedUntil) {
+        this.lockedUntil = lockedUntil;
+    }
+
+    public int getBadLogins() {
+        return badLogins;
+    }
+
+    public void setBadLogins(int badLogins) {
+        this.badLogins = badLogins;
     }
 
     public void setModificationTime(Timestamp modificationTime) {

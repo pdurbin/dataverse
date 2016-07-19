@@ -1,7 +1,5 @@
 package edu.harvard.iq.dataverse.authorization.providers.builtin;
 
-import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
-import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.User;
 import edu.harvard.iq.dataverse.passwordreset.PasswordResetData;
@@ -39,16 +37,9 @@ public class BuiltinUserServiceBean {
     
     @EJB
     PasswordResetServiceBean passwordResetService;
-    @EJB
-    AuthenticationServiceBean authenticationService;
 
     @PersistenceContext(unitName = "VDCNet-ejbPU")
     private EntityManager em;
-    /**
-     * @todo Make this configurable. Don't hard code it as "three strikes and
-     * you're out."
-     */
-    static public int numBadLoginsRequiredToLockAccount = 3;
     
     public String encryptPassword(String plainText) {
         return PasswordEncryption.get().encrypt(plainText);
@@ -156,25 +147,5 @@ public class BuiltinUserServiceBean {
     public String requestPasswordUpgradeLink( BuiltinUser aUser ) throws PasswordResetException {
         PasswordResetInitResponse prir = passwordResetService.requestPasswordReset(aUser, false, PasswordResetData.Reason.UPGRADE_REQUIRED );
         return "passwordreset.xhtml?token=" + prir.getPasswordResetData().getToken() + "&faces-redirect=true";
-    }
-
-    public BuiltinUser recordBadLoginAttempt(BuiltinUser builtinUser) {
-        int badlogins = builtinUser.getBadLogins();
-        builtinUser.setBadLogins(badlogins + 1);
-        BuiltinUser savedBuiltinUser = save(builtinUser);
-        if (savedBuiltinUser.getBadLogins() >= numBadLoginsRequiredToLockAccount) {
-            long secondsInAnHour = 3600;
-            AuthenticatedUser au = authenticationService.lookupUser(BuiltinAuthenticationProvider.PROVIDER_ID, builtinUser.getUserName());
-            Long auId = au.getId();
-            if (auId != null) {
-                AuthenticatedUser savedAu = authenticationService.lockUser(auId, secondsInAnHour);
-            }
-        }
-        return savedBuiltinUser;
-    }
-
-    public BuiltinUser resetBadLoginAttempts(BuiltinUser builtinUser) {
-        builtinUser.setBadLogins(0);
-        return save(builtinUser);
     }
 }
