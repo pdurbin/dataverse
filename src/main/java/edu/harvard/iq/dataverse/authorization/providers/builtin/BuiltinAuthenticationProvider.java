@@ -19,7 +19,10 @@ import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.passwordreset.PasswordResetException;
 import edu.harvard.iq.dataverse.util.BundleUtil;
 import edu.harvard.iq.dataverse.util.SystemConfig;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * An authentication provider built into the application. Uses JPA and the 
@@ -28,7 +31,9 @@ import java.util.Set;
  * @author michael
  */
 public class BuiltinAuthenticationProvider implements CredentialsAuthenticationProvider, UserLister, GroupProvider {
-    
+
+    private static final Logger logger = Logger.getLogger(BuiltinAuthenticationProvider.class.getCanonicalName());
+
     public static final String PROVIDER_ID = "builtin";
     private static String KEY_USERNAME_OR_EMAIL;
     private static String KEY_PASSWORD;
@@ -68,6 +73,21 @@ public class BuiltinAuthenticationProvider implements CredentialsAuthenticationP
         if ( u == null ) return AuthenticationResponse.makeFail("Bad username, email address, or password");
 
         AuthenticatedUser authenticatedUser = authSvc.getAuthenticatedUser(u.getUserName());
+
+        if (authenticatedUser != null) {
+            Timestamp lockedUntil = authenticatedUser.getLockedUntil();
+            if (lockedUntil != null) {
+                Timestamp now = new Timestamp(new Date().getTime());
+                if (lockedUntil.after(now)) {
+                    logger.info("Login attempt by user id " + authenticatedUser.getId() + " (" + authenticatedUser.getIdentifier() + ") that is locked until " + lockedUntil + ".");
+                    return AuthenticationResponse.makeLocked(BundleUtil.getStringFromBundle("login.builtin.accountLocked", Arrays.asList(lockedUntil.toString())));
+//                        throw new AuthenticationFailedException(resp, "Authentication Failed: " + resp.getMessage());
+                } else {
+                    logger.info("Login attempt by user id " + authenticatedUser.getId() + " (" + authenticatedUser.getIdentifier() + ") that was locked until " + lockedUntil + ". Unlocking.");
+                    authenticatedUser = authSvc.unlockUser(authenticatedUser.getId());
+                }
+            }
+        }
 
         int numBadLoginsRequiredToLockAccount = systemConfig.getNumBadLoginsRequiredToLockAccount();
         if (authenticatedUser.getBadLogins() >= numBadLoginsRequiredToLockAccount) {

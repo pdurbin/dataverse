@@ -5,7 +5,7 @@ import static com.jayway.restassured.RestAssured.given;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.path.json.JsonPath;
 import com.jayway.restassured.response.Response;
-import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
+import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -69,9 +69,19 @@ public class BuiltinUsersIT {
         shouldShowAlreadyLockedResponse.prettyPrint();
         shouldShowAlreadyLockedResponse.then().assertThat()
                 .statusCode(400)
-                .body("message", startsWith("Account has been locked until"));
+                // "2" is for 2016 or whatever (Y3K bug!)
+                .body("message", startsWith("Your account has been locked until 2"));
 
         boolean systemConfiguredToUnlockAfterOneMinute = false;
+        Response getMinutes = given().when().get("/api/admin/settings/" + SettingsServiceBean.Key.MinutesToLockAccountForBadLogins);
+        getMinutes.prettyPrint();
+        if (getMinutes.getStatusCode() == 200) {
+            String minutesAsString = JsonPath.from(getMinutes.body().asString()).getString("data.message");
+            if (minutesAsString.equals("1")) {
+                systemConfiguredToUnlockAfterOneMinute = true;
+            }
+        }
+
         if (systemConfiguredToUnlockAfterOneMinute) {
             int secondsInMinute = 60;
             Thread.sleep(1100 * secondsInMinute);
