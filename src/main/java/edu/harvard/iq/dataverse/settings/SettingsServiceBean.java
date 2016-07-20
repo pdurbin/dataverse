@@ -210,6 +210,16 @@ public class SettingsServiceBean {
                 
 
         /**
+         * The number of successive invalid login attempts that will temporarily
+         * lock the account.
+         */
+        NumBadLoginsRequiredToLockAccount,
+        /**
+         * The number of minutes for which an account will be locked after the
+         * threshold of successive invalid login attempts has been reached.
+         */
+        MinutesToLockAccountForBadLogins,
+        /**
          The message added to a popup upon dataset publish
          * 
          */

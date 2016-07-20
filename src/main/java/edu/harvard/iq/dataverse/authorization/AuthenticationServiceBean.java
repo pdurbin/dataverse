@@ -19,6 +19,7 @@ import edu.harvard.iq.dataverse.authorization.providers.shib.ShibAuthenticationP
 import edu.harvard.iq.dataverse.authorization.users.ApiToken;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.util.BundleUtil;
+import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.ParseException;
@@ -58,12 +59,6 @@ public class AuthenticationServiceBean {
     private static final Logger logger = Logger.getLogger(AuthenticationServiceBean.class.getName());
 
     /**
-     * @todo Make this configurable. Don't hard code it as "three strikes and
-     * you're out."
-     */
-    static public int numBadLoginsRequiredToLockAccount = 3;
-
-    /**
      * Where all registered authentication providers live.
      */
     final Map<String, AuthenticationProvider> authenticationProviders = new HashMap<>();
@@ -82,6 +77,9 @@ public class AuthenticationServiceBean {
     @EJB
     UserNotificationServiceBean userNotificationService;
 
+    @EJB
+    SystemConfig systemConfig;
+
     @PersistenceContext(unitName = "VDCNet-ejbPU")
     private EntityManager em;
     
@@ -90,7 +88,7 @@ public class AuthenticationServiceBean {
         
         // First, set up the factories
         try {
-            registerProviderFactory( new BuiltinAuthenticationProviderFactory(builtinUserServiceBean, this) );
+            registerProviderFactory(new BuiltinAuthenticationProviderFactory(builtinUserServiceBean, this, systemConfig));
             registerProviderFactory( new EchoAuthenticationProviderFactory() );
             /**
              * Register shib provider factory here. Test enable/disable via Admin API, etc.
@@ -634,9 +632,10 @@ public class AuthenticationServiceBean {
         int badlogins = authenticatedUser.getBadLogins();
         authenticatedUser.setBadLogins(badlogins + 1);
         AuthenticatedUser savedAuthenticatedUser = save(authenticatedUser);
-        if (authenticatedUser.getBadLogins() >= numBadLoginsRequiredToLockAccount) {
-            long secondsInAnHour = 3600;
-            savedAuthenticatedUser = lockUser(authenticatedUser.getId(), secondsInAnHour);
+        if (authenticatedUser.getBadLogins() >= systemConfig.getNumBadLoginsRequiredToLockAccount()) {
+            int secondsInMinute = 60;
+            int secondsToLockAccount = systemConfig.getMinutesToLockAccountForBadLogins() * secondsInMinute;
+            savedAuthenticatedUser = lockUser(authenticatedUser.getId(), secondsToLockAccount);
         }
         return savedAuthenticatedUser;
     }

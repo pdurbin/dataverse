@@ -6,6 +6,7 @@ import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.path.json.JsonPath;
 import com.jayway.restassured.response.Response;
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
+import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.util.UUID;
 import java.util.logging.Logger;
 import javax.json.Json;
@@ -39,7 +40,7 @@ public class BuiltinUsersIT {
      * testing? Or just use Selenium?
      */
     @Test
-    public void testPasswordGuessingAttack() {
+    public void testPasswordGuessingAttack() throws InterruptedException {
         String email = null;
         Response createUserToBeAttacked = createUser(getRandomUsername(), "firstName", "lastName", email);
         createUserToBeAttacked.prettyPrint();
@@ -49,7 +50,7 @@ public class BuiltinUsersIT {
         long userIdUnderAttack = JsonPath.from(createUserToBeAttacked.body().asString()).getLong("data.authenticatedUser.id");
         String usernameUnderAttack = JsonPath.from(createUserToBeAttacked.body().asString()).getString("data.user.userName");
         String apiToken = JsonPath.from(createUserToBeAttacked.body().asString()).getString("data.apiToken");
-        int numAttemptsNeededToLockAccountMinusOne = AuthenticationServiceBean.numBadLoginsRequiredToLockAccount - 1;
+        int numAttemptsNeededToLockAccountMinusOne = SystemConfig.getSaneDefaultForNumBadLoginsRequiredToLockAccount() - 1;
 
         for (int i = 0; i < numAttemptsNeededToLockAccountMinusOne; i++) {
             Response getApiTokenShouldFail = getApiTokenUsingUsername(usernameUnderAttack, "guess" + i);
@@ -70,6 +71,16 @@ public class BuiltinUsersIT {
                 .statusCode(400)
                 .body("message", startsWith("Account has been locked until"));
 
+        boolean systemConfiguredToUnlockAfterOneMinute = false;
+        if (systemConfiguredToUnlockAfterOneMinute) {
+            int secondsInMinute = 60;
+            Thread.sleep(1100 * secondsInMinute);
+            Response shouldWorkNow = getApiTokenUsingUsername(usernameUnderAttack, usernameUnderAttack);
+            shouldWorkNow.prettyPrint();
+            shouldWorkNow.then().assertThat()
+                    .statusCode(200);
+
+        }
     }
 
     @Test

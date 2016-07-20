@@ -18,6 +18,7 @@ import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.passwordreset.PasswordResetException;
 import edu.harvard.iq.dataverse.util.BundleUtil;
+import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.util.Set;
 
 /**
@@ -35,10 +36,12 @@ public class BuiltinAuthenticationProvider implements CredentialsAuthenticationP
       
     final BuiltinUserServiceBean bean;
     final AuthenticationServiceBean authSvc;
+    final SystemConfig systemConfig;
 
-    public BuiltinAuthenticationProvider( BuiltinUserServiceBean aBean, AuthenticationServiceBean asb ) {
+    public BuiltinAuthenticationProvider(BuiltinUserServiceBean aBean, AuthenticationServiceBean asb, SystemConfig scb) {
         bean = aBean;
         authSvc = asb;
+        systemConfig = scb;
         KEY_USERNAME_OR_EMAIL = BundleUtil.getStringFromBundle("login.builtin.credential.usernameOrEmail");
         KEY_PASSWORD = BundleUtil.getStringFromBundle("login.builtin.credential.password");
         CREDENTIALS_LIST = Arrays.asList(new Credential(KEY_USERNAME_OR_EMAIL), new Credential(KEY_PASSWORD, true));
@@ -65,15 +68,16 @@ public class BuiltinAuthenticationProvider implements CredentialsAuthenticationP
         if ( u == null ) return AuthenticationResponse.makeFail("Bad username, email address, or password");
 
         AuthenticatedUser authenticatedUser = authSvc.getAuthenticatedUser(u.getUserName());
-        
-        if (authenticatedUser.getBadLogins() >= AuthenticationServiceBean.numBadLoginsRequiredToLockAccount) {
+
+        int numBadLoginsRequiredToLockAccount = systemConfig.getNumBadLoginsRequiredToLockAccount();
+        if (authenticatedUser.getBadLogins() >= numBadLoginsRequiredToLockAccount) {
             return AuthenticationResponse.makeLocked("Account has been locked until " + authenticatedUser.getLockedUntil() + ".");
         }
         boolean userAuthenticated = PasswordEncryption.getVersion(u.getPasswordEncryptionVersion())
                                             .check(authReq.getCredential(KEY_PASSWORD), u.getEncryptedPassword() );
         if (!userAuthenticated) {
             AuthenticatedUser updatedUser = authSvc.recordBadLoginAttempt(authenticatedUser);
-            if (updatedUser.getBadLogins() < AuthenticationServiceBean.numBadLoginsRequiredToLockAccount) {
+            if (updatedUser.getBadLogins() < numBadLoginsRequiredToLockAccount) {
                 return AuthenticationResponse.makeFail("Bad username or password");
             } else {
                 return AuthenticationResponse.makeLocked("Bad username or password. Locking account until " + authenticatedUser.getLockedUntil() + ".");
