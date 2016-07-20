@@ -65,7 +65,7 @@ public class BuiltinUsersIT {
         attemptShouldLockAccount.then().assertThat()
                 .statusCode(400)
                 // "2" is for 2016 or whatever (Y3K bug!)
-                .body("message", startsWith("Bad username or password. " + expectedNumBadLoginsRequiredToLockAccount + " successive invalid login attempts. Locking account until 2"));
+                .body("message", startsWith("The username, email address, or password you entered is invalid. " + expectedNumBadLoginsRequiredToLockAccount + " successive invalid login attempts. Locking account until 2"));
 
         Response shouldShowAlreadyLockedResponse = getApiTokenUsingUsername(usernameUnderAttack, "wrongPassword");
         shouldShowAlreadyLockedResponse.prettyPrint();
