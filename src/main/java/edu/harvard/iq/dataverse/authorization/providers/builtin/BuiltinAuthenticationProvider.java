@@ -100,7 +100,6 @@ public class BuiltinAuthenticationProvider implements CredentialsAuthenticationP
                 return AuthenticationResponse.makeFail("Bad username or password");
             } else {
                 logger.info("Login attempt " + updatedUser.getBadLogins() + " by user id " + updatedUser.getId() + " (" + updatedUser.getIdentifier() + ") failed. Locking account until " + updatedUser.getLockedUntil() + ".");
-//                return AuthenticationResponse.makeLocked("Bad username or password. Locking account until " + authenticatedUser.getLockedUntil() + ".");
                 return AuthenticationResponse.makeLocked(BundleUtil.getStringFromBundle("login.builtin.accountLocking", Arrays.asList(updatedUser.getBadLogins() + "", updatedUser.getLockedUntil().toString())));
             }
         }

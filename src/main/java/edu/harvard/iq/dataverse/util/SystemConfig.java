@@ -493,15 +493,17 @@ public class SystemConfig {
         int numBadLoginsRequiredToLockAccount = saneDefault;
         Key settingKey = SettingsServiceBean.Key.NumBadLoginsRequiredToLockAccount;
         String valueFromDb = settingsService.get(settingKey.toString());
+        String errorInvalidValue = "Invalid value for " + settingKey + " setting (\"" + valueFromDb + "\"). The default value \"" + saneDefault + "\" will be used instead.";
         if (valueFromDb != null) {
             try {
                 Integer numBadLoginsRequired = new Integer(valueFromDb);
-                /**
-                 * @todo Make sure it's positive.
-                 */
+                if (numBadLoginsRequired > 0) {
                 return numBadLoginsRequired;
+                } else {
+                    logger.warning(errorInvalidValue);
+                }
             } catch (NumberFormatException nfe) {
-                logger.warning("Invalid value for " + settingKey + " - " + valueFromDb + ". The default value " + numBadLoginsRequiredToLockAccount + " will be used instead.");
+                logger.warning(errorInvalidValue);
             }
         }
         return numBadLoginsRequiredToLockAccount;
@@ -517,15 +519,17 @@ public class SystemConfig {
         int minutesToLockAccountForBadLogins = saneDefault;
         Key settingKey = SettingsServiceBean.Key.MinutesToLockAccountForBadLogins;
         String valueFromDb = settingsService.get(settingKey.toString());
+        String errorInvalidValue = "Invalid value for " + settingKey + " setting (\"" + valueFromDb + "\"). The default value \"" + saneDefault + "\" will be used instead.";
         if (valueFromDb != null) {
             try {
                 Integer numMinutesToLock = new Integer(valueFromDb);
-                /**
-                 * @todo Make sure it's positive.
-                 */
-                return numMinutesToLock;
+                if (numMinutesToLock > 0) {
+                    return numMinutesToLock;
+                } else {
+                    logger.warning(errorInvalidValue);
+                }
             } catch (NumberFormatException nfe) {
-                logger.warning("Invalid value for " + settingKey + " - " + valueFromDb + ". The default value " + minutesToLockAccountForBadLogins + " will be used instead.");
+                logger.warning(errorInvalidValue);
             }
         }
         return minutesToLockAccountForBadLogins;
