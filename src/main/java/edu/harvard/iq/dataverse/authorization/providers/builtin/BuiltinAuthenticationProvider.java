@@ -100,6 +100,7 @@ public class BuiltinAuthenticationProvider implements CredentialsAuthenticationP
             if (updatedUser.getBadLogins() < numBadLoginsRequiredToLockAccount) {
                 return AuthenticationResponse.makeFail("Bad username or password");
             } else {
+                logger.info("Login attempt " + updatedUser.getBadLogins() + " by user id " + authenticatedUser.getId() + " (" + authenticatedUser.getIdentifier() + ") failed. Locking account until " + authenticatedUser.getLockedUntil() + ".");
                 return AuthenticationResponse.makeLocked("Bad username or password. Locking account until " + authenticatedUser.getLockedUntil() + ".");
             }
         }
