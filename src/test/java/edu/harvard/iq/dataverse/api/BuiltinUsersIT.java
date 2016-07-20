@@ -50,7 +50,8 @@ public class BuiltinUsersIT {
         long userIdUnderAttack = JsonPath.from(createUserToBeAttacked.body().asString()).getLong("data.authenticatedUser.id");
         String usernameUnderAttack = JsonPath.from(createUserToBeAttacked.body().asString()).getString("data.user.userName");
         String apiToken = JsonPath.from(createUserToBeAttacked.body().asString()).getString("data.apiToken");
-        int numAttemptsNeededToLockAccountMinusOne = SystemConfig.getSaneDefaultForNumBadLoginsRequiredToLockAccount() - 1;
+        int expectedNumBadLoginsRequiredToLockAccount = SystemConfig.getSaneDefaultForNumBadLoginsRequiredToLockAccount();
+        int numAttemptsNeededToLockAccountMinusOne = expectedNumBadLoginsRequiredToLockAccount - 1;
 
         for (int i = 0; i < numAttemptsNeededToLockAccountMinusOne; i++) {
             Response getApiTokenShouldFail = getApiTokenUsingUsername(usernameUnderAttack, "guess" + i);
@@ -63,7 +64,8 @@ public class BuiltinUsersIT {
         attemptShouldLockAccount.prettyPrint();
         attemptShouldLockAccount.then().assertThat()
                 .statusCode(400)
-                .body("message", startsWith("Bad username or password. Locking account until"));
+                // "2" is for 2016 or whatever (Y3K bug!)
+                .body("message", startsWith("Bad username or password. " + expectedNumBadLoginsRequiredToLockAccount + " successive invalid login attempts. Locking account until 2"));
 
         Response shouldShowAlreadyLockedResponse = getApiTokenUsingUsername(usernameUnderAttack, "wrongPassword");
         shouldShowAlreadyLockedResponse.prettyPrint();
@@ -74,7 +76,6 @@ public class BuiltinUsersIT {
 
         boolean systemConfiguredToUnlockAfterOneMinute = false;
         Response getMinutes = given().when().get("/api/admin/settings/" + SettingsServiceBean.Key.MinutesToLockAccountForBadLogins);
-        getMinutes.prettyPrint();
         if (getMinutes.getStatusCode() == 200) {
             String minutesAsString = JsonPath.from(getMinutes.body().asString()).getString("data.message");
             if (minutesAsString.equals("1")) {
