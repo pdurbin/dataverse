@@ -196,10 +196,7 @@ public class EjbDataverseEngine {
                             aCommand,
                             required, dvo);
                 }
-                /**
-                 * @todo Would it make more sense to have a user.isDisabled or
-                 * user.isExpired method?
-                 */
+
                 User user = dvReq.getUser();
                 if (user instanceof AuthenticatedUser) {
                     AuthenticatedUser authenticatedUser = (AuthenticatedUser) user;

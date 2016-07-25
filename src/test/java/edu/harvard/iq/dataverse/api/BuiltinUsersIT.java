@@ -37,7 +37,7 @@ public class BuiltinUsersIT {
      * @todo We're simulating a password guessing attack here by using the API
      * token lookup endpoint but are there other ways to easily test this? Is it
      * time to start trying to use https://www.cypress.io for automated API
-     * testing? Or just use Selenium?
+     * testing? Or just use Selenium? See tests/passwordguess.py
      */
     @Test
     public void testPasswordGuessingAttack() throws InterruptedException {
@@ -138,9 +138,6 @@ public class BuiltinUsersIT {
                 .statusCode(403)
                 .body("message", equalTo("Superusers only."));
 
-        /**
-         * @todo how do we push out the expiration date after 10 invalid logins?
-         */
         long numSecondsToLock = 3;
         Response lockUserTemporarily = UtilIT.lockAccount(userIdToBeDisabled, numSecondsToLock, superuserApiToken);
         lockUserTemporarily.prettyPrint();
