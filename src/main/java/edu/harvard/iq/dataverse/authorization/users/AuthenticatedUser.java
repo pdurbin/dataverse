@@ -72,14 +72,6 @@ public class AuthenticatedUser implements User, Serializable {
     private String firstName;
     @Column(nullable = true)
     private Timestamp emailConfirmed;
-
-    public Timestamp getEmailConfirmed() {
-        return emailConfirmed;
-    }
-
-    public void setEmailConfirmed(Timestamp emailConfirmed) {
-        this.emailConfirmed = emailConfirmed;
-    }
     private boolean superuser;
 
     /**
@@ -192,6 +184,14 @@ public class AuthenticatedUser implements User, Serializable {
 
     public void setFirstName(String firstName) {
         this.firstName = firstName;
+    }
+
+    public Timestamp getEmailConfirmed() {
+        return emailConfirmed;
+    }
+
+    public void setEmailConfirmed(Timestamp emailConfirmed) {
+        this.emailConfirmed = emailConfirmed;
     }
 
     @Override

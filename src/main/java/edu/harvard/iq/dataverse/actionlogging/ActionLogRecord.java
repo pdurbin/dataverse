@@ -42,7 +42,7 @@ public class ActionLogRecord implements java.io.Serializable {
         
         Admin,
         
-        GlobalGroups, AuthenticatedUser
+        GlobalGroups
     }
     
     @Id

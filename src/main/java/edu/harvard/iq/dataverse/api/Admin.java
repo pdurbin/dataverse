@@ -525,13 +525,15 @@ public class Admin extends AbstractApiBean {
         return okResponse(msg);
     }
     
-    //should the path for this method refer instead to the auth user ID?
+    //should the path for this method refer instead to the auth user ID? Yes.
+    // Call confirmEmailSvc.findConfirmEmailDataByDataverseUser. We need this
+    // to close the security hole of exposing the token on create.
     @Path("confirmEmail/{token}")
     @GET
     public Response getConfirmEmailToken(@PathParam("token") String token) {
         ConfirmEmailExecResponse confirmEmailExecResponse = confirmEmailSvc.processToken(token);
         ConfirmEmailData confirmEmailData = confirmEmailExecResponse.getConfirmEmailData();
-        
+
         return null;
     }
 

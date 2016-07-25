@@ -1,7 +1,6 @@
 package edu.harvard.iq.dataverse.confirmemail;
 
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
-import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUser;
 import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -20,28 +19,27 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 /**
- * 
+ *
  * @author bsilverstein
- * @todo: Make the feature restrict a user until they are confirmed
  */
-
-@Table(indexes = {@Index(columnList="token")
-		, @Index(columnList="authenticateduser_id")})
+@Table(indexes = {
+    @Index(columnList = "token"),
+    @Index(columnList = "authenticateduser_id")})
 @NamedQueries({
-    @NamedQuery(name="ConfirmEmailData.findAll",
-            query="SELECT prd FROM ConfirmEmailData prd"),
-    @NamedQuery(name="ConfirmEmailData.findByUser",
-            query="SELECT prd FROM ConfirmEmailData prd WHERE prd.authenticatedUser = :user"),
-    @NamedQuery(name="ConfirmEmailData.findByToken",
-            query="SELECT prd FROM ConfirmEmailData prd WHERE prd.token = :token")
+    @NamedQuery(name = "ConfirmEmailData.findAll",
+            query = "SELECT prd FROM ConfirmEmailData prd"),
+    @NamedQuery(name = "ConfirmEmailData.findByUser",
+            query = "SELECT prd FROM ConfirmEmailData prd WHERE prd.authenticatedUser = :user"),
+    @NamedQuery(name = "ConfirmEmailData.findByToken",
+            query = "SELECT prd FROM ConfirmEmailData prd WHERE prd.token = :token")
 })
 @Entity
-public class ConfirmEmailData implements Serializable{
-    
+public class ConfirmEmailData implements Serializable {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(nullable = true)
     private String token;
 
@@ -54,8 +52,6 @@ public class ConfirmEmailData implements Serializable{
 
     @Column(nullable = false)
     private Timestamp expires;
-    
-    
 
     public ConfirmEmailData(AuthenticatedUser anAuthenticatedUser) {
         authenticatedUser = anAuthenticatedUser;
@@ -63,10 +59,11 @@ public class ConfirmEmailData implements Serializable{
         long nowInMilliseconds = new Date().getTime();
         created = new Timestamp(nowInMilliseconds);
         long ONE_MINUTE_IN_MILLISECONDS = 60000;
-        /** 
-        * @todo: use database setting instead of jvm option for line 75 configurable expiration value
-        */
-        
+        /**
+         * @todo: use database setting instead of jvm option for line 75
+         * configurable expiration value
+         */
+
         long futureInMilliseconds = nowInMilliseconds + (SystemConfig.getMinutesUntilConfirmEmailTokenExpires() * ONE_MINUTE_IN_MILLISECONDS);
         expires = new Timestamp(new Date(futureInMilliseconds).getTime());
     }
@@ -95,7 +92,7 @@ public class ConfirmEmailData implements Serializable{
     public Timestamp getExpires() {
         return expires;
     }
-    
+
     public Long getId() {
         return id;
     }

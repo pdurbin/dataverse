@@ -20,10 +20,9 @@ import javax.inject.Named;
 import org.hibernate.validator.constraints.NotBlank;
 
 /**
- *        
+ *
  * @author bsilverstein
  */
-
 @ViewScoped
 @Named("ConfirmEmailPage")
 public class ConfirmEmailPage implements java.io.Serializable {
@@ -32,20 +31,21 @@ public class ConfirmEmailPage implements java.io.Serializable {
 
     @EJB
     ConfirmEmailServiceBean confirmEmailService;
-    @EJB 
+    @EJB
     AuthenticationServiceBean dataverseUserService;
     @EJB
-    DataverseServiceBean dataverseService;    
+    DataverseServiceBean dataverseService;
     @EJB
     AuthenticationServiceBean authSvc;
     @Inject
     DataverseSession session;
-    
+
     @EJB
     ActionLogServiceBean actionLogSvc;
-    
+
     /**
-     * The unique string used to look up a user and continue the email confirmation.
+     * The unique string used to look up a user and continue the email
+     * confirmation.
      */
     String token;
 
@@ -58,17 +58,15 @@ public class ConfirmEmailPage implements java.io.Serializable {
      * The email address that is entered to be confirmed.
      */
     @NotBlank(message = "Please enter a valid email address.")
-    @ValidateEmail(message = "Confirm email page default email message.")    
+    @ValidateEmail(message = "Confirm email page default email message.")
     String emailAddress;
 
     /**
-     * The link that is emailed to the user to confirm the email that contains
-     * a token.
+     * The link that is emailed to the user to confirm the email that contains a
+     * token.
      */
     String confirmEmailUrl;
 
-    
-    
     ConfirmEmailData confirmEmailData;
 
     public void init() {
@@ -84,22 +82,17 @@ public class ConfirmEmailPage implements java.io.Serializable {
     }
 
     public String sendEmailConfirmLink() {
-            //Need to figure out a replacement for action type _____user, was builtin before
-        actionLogSvc.log( new ActionLogRecord(ActionLogRecord.ActionType.BuiltinUser, "confirmEmailRequest")
-                            .setInfo("Email Address: " + emailAddress) );
         try {
             ConfirmEmailInitResponse confirmEmailInitResponse = confirmEmailService.beginConfirm(emailAddress);
             ConfirmEmailData confirmEmailData = confirmEmailInitResponse.getConfirmEmailData();
             if (confirmEmailData != null) {
                 AuthenticatedUser foundUser = confirmEmailData.getAuthenticatedUser();
                 confirmEmailUrl = confirmEmailInitResponse.getConfirmUrl();
-                actionLogSvc.log( new ActionLogRecord(ActionLogRecord.ActionType.BuiltinUser, "passwordResetSent")
-                            .setInfo("Email Address: " + emailAddress) );
-            } else {                
+            } else {
                 logger.log(Level.INFO, "Couldn''t find single account using {0}", emailAddress);
             }
             FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Email Confirmation Initiated", ""));
-        } catch (ConfirmEmailException ex) {            
+        } catch (ConfirmEmailException ex) {
             logger.log(Level.WARNING, "Error While confirming email: " + ex.getMessage(), ex);
         }
         return "";
@@ -124,7 +117,7 @@ public class ConfirmEmailPage implements java.io.Serializable {
 //            throw new ConfirmEmailException(msg, ex);
 //        }
 //    }
-    
+
     public String getToken() {
         return token;
     }
@@ -156,4 +149,4 @@ public class ConfirmEmailPage implements java.io.Serializable {
     public void setConfirmEmailData(ConfirmEmailData confirmEmailData) {
         this.confirmEmailData = confirmEmailData;
     }
-}    
+}

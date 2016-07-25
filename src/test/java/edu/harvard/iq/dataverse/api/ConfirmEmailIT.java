@@ -20,15 +20,29 @@ import static org.hamcrest.Matchers.startsWith;
 /**
  *
  * @author bsilverstein
- * @todo: Develop test to reflect access restrictions without confirmation
  *
  * Next steps:
  *
- * - 1. Switch from POST to confirmemail.xhtml
+ * - Switch from POST to confirmemail.xhtml
  *
- * - 2. Change first email to say, "please click to confirm your email."
+ * - Change first email to say, "please click to confirm your email." See
+ * confirmUrl in ConfirmEmailInitResponse.
  *
- * - 3. Show on user page if has been email confirmed (see mockups).
+ * - Show on user page if has been email confirmed (see mockups).
+ *
+ * - Do not expose confirm email token to user.
+ *
+ * - Call confirmEmailSvc.createToken when user is created in GUI.
+ *
+ * - Call confirmEmailSvc.createToken when user changes email address.
+ *
+ * - What effect should there be of not having a confirmed email? No emails are
+ * sent? User can't create stuff?
+ *
+ * - Make getMinutesUntilConfirmEmailTokenExpires configurable. How long should
+ * the default be? 24 hours?
+ *
+ * - Get ConfirmEmailPage and xhtml working.
  *
  */
 public class ConfirmEmailIT {
