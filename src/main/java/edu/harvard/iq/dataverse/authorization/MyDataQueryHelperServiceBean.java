@@ -10,6 +10,7 @@ import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.DvObjectServiceBean;
 import edu.harvard.iq.dataverse.RoleAssigneeServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
+import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.mydata.MyDataFinder;
 import java.util.ArrayList;
 import java.util.List;
@@ -102,7 +103,7 @@ public class MyDataQueryHelperServiceBean {
         return " AND role.role_id IN (" + StringUtils.join(outputList, ",") + ")";        
     }
     
-    public List<String> getRolesOnDVO(AuthenticatedUser user, Long dvoId, List<Long> roleIdList, MyDataFinder finder) {
+    public List<String> getRolesOnDVO(DataverseRequest dataverseRequest, Long dvoId, List<Long> roleIdList, MyDataFinder finder) {
 
         List<String> retVal = new ArrayList();
 
@@ -123,7 +124,7 @@ public class MyDataQueryHelperServiceBean {
 
         }
         
-        List<Long> roles = roleAssigneeService.getRoleIdListForGivenAssigneeDvObject(user, idsForSelect, dvoId);
+        List<Long> roles = roleAssigneeService.getRoleIdListForGivenAssigneeDvObject(dataverseRequest, idsForSelect, dvoId);
         
        /* List<Object> results = em.createNativeQuery("Select distinct role.role_id FROM roleassignment role WHERE  "
                 + " role.definitionpoint_id = " + dvoId + " "
@@ -155,7 +156,7 @@ public class MyDataQueryHelperServiceBean {
                 + ")"
                 + roleClause
                 + ";").getResultList();*/
-        List<Long> resultsParent = roleAssigneeService.getRoleIdListForGivenAssigneeDvObject(user, idsForSelect, parentId);
+        List<Long> resultsParent = roleAssigneeService.getRoleIdListForGivenAssigneeDvObject(dataverseRequest, idsForSelect, parentId);
         if (resultsParent != null && !resultsParent.isEmpty()) {
             for (Object result : resultsParent) {
                 Long role_id = (Long) result;
@@ -181,7 +182,7 @@ public class MyDataQueryHelperServiceBean {
                 + roleClause
                 + ";").getResultList();
                 */
-        List<Long> resultsGrandParent = roleAssigneeService.getRoleIdListForGivenAssigneeDvObject(user, idsForSelect, grandParentId);
+        List<Long> resultsGrandParent = roleAssigneeService.getRoleIdListForGivenAssigneeDvObject(dataverseRequest, idsForSelect, grandParentId);
         if (resultsGrandParent != null && !resultsGrandParent.isEmpty()) {
             for (Object result : resultsGrandParent) {
                 Long role_id = (Long) result;

@@ -199,7 +199,7 @@ public class DataRetrieverAPI extends AbstractApiBean {
         // -------------------------------------------------------
         // Create new filter params that only check by the User 
         // -------------------------------------------------------
-        MyDataFilterParams filterParams = new MyDataFilterParams(searchUser, myDataFinder.getRolePermissionHelper());
+        MyDataFilterParams filterParams = new MyDataFilterParams(createDataverseRequest(searchUser), myDataFinder.getRolePermissionHelper());
         if (filterParams.hasError()){
             logger.severe("getTotalCountsFromSolr. filterParams error: " + filterParams.getErrorMessage());           
             return null;
@@ -351,7 +351,7 @@ public class DataRetrieverAPI extends AbstractApiBean {
         // ---------------------------------
         // (1) Initialize filterParams and check for Errors 
         // ---------------------------------
-        MyDataFilterParams filterParams = new MyDataFilterParams(authUser, dtypes, pub_states, roleIds, searchTerm);
+        MyDataFilterParams filterParams = new MyDataFilterParams(createDataverseRequest(authUser), dtypes, pub_states, roleIds, searchTerm);
         if (filterParams.hasError()){
             return this.getJSONErrorString(filterParams.getErrorMessage(), filterParams.getErrorMessage());
         }
@@ -441,7 +441,7 @@ public class DataRetrieverAPI extends AbstractApiBean {
                                 paginationStart);
         
         RoleTagRetriever roleTagRetriever = new RoleTagRetriever(this.rolePermissionHelper, this.roleAssigneeSvc, this.dvObjectServiceBean);
-        roleTagRetriever.loadRoles(searchUser, solrQueryResponse);
+        roleTagRetriever.loadRoles(createDataverseRequest(searchUser), solrQueryResponse);
 
                 
         jsonData.add(DataRetrieverAPI.JSON_SUCCESS_FIELD_NAME, true)

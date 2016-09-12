@@ -11,6 +11,8 @@ import static edu.harvard.iq.dataverse.DvObject.DATAVERSE_DTYPE_STRING;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import edu.harvard.iq.dataverse.authorization.DataverseRolePermissionHelper;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
+import edu.harvard.iq.dataverse.authorization.users.User;
+import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.search.SearchConstants;
 import edu.harvard.iq.dataverse.search.SearchFields;
 import java.util.ArrayList;
@@ -75,6 +77,15 @@ public class MyDataFilterParams {
     // Filter parameters
     // -----------------------------------
     private AuthenticatedUser authenticatedUser;
+    private DataverseRequest dataverseRequest;
+
+    public DataverseRequest getDataverseRequest() {
+        return dataverseRequest;
+    }
+
+    public void setDataverseRequest(DataverseRequest dataverseRequest) {
+        this.dataverseRequest = dataverseRequest;
+    }
     private String userIdentifier;
     private List<String> dvObjectTypes;    
     private List<String> publicationStatuses;
@@ -99,7 +110,8 @@ public class MyDataFilterParams {
      * @param authenticatedUser
      * @param userIdentifier 
      */
-    public MyDataFilterParams(AuthenticatedUser authenticatedUser, DataverseRolePermissionHelper roleHelper){
+    public MyDataFilterParams(DataverseRequest dataverseRequest, DataverseRolePermissionHelper roleHelper){
+        this.dataverseRequest = dataverseRequest;
         if (authenticatedUser==null){
             throw new NullPointerException("MyDataFilterParams constructor: authenticatedIUser cannot be null ");
         }
@@ -121,11 +133,17 @@ public class MyDataFilterParams {
      * @param publicationStatuses 
      * @param searchTerm 
      */    
-    public MyDataFilterParams(AuthenticatedUser authenticatedUser, List<String> dvObjectTypes, List<String> publicationStatuses, List<Long> roleIds, String searchTerm){
-        if (authenticatedUser==null){
+    public MyDataFilterParams(DataverseRequest dataverseRequest, List<String> dvObjectTypes, List<String> publicationStatuses, List<Long> roleIds, String searchTerm){
+        this.dataverseRequest = dataverseRequest;
+        User user = dataverseRequest.getUser();
+        if (!(user instanceof AuthenticatedUser)) {
+            throw new NullPointerException("MyDataFilterParams constructor: DataverseRequest must contain an AuthenticatedUser.");
+        }
+        AuthenticatedUser au = (AuthenticatedUser) user;
+        if (au == null) {
             throw new NullPointerException("MyDataFilterParams constructor: authenticatedIUser cannot be null ");
         }
-        this.authenticatedUser = authenticatedUser;
+        this.authenticatedUser = au;
         this.userIdentifier = authenticatedUser.getIdentifier();
 
         if (dvObjectTypes==null){

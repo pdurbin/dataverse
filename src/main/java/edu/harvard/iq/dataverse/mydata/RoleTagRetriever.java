@@ -12,6 +12,8 @@ import edu.harvard.iq.dataverse.search.SolrQueryResponse;
 import edu.harvard.iq.dataverse.search.SolrSearchResult;
 import edu.harvard.iq.dataverse.authorization.DataverseRolePermissionHelper;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
+import edu.harvard.iq.dataverse.authorization.users.User;
+import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.search.SearchConstants;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,8 +71,19 @@ public class RoleTagRetriever {
        this.dvObjectServiceBean = dvObjectServiceBean;
     }
     
-    public void loadRoles(AuthenticatedUser au , SolrQueryResponse solrQueryResponse){
-        
+    public void loadRoles(DataverseRequest dataverseRequest, SolrQueryResponse solrQueryResponse){
+
+        User user = dataverseRequest.getUser();
+        if (!(user instanceof AuthenticatedUser)) {
+            /**
+             * @todo Ask the original author why we are throwing
+             * NullPointerException in this method. For now, we are just
+             * duplicating the pattern below.
+             */
+            throw new NullPointerException("RoleTagRetriever.constructor. au cannot be null");
+        }
+        AuthenticatedUser au = (AuthenticatedUser) user;
+
         if (au == null){
             throw new NullPointerException("RoleTagRetriever.constructor. au cannot be null");
         }
@@ -94,7 +107,7 @@ public class RoleTagRetriever {
         findDataverseIdsForFiles();
         
         // (4) Retrieve the role ids
-        retrieveRoleIdsForDvObjects(au);
+        retrieveRoleIdsForDvObjects(dataverseRequest);
 
         // (5) Prepare final role lists
         prepareFinalRoleLists();
@@ -349,7 +362,13 @@ public class RoleTagRetriever {
     }
     
     
-    private boolean retrieveRoleIdsForDvObjects(AuthenticatedUser au ){
+    private boolean retrieveRoleIdsForDvObjects(DataverseRequest dataverseRequest){
+        User user = dataverseRequest.getUser();
+        if (!(user instanceof AuthenticatedUser)) {
+            this.addErrorMessage("This method can only operate on a DataverseRequest that contains an AuthenticatedUser.");
+            return false;
+        }
+        AuthenticatedUser au = (AuthenticatedUser) user;
         
         String userIdentifier = au.getUserIdentifier();
         if (userIdentifier == null){
@@ -366,7 +385,7 @@ public class RoleTagRetriever {
         }
         //msg("dvObjectIdList: " + dvObjectIdList.toString());
 
-        List<Object[]> results = this.roleAssigneeService.getRoleIdsFor(au, dvObjectIdList);
+        List<Object[]> results = this.roleAssigneeService.getRoleIdsFor(dataverseRequest, dvObjectIdList);
         
         //msgt("runStep1RoleAssignments results: " + results.toString());
 

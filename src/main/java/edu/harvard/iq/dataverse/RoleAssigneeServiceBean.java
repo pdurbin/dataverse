@@ -11,6 +11,8 @@ import edu.harvard.iq.dataverse.authorization.groups.impl.explicit.ExplicitGroup
 import edu.harvard.iq.dataverse.authorization.groups.impl.explicit.ExplicitGroupServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.authorization.users.GuestUser;
+import edu.harvard.iq.dataverse.authorization.users.User;
+import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrlUtil;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,9 +24,11 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
+import javax.faces.context.FacesContext;
 import javax.inject.Named;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -51,6 +55,8 @@ public class RoleAssigneeServiceBean {
 
     @EJB
     DataverseRoleServiceBean dataverseRoleService;
+//@Context
+//private HttpServletRequest httpRequest;
 
     protected Map<String, RoleAssignee> predefinedRoleAssignees = new TreeMap<>();
 
@@ -127,7 +133,12 @@ public class RoleAssigneeServiceBean {
         return " AND r.role_id IN (" + StringUtils.join(outputList, ",") + ")";
     }
 
-    public List<DataverseRole> getAssigneeDataverseRoleFor(AuthenticatedUser au) {
+    public List<DataverseRole> getAssigneeDataverseRoleFor(DataverseRequest dataverseRequest) {
+        User user = dataverseRequest.getUser();
+        if (!(user instanceof AuthenticatedUser)) {
+            return null;
+        }
+        AuthenticatedUser au = (AuthenticatedUser) user;
         String roleAssigneeIdentifier = "@" + au.getUserIdentifier();
         if (roleAssigneeIdentifier == null) {
             return null;
@@ -135,7 +146,7 @@ public class RoleAssigneeServiceBean {
         List<DataverseRole> retList = new ArrayList();
         roleAssigneeIdentifier = roleAssigneeIdentifier.replaceAll("\\s", "");   // remove spaces from string
         List<String> userGroups = getUserExplicitGroups(au);
-        List<String> userRunTimeGroups = getUserRuntimeGroups(au);
+        List<String> userRunTimeGroups = getUserRuntimeGroups(dataverseRequest);
         String identifierClause = " WHERE r.assigneeIdentifier= '" + roleAssigneeIdentifier + "'";
         if (userGroups != null || userRunTimeGroups != null) {
 
@@ -154,7 +165,12 @@ public class RoleAssigneeServiceBean {
         return retList;
     }
 
-    public List<Object[]> getAssigneeAndRoleIdListFor(AuthenticatedUser au, List<Long> roleIdList) {
+    public List<Object[]> getAssigneeAndRoleIdListFor(DataverseRequest dataverseRequest, List<Long> roleIdList) {
+        User user = dataverseRequest.getUser();
+        if (!(user instanceof AuthenticatedUser)) {
+            return null;
+        }
+        AuthenticatedUser au = (AuthenticatedUser) user;
 
         String roleAssigneeIdentifier = "@" + au.getUserIdentifier();
 
@@ -163,7 +179,7 @@ public class RoleAssigneeServiceBean {
         }
         roleAssigneeIdentifier = roleAssigneeIdentifier.replaceAll("\\s", "");   // remove spaces from string
         List<String> userExplicitGroups = getUserExplicitGroups(au);
-        List<String> userRunTimeGroups = getUserRuntimeGroups(au);
+        List<String> userRunTimeGroups = getUserRuntimeGroups(dataverseRequest);
         String identifierClause = " WHERE r.assigneeIdentifier= '" + roleAssigneeIdentifier + "'";
         if (userExplicitGroups != null || userRunTimeGroups != null) {
             identifierClause = getGroupIdentifierClause(roleAssigneeIdentifier, userExplicitGroups, userRunTimeGroups);
@@ -174,20 +190,26 @@ public class RoleAssigneeServiceBean {
         qstr += identifierClause;
         qstr += getRoleIdListClause(roleIdList);
         qstr += ";";
+        System.out.println("qstr: " + qstr);
         msg("qstr: " + qstr);
         return em.createNativeQuery(qstr)
                 .getResultList();
 
     }
 
-    public List<Long> getRoleIdListForGivenAssigneeDvObject(AuthenticatedUser au, List<Long> roleIdList, Long defPointId) {
+    public List<Long> getRoleIdListForGivenAssigneeDvObject(DataverseRequest dataverseRequest, List<Long> roleIdList, Long defPointId) {
+        User user = dataverseRequest.getUser();
+        if (!(user instanceof AuthenticatedUser)) {
+            return null;
+        }
+        AuthenticatedUser au = (AuthenticatedUser) user;
         String roleAssigneeIdentifier = "@" + au.getUserIdentifier();
         if (roleAssigneeIdentifier == null) {
             return null;
         }
         roleAssigneeIdentifier = roleAssigneeIdentifier.replaceAll("\\s", "");   // remove spaces from string
         List<String> userGroups = getUserExplicitGroups(au);
-        List<String> userRunTimeGroups = getUserRuntimeGroups(au);
+        List<String> userRunTimeGroups = getUserRuntimeGroups(dataverseRequest);
         String identifierClause = " WHERE r.assigneeIdentifier= '" + roleAssigneeIdentifier + "'";
         if (userGroups != null || userRunTimeGroups != null) {
             identifierClause = getGroupIdentifierClause(roleAssigneeIdentifier, userGroups, userRunTimeGroups);
@@ -246,7 +268,12 @@ public class RoleAssigneeServiceBean {
 
     }
 
-    public List<Object[]> getRoleIdsFor(AuthenticatedUser au, List<Long> dvObjectIdList) {
+    public List<Object[]> getRoleIdsFor(DataverseRequest dataverseRequest, List<Long> dvObjectIdList) {
+        User user = dataverseRequest.getUser();
+        if (!(user instanceof AuthenticatedUser)) {
+            return null;
+        }
+        AuthenticatedUser au = (AuthenticatedUser) user;
         String roleAssigneeIdentifier = "@" + au.getUserIdentifier();
         if (roleAssigneeIdentifier == null) {
             return null;
@@ -254,7 +281,7 @@ public class RoleAssigneeServiceBean {
 
         roleAssigneeIdentifier = roleAssigneeIdentifier.replaceAll("\\s", "");   // remove spaces from string
         List<String> userGroups = getUserExplicitGroups(au);
-        List<String> userRunTimeGroups = getUserRuntimeGroups(au);
+        List<String> userRunTimeGroups = getUserRuntimeGroups(dataverseRequest);
         String identifierClause = " WHERE r.assigneeIdentifier= '" + roleAssigneeIdentifier + "'";
         if (userGroups != null || userRunTimeGroups != null) {
             identifierClause = getGroupIdentifierClause(roleAssigneeIdentifier, userGroups, userRunTimeGroups);
@@ -300,19 +327,27 @@ public class RoleAssigneeServiceBean {
                                .collect(Collectors.toList());
     }
 
-    private List<String> getUserRuntimeGroups(AuthenticatedUser au) {
+    private List<String> getUserRuntimeGroups(DataverseRequest dataverseRequest) {
         List<String> retVal = new ArrayList();
 
-        Set<Group> groups = groupSvc.groupsFor(au, null);
+//        HttpServletRequest httpServletRequest = (HttpServletRequest) FacesContext.getCurrentInstance().getExternalContext().getRequest();
+//        DataverseRequest dataverseRequest = new DataverseRequest(au, httpServletRequest);
+        Set<Group> groups = groupSvc.collectAncestors(groupSvc.groupsFor(dataverseRequest));
+
+        logger.info("BEGIN iterating through groups");
         for (Group group : groups) {
             logger.fine("found group " + group.getIdentifier() + " with alias " + group.getAlias());
             if (group.getGroupProvider().getGroupProviderAlias().equals("shib") || group.getGroupProvider().getGroupProviderAlias().equals("ip")) {
+                logger.info("found Shib group or IP Group: " + group.getIdentifier() + " with alias " + group.getAlias());
                 String groupAlias = group.getAlias();
                 if (groupAlias != null && !groupAlias.isEmpty()) {
                     retVal.add('&' + groupAlias);
                 }
+            } else {
+                logger.info("found group that isn't a Shib group or IP Group: " + group.getIdentifier() + " with alias " + group.getAlias());
             }
         }
+        logger.info("END iterating through groups: retVal: " + retVal);
         return retVal;
     }
 
