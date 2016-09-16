@@ -155,8 +155,8 @@
                             <h:outputText id="fileTypeOutputTabular" value="#{bundle['file.type.tabularData']}" rendered="#{fileMetadata.dataFile.tabularData}"/>
                             <h:outputText id="fileCreatePublishDate" value=" - #{EditDatafilesPage.getFileDateToDisplay(fileMetadata)}" rendered="#{!(empty fileMetadata.id)}"/>
                             <div class="mD5-block">
-                                <h:outputText id="fileMD5" value="#{fileMetadata.dataFile.tabularData ? bundle['file.MD5.origal'] : bundle['file.MD5']}: #{fileMetadata.dataFile.md5};" rendered="#{!(empty fileMetadata.dataFile.md5) and (!EditDatafilesPage.isDuplicate(fileMetadata))}"/>
-                                <h:outputText id="duplicateFileMD5" styleClass="text-danger" value="#{fileMetadata.dataFile.tabularData ? bundle['file.MD5.origal']: bundle['file.MD5']}: #{fileMetadata.dataFile.md5}" rendered="#{!(empty fileMetadata.dataFile.md5) and EditDatafilesPage.isDuplicate(fileMetadata)}"/>
+                                <h:outputText id="fileMD5" value="#{fileMetadata.dataFile.tabularData ? bundle['file.MD5.origal'] : bundle['file.MD5']}: #{fileMetadata.dataFile.checksumValue};" rendered="#{!(empty fileMetadata.dataFile.checksumValue) and (!EditDatafilesPage.isDuplicate(fileMetadata))}"/>
+                                <h:outputText id="duplicateFileMD5" styleClass="text-danger" value="#{fileMetadata.dataFile.tabularData ? bundle['file.MD5.origal']: bundle['file.MD5']}: #{fileMetadata.dataFile.checksumValue}" rendered="#{!(empty fileMetadata.dataFile.checksumValue) and EditDatafilesPage.isDuplicate(fileMetadata)}"/>
                                 <ui:fragment rendered="#{EditDatafilesPage.isDuplicate(fileMetadata) and (empty fileMetadata.id)}">
                                     <div style="display:inline-block;" class="ui-message ui-message-error ui-widget ui-corner-all fileDuplicateWarning"><span class="ui-message-error-detail">#{bundle['file.MD5.exists.tip']}</span></div>
                                 </ui:fragment>

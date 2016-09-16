@@ -604,7 +604,8 @@ public class IngestServiceBean {
             // MD5:
             MD5Checksum md5Checksum = new MD5Checksum();
             try {
-                datafile.setmd5(md5Checksum.CalculateMD5(getFilesTempDirectory() + "/" + datafile.getStorageIdentifier()));
+                datafile.setChecksumType(DataFile.ChecksumType.MD5);
+                datafile.setChecksumValue(md5Checksum.CalculateMD5(getFilesTempDirectory() + "/" + datafile.getStorageIdentifier()));
             } catch (Exception md5ex) {
                 logger.warning("Could not calculate MD5 signature for new file " + fileName);
             }
@@ -858,7 +859,8 @@ public class IngestServiceBean {
             if (datafile != null) {
                 MD5Checksum md5Checksum = new MD5Checksum();
                 try {
-                    datafile.setmd5(md5Checksum.CalculateMD5(getFilesTempDirectory() + "/" + datafile.getStorageIdentifier()));
+                    datafile.setChecksumType(DataFile.ChecksumType.MD5);
+                    datafile.setChecksumValue(md5Checksum.CalculateMD5(getFilesTempDirectory() + "/" + datafile.getStorageIdentifier()));
                 } catch (Exception md5ex) {
                     logger.warning("Could not calculate MD5 signature for new file " + fileName);
                 }

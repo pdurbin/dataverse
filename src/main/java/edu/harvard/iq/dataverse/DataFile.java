@@ -21,6 +21,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
@@ -61,9 +63,26 @@ public class DataFile extends DvObject {
     
     @Column( nullable = false )
     private String fileSystemName;
-    
-    @Column( nullable = false )
-    private String md5;
+
+    public enum ChecksumType {
+        MD5,
+        SHA1,;
+
+        public static int valueOf(int foo) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+    };
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ChecksumType checksumType;
+
+    /**
+     * Examples include "f622da34d54bdc8ee541d6916ac1c16f" as an MD5 value or
+     * "3a484dfdb1b429c2e15eb2a735f1f5e4d5b04ec6" as a SHA-1 value"
+     */
+    @Column(nullable = false)
+    private String checksumValue;
 
     @Column(nullable=true)
     private Long filesize;      // Number of bytes in file.  Allows 0 and null, negative numbers not permitted
@@ -364,15 +383,22 @@ public class DataFile extends DvObject {
         this.restricted = restricted;
     }
 
+    public ChecksumType getChecksumType() {
+        return checksumType;
+    }
 
-    public String getmd5() { 
-        return this.md5; 
+    public void setChecksumType(ChecksumType checksumType) {
+        this.checksumType = checksumType;
     }
-    
-    public void setmd5(String md5) { 
-        this.md5 = md5; 
+
+    public String getChecksumValue() {
+        return this.checksumValue;
     }
-    
+
+    public void setChecksumValue(String checksumValue) {
+        this.checksumValue = checksumValue;
+    }
+
     public DataFileIO getAccessObject() throws IOException {
         DataFileIO dataAccess =  DataAccess.createDataAccessObject(this);
         

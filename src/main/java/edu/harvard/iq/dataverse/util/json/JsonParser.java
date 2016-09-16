@@ -384,7 +384,11 @@ public class JsonParser {
         
         dataFile.setContentType(contentType);
         dataFile.setStorageIdentifier(storageIdentifier);
-        dataFile.setmd5(md5);
+        /**
+         * @todo What should we do here?
+         */
+        dataFile.setChecksumType(DataFile.ChecksumType.MD5);
+        dataFile.setChecksumValue(md5);
         
         return dataFile;
     }
