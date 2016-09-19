@@ -416,7 +416,6 @@ public class DataFileServiceBean implements java.io.Serializable {
         findFileMetadataOptimizedExperimental(owner, null);
     }
     public void findFileMetadataOptimizedExperimental(Dataset owner, DatasetVersion requestedVersion) {
-        System.out.println("called findFileMetadataOptimizedExperimental");
         List<DataFile> dataFiles = new ArrayList<>();
         List<DataTable> dataTables = new ArrayList<>();
         //List<FileMetadata> retList = new ArrayList<>(); 
@@ -479,10 +478,6 @@ public class DataFileServiceBean implements java.io.Serializable {
         List<Object[]> fileResults = em.createNativeQuery("SELECT t0.ID, t0.CREATEDATE, t0.INDEXTIME, t0.MODIFICATIONTIME, t0.PERMISSIONINDEXTIME, t0.PERMISSIONMODIFICATIONTIME, t0.PUBLICATIONDATE, t0.CREATOR_ID, t0.RELEASEUSER_ID, t1.CONTENTTYPE, t1.FILESYSTEMNAME, t1.FILESIZE, t1.INGESTSTATUS, t1.CHECKSUMVALUE, t1.RESTRICTED, t1.CHECKSUMTYPE FROM DVOBJECT t0, DATAFILE t1 WHERE ((t0.OWNER_ID = " + owner.getId() + ") AND ((t1.ID = t0.ID) AND (t0.DTYPE = 'DataFile')))").getResultList(); 
     
         for (Object[] result : fileResults) {
-            for (int j = 0; j < result.length; j++) {
-                Object object = result[j];
-                System.out.println("result " + j +":" + object);
-            }
             Integer file_id = (Integer) result[0];
             
             DataFile dataFile = new DataFile();

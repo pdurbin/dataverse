@@ -67,10 +67,6 @@ public class DataFile extends DvObject {
     public enum ChecksumType {
         MD5,
         SHA1,;
-
-        public static int valueOf(int foo) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
     };
 
     @Column(nullable = false)
