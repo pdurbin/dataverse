@@ -763,7 +763,9 @@ public class DatasetVersionDifference {
                 fdi.setFileChecksumValue(fm2.getDataFile().getChecksumValue());
             } else {
                 /**
-                 * @todo What should we do here?
+                 * @todo What should we do here? checksumValue is set to
+                 * "nullable = false" so it should never be non-null. Setting to
+                 * MD5 because it has to be set to something.
                  */
                 fdi.setFileChecksumType(DataFile.ChecksumType.MD5);
                 fdi.setFileChecksumValue("[UNASSIGNED]");

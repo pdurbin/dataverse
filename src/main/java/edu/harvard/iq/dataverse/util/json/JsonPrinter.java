@@ -471,9 +471,9 @@ public class JsonPrinter {
                 .add("UNF", df.getUnf())
                 /**
                  * @todo Should we deprecate "md5" now that it's under
-                 * "checksum" (which may also be a SHA1 rather than an MD5)?
+                 * "checksum" (which may also be a SHA-1 rather than an MD5)?
                  */
-                .add("md5", df.getChecksumValue())
+                .add("md5", getMd5IfItExists(df.getChecksumType(), df.getChecksumValue()))
                 .add("checksum", getChecksumTypeAndValue(df.getChecksumType(), df.getChecksumValue()))
                 .add("description", df.getDescription());
     }
@@ -594,6 +594,14 @@ public class JsonPrinter {
             bld.add(json(j));
         }
         return bld;
+    }
+
+    public static String getMd5IfItExists(DataFile.ChecksumType checksumType, String checksumValue) {
+        if (DataFile.ChecksumType.MD5.equals(checksumType)) {
+            return checksumValue;
+        } else {
+            return null;
+        }
     }
 
     public static JsonObjectBuilder getChecksumTypeAndValue(DataFile.ChecksumType checksumType, String checksumValue) {

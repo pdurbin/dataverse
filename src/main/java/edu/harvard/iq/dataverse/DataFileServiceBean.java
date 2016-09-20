@@ -366,8 +366,9 @@ public class DataFileServiceBean implements java.io.Serializable {
         String checksumType = (String) result[19];
         if (checksumType != null) {
             try {
-                DataFile.ChecksumType typeFromString = DataFile.ChecksumType.valueOf(checksumType);
-                dataFile.setChecksumType(typeFromString);
+                // In the database we store "SHA1" rather than "SHA-1".
+                DataFile.ChecksumType typeFromStringInDatabase = DataFile.ChecksumType.valueOf(checksumType);
+                dataFile.setChecksumType(typeFromStringInDatabase);
             } catch (IllegalArgumentException ex) {
                 logger.info("Exception trying to convert " + checksumType + " to enum: " + ex);
             }
@@ -565,8 +566,9 @@ public class DataFileServiceBean implements java.io.Serializable {
             String checksumType = (String) result[15];
             if (checksumType != null) {
                 try {
-                    DataFile.ChecksumType typeFromString = DataFile.ChecksumType.valueOf(checksumType);
-                    dataFile.setChecksumType(typeFromString);
+                    // In the database we store "SHA1" rather than "SHA-1".
+                    DataFile.ChecksumType typeFromStringInDatabase = DataFile.ChecksumType.valueOf(checksumType);
+                    dataFile.setChecksumType(typeFromStringInDatabase);
                 } catch (IllegalArgumentException ex) {
                     logger.info("Exception trying to convert " + checksumType + " to enum: " + ex);
                 }

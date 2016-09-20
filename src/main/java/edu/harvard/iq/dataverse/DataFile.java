@@ -66,10 +66,44 @@ public class DataFile extends DvObject {
     @Column( nullable = false )
     private String fileSystemName;
 
+    /**
+     * End users will see "SHA-1" (with a hyphen) rather than "SHA1" in the GUI
+     * and API but in the "datafile" table we persist "SHA1" (no hyphen) for
+     * type safety (using keys of the enum). In the "setting" table, we persist
+     * "SHA-1" (with a hyphen) to match the GUI and the "Algorithm Name" list at
+     * https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#MessageDigest
+     *
+     * The list of types should be limited to the list above in the technote
+     * because the string gets passed into MessageDigest.getInstance() and you
+     * can't just pass in any old string.
+     */
     public enum ChecksumType {
-        MD5,
-        SHA1,;
-    };
+
+        MD5("MD5"),
+        SHA1("SHA-1");
+
+        private final String text;
+
+        private ChecksumType(final String text) {
+            this.text = text;
+        }
+
+        public static ChecksumType fromString(String text) {
+            if (text != null) {
+                for (ChecksumType checksumType : ChecksumType.values()) {
+                    if (text.equals(checksumType.text)) {
+                        return checksumType;
+                    }
+                }
+            }
+            throw new IllegalArgumentException("ChecksumType must be one of these values: " + Arrays.asList(ChecksumType.values()) + ".");
+        }
+
+        @Override
+        public String toString() {
+            return text;
+        }
+    }
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

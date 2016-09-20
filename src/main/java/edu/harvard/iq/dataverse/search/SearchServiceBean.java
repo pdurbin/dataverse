@@ -529,7 +529,7 @@ public class SearchServiceBean {
                 }
                 solrSearchResult.setFileMd5((String) solrDocument.getFieldValue(SearchFields.FILE_MD5));
                 try {
-                    solrSearchResult.setFileChecksumType((DataFile.ChecksumType) DataFile.ChecksumType.valueOf((String) solrDocument.getFieldValue(SearchFields.FILE_CHECKSUM_TYPE)));
+                    solrSearchResult.setFileChecksumType((DataFile.ChecksumType) DataFile.ChecksumType.fromString((String) solrDocument.getFieldValue(SearchFields.FILE_CHECKSUM_TYPE)));
                 } catch (IllegalArgumentException ex) {
                     logger.info("Exception setting setFileChecksumType: " + ex);
                 }
