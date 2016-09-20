@@ -33,9 +33,6 @@ public class SettingsServiceBean {
      * So there.
      */
     public enum Key {
-        /**
-         * @todo Document this in Installation Guide
-         */
         FileFixityChecksumAlgorithm,
         /**
          * Override Solr highlighting "fragsize"
