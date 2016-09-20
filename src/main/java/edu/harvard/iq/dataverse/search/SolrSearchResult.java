@@ -505,7 +505,7 @@ public class SolrSearchResult {
                 /**
                  * "md5" was the only possible value so it's hard-coded here but
                  * we might want to deprecate it someday since we now put the
-                 * MD5 or SHA1 in "checksum".
+                 * MD5 or SHA-1 in "checksum".
                  */
                 .add("md5", getFileMd5())
                 .add("checksum", JsonPrinter.getChecksumTypeAndValue(getFileChecksumType(), getFileChecksumValue()))
