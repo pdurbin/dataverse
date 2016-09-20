@@ -764,10 +764,11 @@ public class DatasetVersionDifference {
             } else {
                 /**
                  * @todo What should we do here? checksumValue is set to
-                 * "nullable = false" so it should never be non-null. Setting to
-                 * MD5 because it has to be set to something.
+                 * "nullable = false" so it should never be non-null. Let's set
+                 * it to "null" and see if this code path is ever reached. If
+                 * not, the null check above can probably be safely removed.
                  */
-                fdi.setFileChecksumType(DataFile.ChecksumType.MD5);
+                fdi.setFileChecksumType(null);
                 fdi.setFileChecksumValue("[UNASSIGNED]");
             }
             datasetFilesDiffList.add(fdi);
