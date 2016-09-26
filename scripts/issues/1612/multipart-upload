@@ -1,0 +1,2 @@
+#!/bin/sh
+curl -v -F key1=value1 -F upload=@README.md http://localhost:8080/uploadServlet

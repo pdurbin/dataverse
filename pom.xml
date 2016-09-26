@@ -403,6 +403,15 @@
             <optional>true</optional>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <!--FIXME: Added to get multipart/form-data working but 
+            why can't we use 3.0 without "alpha" in the name?
+            Is SWORD holding us back to Servlet 2.4? "2.4" appears in
+            2.4 local_lib/org/swordapp/sword2-server/1.1-SNAPSHOT/sword2-server-1.1-SNAPSHOT.pom-->
+            <version>3.0-alpha-1</version>
+        </dependency>
     </dependencies>
 
     <build>

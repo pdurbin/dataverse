@@ -77,6 +77,10 @@
         <servlet-name>Citation Servlet</servlet-name>
         <servlet-class>edu.harvard.iq.dataverse.CitationServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>File Upload Servlet</servlet-name>
+        <servlet-class>edu.harvard.iq.dataverse.api.FileUploadServlet</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>Faces Servlet</servlet-name>
         <url-pattern>/faces/*</url-pattern>
