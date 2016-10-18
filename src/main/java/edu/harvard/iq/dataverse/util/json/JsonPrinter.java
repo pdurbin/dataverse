@@ -104,25 +104,25 @@ public class JsonPrinter {
                 .add("emailLastConfirmed", authenticatedUser.getEmailConfirmed())
                 .add("authenticationProviderId", authenticatedUser.getAuthenticatedUserLookup().getAuthenticationProviderId());
     }
-    
+
     public static JsonObjectBuilder json( RoleAssignment ra ) {
-		return jsonObjectBuilder()
-				.add("id", ra.getId())
-				.add("assignee", ra.getAssigneeIdentifier() )
-				.add("roleId", ra.getRole().getId() )
-				.add("_roleAlias", ra.getRole().getAlias())
-				.add("privateUrlToken", ra.getPrivateUrlToken())
-				.add("definitionPointId", ra.getDefinitionPoint().getId() );
-	}
-	
-	public static JsonArrayBuilder json( Set<Permission> permissions ) {
-		JsonArrayBuilder bld = Json.createArrayBuilder();
-		for ( Permission p : permissions ) {
-			bld.add( p.name() );
-		}
-		return bld;
-	}
-    
+        return jsonObjectBuilder()
+                .add("id", ra.getId())
+                .add("assignee", ra.getAssigneeIdentifier() )
+                .add("roleId", ra.getRole().getId() )
+                .add("_roleAlias", ra.getRole().getAlias())
+                .add("privateUrlToken", ra.getPrivateUrlToken())
+                .add("definitionPointId", ra.getDefinitionPoint().getId() );
+    }
+
+    public static JsonArrayBuilder json( Set<Permission> permissions ) {
+        JsonArrayBuilder bld = Json.createArrayBuilder();
+        for ( Permission p : permissions ) {
+            bld.add( p.name() );
+        }
+        return bld;
+    }
+
     public static JsonObjectBuilder json( RoleAssigneeDisplayInfo d ) {
         return jsonObjectBuilder()
                 .add("title", d.getTitle())
@@ -131,14 +131,14 @@ public class JsonPrinter {
     }
 
     public static JsonObjectBuilder json(IpGroup grp) {
-         // collect single addresses
+        // collect single addresses
         List<String> singles = grp.getRanges().stream().filter( IpAddressRange::isSingleAddress )
-                                .map( IpAddressRange::getBottom )
-                                .map( IpAddress::toString ).collect(toList());
+                .map( IpAddressRange::getBottom )
+                .map( IpAddress::toString ).collect(toList());
         // collect "real" ranges
         List<List<String>> ranges = grp.getRanges().stream().filter( rng -> !rng.isSingleAddress() )
-                                .map( rng -> Arrays.asList(rng.getBottom().toString(), rng.getTop().toString()) )
-                                .collect(toList());
+                .map( rng -> Arrays.asList(rng.getBottom().toString(), rng.getTop().toString()) )
+                .collect(toList());
 
         JsonObjectBuilder bld = jsonObjectBuilder()
                 .add("alias", grp.getPersistedGroupAlias() )
@@ -146,17 +146,17 @@ public class JsonPrinter {
                 .add("id", grp.getId() )
                 .add("name", grp.getDisplayName() )
                 .add("description", grp.getDescription() );
-       
+
         if ( ! singles.isEmpty() ) {
             bld.add("addresses", asJsonArray(singles) );
         }
-        
+
         if ( ! ranges.isEmpty() ) {
             JsonArrayBuilder rangesBld = Json.createArrayBuilder();
             ranges.forEach( r -> rangesBld.add( Json.createArrayBuilder().add(r.get(0)).add(r.get(1))) );
             bld.add("ranges", rangesBld );
         }
-        
+
         return bld;
     }
 
@@ -454,12 +454,13 @@ public class JsonPrinter {
     public static JsonObjectBuilder json(FileMetadata fmd) {
         return jsonObjectBuilder()
                 // deprecated: .add("category", fmd.getCategory())
-                // TODO: uh, figure out what to do here... it's deprecated 
-                // in a sense that there's no longer the category field in the 
-                // fileMetadata object; but there are now multiple, oneToMany file 
+                // TODO: uh, figure out what to do here... it's deprecated
+                // in a sense that there's no longer the category field in the
+                // fileMetadata object; but there are now multiple, oneToMany file
                 // categories - and we probably need to export them too!) -- L.A. 4.5
                 .add("description", fmd.getDescription())
                 .add("label", fmd.getLabel()) // "label" is the filename
+                .add("directoryLabel", fmd.getDirectoryLabel())
                 .add("version", fmd.getVersion())
                 .add("datasetVersionId", fmd.getDatasetVersion().getId())
                 .add("dataFile", json(fmd.getDataFile(), fmd));
@@ -468,18 +469,18 @@ public class JsonPrinter {
     public static JsonObjectBuilder json(DataFile df) {
         return json(df, null);
     }
-    
+
     public static JsonObjectBuilder json(DataFile df, FileMetadata fileMetadata) {
-        // File names are no longer stored in the DataFile entity; 
-        // (they are instead in the FileMetadata (as "labels") - this way 
-        // the filename can change between versions... 
+        // File names are no longer stored in the DataFile entity;
+        // (they are instead in the FileMetadata (as "labels") - this way
+        // the filename can change between versions...
         // It does appear that for some historical purpose we still need the
-        // filename in the file DTO (?)... We rely on it to be there for the 
-        // DDI export, for example. So we need to make sure this is is the 
-        // *correct* file name - i.e., that it comes from the right version. 
+        // filename in the file DTO (?)... We rely on it to be there for the
+        // DDI export, for example. So we need to make sure this is is the
+        // *correct* file name - i.e., that it comes from the right version.
         // (TODO...? L.A. 4.5, Aug 7 2016)
         String fileName = null;
-        
+
         if (fileMetadata != null) {
             fileName = fileMetadata.getLabel();
         } else if (df.getFileMetadata() != null) {
@@ -487,7 +488,7 @@ public class JsonPrinter {
             // version *you want*! (L.A.)
             fileName = df.getFileMetadata().getLabel();
         }
-        
+
         return jsonObjectBuilder()
                 .add("id", df.getId())
                 .add("filename", fileName)
@@ -575,12 +576,12 @@ public class JsonPrinter {
 
     public static JsonObjectBuilder json(AuthenticationProviderRow aRow) {
         return jsonObjectBuilder()
-                        .add("id", aRow.getId())
-                        .add("factoryAlias", aRow.getFactoryAlias() )
-                        .add("title", aRow.getTitle())
-                        .add("subtitle",aRow.getSubtitle())
-                        .add("factoryData", aRow.getFactoryData())
-                        .add("enabled", aRow.isEnabled())
+                .add("id", aRow.getId())
+                .add("factoryAlias", aRow.getFactoryAlias() )
+                .add("title", aRow.getTitle())
+                .add("subtitle",aRow.getSubtitle())
+                .add("factoryData", aRow.getFactoryData())
+                .add("enabled", aRow.isEnabled())
                 ;
     }
 
@@ -623,7 +624,7 @@ public class JsonPrinter {
         return bld;
     }
 
-        public static Collector<String, JsonArrayBuilder, JsonArrayBuilder> stringsToJsonArray() {
+    public static Collector<String, JsonArrayBuilder, JsonArrayBuilder> stringsToJsonArray() {
         return new Collector<String, JsonArrayBuilder, JsonArrayBuilder>() {
 
             @Override
