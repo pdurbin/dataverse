@@ -73,8 +73,8 @@ public class Dataset extends DvObjectContainer {
     @OneToOne(cascade = {CascadeType.MERGE, CascadeType.PERSIST})
     @JoinColumn(name = "guestbook_id", unique = false, nullable = true, insertable = true, updatable = true)
     private Guestbook guestbook;
-    
-    @OneToMany(mappedBy="dataset", cascade={CascadeType.REMOVE, CascadeType.MERGE, CascadeType.PERSIST})
+
+    @OneToMany(mappedBy = "dataset", cascade = {CascadeType.REMOVE, CascadeType.MERGE, CascadeType.PERSIST})
     private List<DatasetLinkingDataverse> datasetLinkingDataverses;
 
     public List<DatasetLinkingDataverse> getDatasetLinkingDataverses() {
@@ -88,18 +88,18 @@ public class Dataset extends DvObjectContainer {
     private boolean fileAccessRequest;
     @OneToMany(mappedBy = "dataset", orphanRemoval = true, cascade = {CascadeType.REMOVE, CascadeType.MERGE, CascadeType.PERSIST})
     private List<DataFileCategory> dataFileCategories = null;
-    
+
     @ManyToOne
     @JoinColumn(name = "citationDateDatasetFieldType_id")
     private DatasetFieldType citationDateDatasetFieldType;
-    
+
     public DatasetFieldType getCitationDateDatasetFieldType() {
         return citationDateDatasetFieldType;
     }
 
     public void setCitationDateDatasetFieldType(DatasetFieldType citationDateDatasetFieldType) {
         this.citationDateDatasetFieldType = citationDateDatasetFieldType;
-    }    
+    }
 
     public Dataset() {
         //this.versions = new ArrayList();
@@ -159,7 +159,7 @@ public class Dataset extends DvObjectContainer {
     public void setLastExportTime(Date lastExportTime) {
         this.lastExportTime = lastExportTime;
     }
-    
+
     public Guestbook getGuestbook() {
         return guestbook;
     }
@@ -180,7 +180,7 @@ public class Dataset extends DvObjectContainer {
         return new GlobalId(this).toURL().toString();
     }
 
-    public String getGlobalId() {       
+    public String getGlobalId() {
         return new GlobalId(this).toString();
     }
 
@@ -253,16 +253,16 @@ public class Dataset extends DvObjectContainer {
             dsv.updateDefaultValuesFromTemplate(template);
         } else {
             latestVersion = getLatestVersionForCopy();
-            
-            if (latestVersion.getUNF() != null){
+
+            if (latestVersion.getUNF() != null) {
                 dsv.setUNF(latestVersion.getUNF());
             }
-            
+
             if (latestVersion.getDatasetFields() != null && !latestVersion.getDatasetFields().isEmpty()) {
                 dsv.setDatasetFields(dsv.copyDatasetFields(latestVersion.getDatasetFields()));
             }
-            
-            if (latestVersion.getTermsOfUseAndAccess()!= null){
+
+            if (latestVersion.getTermsOfUseAndAccess() != null) {
                 dsv.setTermsOfUseAndAccess(latestVersion.getTermsOfUseAndAccess().copyTermsOfUseAndAccess());
             } else {
                 TermsOfUseAndAccess terms = new TermsOfUseAndAccess();
@@ -303,7 +303,6 @@ public class Dataset extends DvObjectContainer {
         return dsv;
     }
 
-
     public DatasetVersion getEditVersion() {
         return getEditVersion(null);
     }
@@ -319,10 +318,10 @@ public class Dataset extends DvObjectContainer {
         }
     }
 
- public DatasetVersion getCreateVersion() {
+    public DatasetVersion getCreateVersion() {
         DatasetVersion dsv = new DatasetVersion();
         dsv.setVersionState(DatasetVersion.VersionState.DRAFT);
-        dsv.setDataset(this);        
+        dsv.setDataset(this);
         dsv.initDefaultValues();
         this.setVersions(new ArrayList());
         getVersions().add(0, dsv);
@@ -399,6 +398,7 @@ public class Dataset extends DvObjectContainer {
             }
         }
     }
+
     /*
      public void addCategoryByName(String newCategoryName) {
      if (newCategoryName != null && !newCategoryName.equals("")) {
@@ -435,8 +435,8 @@ public class Dataset extends DvObjectContainer {
     private Collection<String> getCategoryNames() {
         if (dataFileCategories != null) {
             ArrayList<String> ret = new ArrayList<>(dataFileCategories.size());
-            for ( DataFileCategory dfc : dataFileCategories ) {
-                ret.add( dfc.getName() );
+            for (DataFileCategory dfc : dataFileCategories) {
+                ret.add(dfc.getName());
             }
             return ret;
         } else {
@@ -517,8 +517,8 @@ public class Dataset extends DvObjectContainer {
     }
 
     public String getPublicationDateFormattedYYYYMMDD() {
-        if (getPublicationDate() != null){
-                   return new SimpleDateFormat("yyyy-MM-dd").format(getPublicationDate()); 
+        if (getPublicationDate() != null) {
+            return new SimpleDateFormat("yyyy-MM-dd").format(getPublicationDate());
         }
         return null;
     }
@@ -532,8 +532,8 @@ public class Dataset extends DvObjectContainer {
     }
 
     @ManyToOne
-    @JoinColumn(name="harvestingClient_id")
-    private  HarvestingClient harvestedFrom;
+    @JoinColumn(name = "harvestingClient_id")
+    private HarvestingClient harvestedFrom;
 
     public HarvestingClient getHarvestedFrom() {
         return this.harvestedFrom;
@@ -542,20 +542,19 @@ public class Dataset extends DvObjectContainer {
     public void setHarvestedFrom(HarvestingClient harvestingClientConfig) {
         this.harvestedFrom = harvestingClientConfig;
     }
-    
-    
+
     public boolean isHarvested() {
         return this.harvestedFrom != null;
     }
 
     private String harvestIdentifier;
-     
+
     public String getHarvestIdentifier() {
-	return harvestIdentifier;
+        return harvestIdentifier;
     }
 
     public void setHarvestIdentifier(String harvestIdentifier) {
-	this.harvestIdentifier = harvestIdentifier;
+        this.harvestIdentifier = harvestIdentifier;
     }
 
     public String getRemoteArchiveURL() {
@@ -614,7 +613,7 @@ public class Dataset extends DvObjectContainer {
                     }
                 }
                 return this.getHarvestedFrom().getArchiveUrl();
-            }else {
+            } else {
                 return this.getHarvestedFrom().getArchiveUrl();
             }
         }
@@ -655,9 +654,9 @@ public class Dataset extends DvObjectContainer {
     protected boolean isPermissionRoot() {
         return false;
     }
-    
+
     @Override
-    public boolean isAncestorOf( DvObject other ) {
+    public boolean isAncestorOf(DvObject other) {
         return equals(other) || equals(other.getOwner());
     }
 }
