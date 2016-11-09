@@ -24,6 +24,7 @@ import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 import org.hibernate.validator.constraints.NotBlank;
 
@@ -48,6 +49,27 @@ public class Dataset extends DvObjectContainer {
 
     @OneToMany(mappedBy = "owner", cascade = CascadeType.MERGE)
     private List<DataFile> files = new ArrayList();
+
+    public enum FileUploadMechanism {
+        /**
+         * @todo Eventually, rather than hard-coding "RSYNC" et al here, each
+         * should be a row in a table.
+         */
+        /**
+         * Files are uploaded through the GUI or SWORD.
+         *
+         * @todo Instead of "STANDARD" should we split out "GUI" and "SWORD" as
+         * separate mechanisms? What if we add a non-SWORD API endpoint for
+         * uploads ( https://github.com/IQSS/dataverse/issues/1612 )some day?
+         */
+        STANDARD,
+        /**
+         * Files are uploaded via rsync only and upload via any other mechanism
+         * is not allowed. This option requires setup of the Data Capture
+         * Module.
+         */
+        RSYNC
+    };
 
     private String protocol;
     private String authority;
@@ -93,6 +115,30 @@ public class Dataset extends DvObjectContainer {
     @JoinColumn(name = "citationDateDatasetFieldType_id")
     private DatasetFieldType citationDateDatasetFieldType;
 
+    /**
+     * The Data Capture Module provides an rsync script for uploading data.
+     * Dataverse presents the script to the user for download instead of the
+     * usual "Upload Files" option. Yes, we are effectively telling the user,
+     * "To upload, you must first download." :)
+     *
+     * @todo Rename this to dcmValue
+     * 
+     * @todo Add dcmType
+     */
+//    @Column(columnDefinition = "TEXT", nullable = true)
+    @Transient
+    private String rsyncScript;
+
+    public String getRsyncScript() {
+        return rsyncScript;
+    }
+
+    public void setRsyncScript(String rsyncScript) {
+        this.rsyncScript = rsyncScript;
+    }
+
+    
+    
     public DatasetFieldType getCitationDateDatasetFieldType() {
         return citationDateDatasetFieldType;
     }
@@ -411,7 +457,6 @@ public class Dataset extends DvObjectContainer {
      }
      }
      }*/
-
     public DataFileCategory getCategoryByName(String categoryName) {
         if (categoryName != null && !categoryName.equals("")) {
             if (dataFileCategories != null) {

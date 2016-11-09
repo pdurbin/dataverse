@@ -735,4 +735,36 @@ public class Dataverse extends DvObjectContainer {
         return false;
     }
 
+    /**
+     * Persisted as a colon delimited set of Strings based on the
+     * Dataset.FileUploadMechanism (i.e. "RSYNC:STANDARD" using TreeSet to keep
+     * the list sorted. "STANDARD" is returned if null. No inheritance.
+     *
+     * @todo Is there a smarter or better way to persist this this information?
+     *
+     * @todo Make this field non-nullable if we ever populate the existing
+     * dataverses with "STANDARD" rather than null.
+     */
+//    @Column(nullable = true)
+    @Transient
+    String fileUploadMechanisms;
+
+    public String getFileUploadMechanisms() {
+        /**
+         * @todo Remove this is we end up populating all the existing dataverses
+         * with "STANDARD" rather than null at which point we should make the
+         * field non-nullable.
+         */
+        if (fileUploadMechanisms == null) {
+            /** @todo What should we return here? --pdurbin 2016-11-07 */
+//            return Dataset.FileUploadMechanism.STANDARD.toString();
+            return Dataset.FileUploadMechanism.RSYNC.toString();
+        }
+        return fileUploadMechanisms;
+    }
+
+    public void setFileUploadMechanisms(String fileUploadMechanisms) {
+        this.fileUploadMechanisms = fileUploadMechanisms;
+    }
+
 }

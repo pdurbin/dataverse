@@ -7,6 +7,7 @@ import edu.harvard.iq.dataverse.authorization.providers.builtin.BuiltinUserServi
 import edu.harvard.iq.dataverse.engine.DataverseEngine;
 import edu.harvard.iq.dataverse.authorization.Permission;
 import edu.harvard.iq.dataverse.authorization.groups.impl.explicit.ExplicitGroupServiceBean;
+import edu.harvard.iq.dataverse.datacapturemodule.DataCaptureModuleServiceBean;
 import edu.harvard.iq.dataverse.engine.command.Command;
 import edu.harvard.iq.dataverse.engine.command.CommandContext;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
@@ -139,6 +140,9 @@ public class EjbDataverseEngine {
 
     @EJB
     PrivateUrlServiceBean privateUrlService;
+
+    @EJB
+    DataCaptureModuleServiceBean dataCaptureModuleService;
 
     @PersistenceContext(unitName = "VDCNet-ejbPU")
     private EntityManager em;
@@ -404,6 +408,10 @@ public class EjbDataverseEngine {
                     return privateUrlService;
                 }
 
+                @Override
+                public DataCaptureModuleServiceBean dataCaptureModule(){
+                    return dataCaptureModuleService;
+                }
             };
         }
 

@@ -600,6 +600,38 @@ public class UtilIT {
                 .get("api/admin/assignee/" + roleAssignee);
     }
 
+    static Response createDatasetWithDcmDependency(String dataverseAlias, String apiToken) {
+        return createRandomDatasetViaNativeApi(dataverseAlias, apiToken);
+    }
+
+    /**
+     * @todo How important it is to have "category" here? --pdurbin 2016-11-07
+     */
+//    static Response createDataverse(String alias, String category, List<String> fileUploadMechanismsEnabled, String apiToken) {
+    static Response createDataverse(String alias, List<String> fileUploadMechanismsEnabled, String apiToken) {
+        JsonArrayBuilder contactArrayBuilder = Json.createArrayBuilder();
+        contactArrayBuilder.add(Json.createObjectBuilder().add("contactEmail", getEmailFromUserName(getRandomIdentifier())));
+        JsonArrayBuilder subjectArrayBuilder = Json.createArrayBuilder();
+        subjectArrayBuilder.add("Other");
+        JsonArrayBuilder fileUploadMechanismEnabled = Json.createArrayBuilder();
+        fileUploadMechanismsEnabled.stream().forEach((mechanism) -> {
+            fileUploadMechanismEnabled.add(mechanism);
+        });
+        JsonObject dvData = Json.createObjectBuilder()
+                .add("alias", alias)
+                .add("name", alias)
+                .add("dataverseContacts", contactArrayBuilder)
+                .add("dataverseSubjects", subjectArrayBuilder)
+                .add("fileUploadMechanismsEnabled", fileUploadMechanismEnabled)
+                // don't send "dataverseType" if category is null, must be a better way
+                //                .add(category != null ? "dataverseType" : "notTheKeyDataverseType", category != null ? category : "whatever")
+                .build();
+        Response createDataverseResponse = given()
+                .body(dvData.toString()).contentType(ContentType.JSON)
+                .when().post("/api/dataverses/:root?key=" + apiToken);
+        return createDataverseResponse;
+    }
+
     @Test
     public void testGetFileIdFromSwordStatementWithNoFiles() {
         String swordStatementWithNoFiles = "<feed xmlns=\"http://www.w3.org/2005/Atom\">\n"
