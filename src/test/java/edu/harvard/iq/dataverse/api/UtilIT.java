@@ -88,7 +88,14 @@ public class UtilIT {
     }
 
     public static String getRandomIdentifier() {
-        return UUID.randomUUID().toString().substring(0, 8);
+        /**
+         * We append an alpha character here to avoid this problem when creating
+         * a dataverse: Invalid value: <<<59069309>>> for alias at [Dataverse
+         * id:null name:59069309] - Alias should not be a number Command
+         * edu.harvard.iq.dataverse.engine.command.impl.CreateDataverseCommand@7d47cf72
+         * failed: null
+         */
+        return UUID.randomUUID().toString().substring(0, 8) + "z";
     }
 
     static String getUsernameFromResponse(Response createUserResponse) {
@@ -165,6 +172,38 @@ public class UtilIT {
         String alias = getRandomIdentifier();
         String category = null;
         return createDataverse(alias, category, apiToken);
+    }
+
+    static Response createDatasetWithDcmDependency(String dataverseAlias, String apiToken) {
+        return createRandomDatasetViaNativeApi(dataverseAlias, apiToken);
+    }
+
+    /**
+     * @todo How important it is to have "category" here? --pdurbin 2017-01-03
+     */
+//    static Response createDataverse(String alias, String category, List<String> fileUploadMechanismsEnabled, String apiToken) {
+    static Response createDataverse(String alias, List<String> fileUploadMechanismsEnabled, String apiToken) {
+        JsonArrayBuilder contactArrayBuilder = Json.createArrayBuilder();
+        contactArrayBuilder.add(Json.createObjectBuilder().add("contactEmail", getEmailFromUserName(getRandomIdentifier())));
+        JsonArrayBuilder subjectArrayBuilder = Json.createArrayBuilder();
+        subjectArrayBuilder.add("Other");
+        JsonArrayBuilder fileUploadMechanismEnabled = Json.createArrayBuilder();
+        fileUploadMechanismsEnabled.stream().forEach((mechanism) -> {
+            fileUploadMechanismEnabled.add(mechanism);
+        });
+        JsonObject dvData = Json.createObjectBuilder()
+                .add("alias", alias)
+                .add("name", alias)
+                .add("dataverseContacts", contactArrayBuilder)
+                .add("dataverseSubjects", subjectArrayBuilder)
+                .add("fileUploadMechanismsEnabled", fileUploadMechanismEnabled)
+                // don't send "dataverseType" if category is null, must be a better way
+                //                .add(category != null ? "dataverseType" : "notTheKeyDataverseType", category != null ? category : "whatever")
+                .build();
+        Response createDataverseResponse = given()
+                .body(dvData.toString()).contentType(ContentType.JSON)
+                .when().post("/api/dataverses/:root?key=" + apiToken);
+        return createDataverseResponse;
     }
 
     static Response showDataverseContents(String alias, String apiToken) {
