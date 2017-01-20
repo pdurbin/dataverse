@@ -1567,6 +1567,7 @@ public class ImportDDIServiceBean {
      
    private void parseStudyIdHandle(String _id, DatasetDTO datasetDTO)  {
 
+       System.out.println("parseStudyIdHandle: " + _id);
         int index1 = _id.indexOf(':');
         int index2 = _id.indexOf('/');
         if (index1==-1) {
@@ -1586,6 +1587,7 @@ public class ImportDDIServiceBean {
     }
 
     private void parseStudyIdDOI(String _id, DatasetDTO datasetDTO) throws ImportException{
+       System.out.println("parseStudyIdDOI: " + _id);
         int index1 = _id.indexOf(':');
         int index2 = _id.lastIndexOf('/');
         if (index1==-1) {

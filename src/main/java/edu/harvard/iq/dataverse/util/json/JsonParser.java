@@ -242,10 +242,16 @@ public class JsonParser {
     public Dataset parseDataset(JsonObject obj) throws JsonParseException {
         Dataset dataset = new Dataset();
 
+        logger.info("protocol: " + obj.getString("protocol", null) );
+        logger.info("authority: " + obj.getString("authority", null) );
+        logger.info("doiSeparator: " + obj.getString("doiSeparator", null) );
+        logger.info("identifier: " + obj.getString("identifier", null) );
+        
         dataset.setAuthority(obj.getString("authority", null) == null ? settingsService.getValueForKey(SettingsServiceBean.Key.Authority) : obj.getString("authority"));
         dataset.setProtocol(obj.getString("protocol", null) == null ? settingsService.getValueForKey(SettingsServiceBean.Key.Protocol) : obj.getString("protocol"));
         dataset.setDoiSeparator(obj.getString("doiSeparator", null) == null ? settingsService.getValueForKey(SettingsServiceBean.Key.DoiSeparator) : obj.getString("doiSeparator"));
         dataset.setIdentifier(obj.getString("identifier",null));
+        System.out.println("persistent id in parseDataset: " + dataset.getGlobalId());
 
         DatasetVersion dsv = new DatasetVersion(); 
         dsv.setDataset(dataset);

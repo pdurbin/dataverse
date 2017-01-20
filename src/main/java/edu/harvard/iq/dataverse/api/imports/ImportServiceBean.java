@@ -405,6 +405,7 @@ public class ImportServiceBean {
         // convert DTO to Json, 
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String json = gson.toJson(dsDTO);
+        logger.info("json: " + json);
         JsonReader jsonReader = Json.createReader(new StringReader(json));
         JsonObject obj = jsonReader.readObject();
         //and call parse Json to read it into a dataset   
@@ -412,6 +413,8 @@ public class ImportServiceBean {
             JsonParser parser = new JsonParser(datasetfieldService, metadataBlockService, settingsService);
             parser.setLenient(!importType.equals(ImportType.NEW));
             Dataset ds = parser.parseDataset(obj);
+            System.out.println("just parsed and persistent id is: " + ds.getGlobalId());
+
 
             // For ImportType.NEW, if the user supplies a global identifier, and it's not a protocol
             // we support, it will be rejected.
@@ -485,6 +488,7 @@ public class ImportServiceBean {
             }
 
 
+            System.out.println("looking for existing dataset with " + ds.getGlobalId());
             Dataset existingDs = datasetService.findByGlobalId(ds.getGlobalId());
 
             if (existingDs != null) {
@@ -511,9 +515,29 @@ public class ImportServiceBean {
                 }
 
             } else {
+                // validate dataset
+                if (true) {
+                    System.out.println("let's revalidate");
+                    ValidatorFactory factory2 = Validation.buildDefaultValidatorFactory();
+                    Validator validator2 = factory2.getValidator();
+                    Set<ConstraintViolation<Dataset>> violations2 = validator2.validate(ds);
+                    int numViolations = violations2.size();
+                    System.out.println("num violations: " + numViolations);
+                    if (numViolations > 0) {
+                        StringBuilder logMsg = new StringBuilder();
+                        for (ConstraintViolation<?> violation : violations) {
+                            logMsg.append(" Invalid value: <<<").append(violation.getInvalidValue()).append(">>> for ").append(violation.getPropertyPath()).append(" at ").append(violation.getLeafBean()).append(" - ").append(violation.getMessage());
+                        }
+                        System.out.println("violations: " + logMsg);
+//                        throw new Exception("User id " + idOfAuthUserToConvert + " cannot be converted from Shibboleth to BuiltIn because of constraint violations on the BuiltIn user that would be created: " + numViolations + ". Details: " + logMsg);
+                    }
+
+                }
                 Dataset managedDs = engineSvc.submit(new CreateDatasetCommand(ds, dataverseRequest, false, importType));
                 status = " created dataset, id=" + managedDs.getId() + ".";
                 createdId = managedDs.getId();
+                System.out.println("created id " + createdId);
+                System.out.println("persistent id: " + ds.getGlobalId());
             }
 
         } catch (JsonParseException ex) {

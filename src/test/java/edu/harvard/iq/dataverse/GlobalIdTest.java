@@ -54,8 +54,29 @@ public class GlobalIdTest {
         assertEquals("BYM3IW", instance.getIdentifier());
         // TODO review the generated test code and remove the default call to fail.
     }
-    
-    
+
+    @Test
+    public void testValidDOIJhu() {
+        // example from http://irclog.iq.harvard.edu/dataverse/2017-01-20#i_47395
+        System.out.println("testValidDOIJhu");
+        Exception exceptionExpected = null;
+        try {
+            GlobalId deprecatedConstructor = new GlobalId("doi:10.7281/T1J10120");
+        } catch (Exception ex) {
+            exceptionExpected = ex;
+        }
+        System.out.println("Exception parsing valid DOI: " + exceptionExpected);
+        assertEquals("java.lang.IllegalArgumentException", exceptionExpected.getClass().getName());
+
+        Dataset dataset = new Dataset();
+        dataset.setProtocol("doi");
+        dataset.setIdentifier("T1J10120");
+        GlobalId nonDeprecatedConstructor = new GlobalId(dataset);
+        assertEquals("doi", nonDeprecatedConstructor.getProtocol());
+        assertEquals(null, nonDeprecatedConstructor.getAuthority());
+        assertEquals("T1J10120", nonDeprecatedConstructor.getIdentifier());
+    }
+
     @Test
     public void testValidHandle() {
         System.out.println("testValidDOI");
@@ -128,6 +149,7 @@ public class GlobalIdTest {
         System.out.println("testBadIdentifierTwoParts");
 
         exception.expect(IllegalArgumentException.class);
+        // This is a valid DOI, see the "doi:10.7281/T1J10120" example above.
         exception.expectMessage("Failed to parse identifier: doi:2part/blah");
         new GlobalId("doi:2part/blah");
     }

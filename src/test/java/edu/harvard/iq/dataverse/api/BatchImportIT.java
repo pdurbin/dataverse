@@ -96,9 +96,9 @@ public class BatchImportIT {
 //        deleteDataverseResponse.prettyPrint();
 //        assertEquals(200, deleteDataverseResponse.getStatusCode());
 
-        Response deleteUser1Response = deleteUser(username1);
+//        Response deleteUser1Response = deleteUser(username1);
 //        deleteUser1Response.prettyPrint();
-        assertEquals(200, deleteUser1Response.getStatusCode());
+//        assertEquals(200, deleteUser1Response.getStatusCode());
 
         Response deleteUser2Response = deleteUser(username2);
 //        deleteUser2Response.prettyPrint();
@@ -115,20 +115,24 @@ public class BatchImportIT {
 
     @Test
     public void roundTripDdi() throws Exception {
+        System.out.println("roundTripDdi");
         String directoryPath = "scripts/issues/907/" + importDirectoryAndDataverseAliasMustMatch;
         String absoluteDirectoryPath = new File(directoryPath).getAbsolutePath();
 
         String parentDataverse = dataverseAlias;
         Response migrateResponse = migrate(absoluteDirectoryPath, parentDataverse, apiToken1);
-//        migrateResponse.prettyPrint();
+        migrateResponse.prettyPrint();
 
-        Thread.sleep(500);
+        Thread.sleep(2000);
         Response listDatasetsResponse = listDatasets(parentDataverse, apiToken1);
-//        listDatasetsResponse.prettyPrint();
+        listDatasetsResponse.prettyPrint();
         XmlPath xmlPath = new XmlPath(listDatasetsResponse.body().asString());
         String datasetUrlFromSword = xmlPath.getString("feed.entry[0].id");
+        System.out.println("datasetUrlFromSword: " + datasetUrlFromSword);
         if (datasetUrlFromSword != null && !datasetUrlFromSword.isEmpty()) {
             String persistentIdentifier = datasetUrlFromSword.substring(68);
+            assertEquals("doi:10.7281/T1J10120", persistentIdentifier);
+            System.out.println("persistent id: " + persistentIdentifier);
             Response indexDatasetResponse = indexDataset(persistentIdentifier);
 //            indexDatasetResponse.prettyPrint();
             datasetId = JsonPath.from(indexDatasetResponse.body().asString()).getInt("data.id");
@@ -173,7 +177,7 @@ public class BatchImportIT {
             boolean ddiFromDto = false;
             Response datasetAsDdi = getDatasetAsDdi("junkDoi", ddiFromDto, apiToken1);
             datasetAsDdi.prettyPrint();
-            assertEquals(404, datasetAsDdi.getStatusCode());
+            assertEquals(403, datasetAsDdi.getStatusCode());
         }
     }
 
@@ -210,6 +214,7 @@ public class BatchImportIT {
     }
 
     private Response migrate(String filename, String parentDataverse, String apiToken) throws IOException {
+        System.out.println("called migrate");
         if (filename == null || filename.isEmpty()) {
             throw new IOException("null or empty filename");
         }

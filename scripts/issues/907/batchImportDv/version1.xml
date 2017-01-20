@@ -3,7 +3,10 @@
         <citation>
             <titlStmt>
                 <titl>Black Professional Women, 1969 </titl>
+		<!--
                 <IDNo agency="handle">hdl:1902.1/00012</IDNo>
+		-->
+		<IDNo agency="DOI">doi:10.7281/T1J10120</IDNo>
             </titlStmt>
             <distStmt>
                 <distrbtr>IQSS Test Dataverse Network</distrbtr>
@@ -27,15 +30,24 @@
                 <notes type="DVN:ARCHIVE_DATE" subject="Archive Date">2013-09-20</notes>
             </verStmt>
             <biblCit format="DVN">Cynthia Fuchs Epstein, 1983, "Black Professional Women, 1969 ", http://hdl.handle.net/1902.1/00012 Murray Research Archive [Distributor] V1 [Version]</biblCit>
+	    <!--
             <holdings URI="http://dvn-4.hmdc.harvard.edu/dvn/study?globalId=hdl:1902.1/00012"/>
+	    -->
+	    <holdings URI="http://dvn-4.hmdc.harvard.edu/dvn/study?globalId=doi:10.7281/T1J10120"/>
         </citation>
     </docDscr>
     <stdyDscr>
         <citation>
             <titlStmt>
                 <titl>Black Professional Women, 1969 </titl>
+		<!--
                 <IDNo agency="handle">hdl:1902.1/00012</IDNo>
+		-->
+		<IDNo agency="DOI">doi:10.7281/T1J10120</IDNo>
+		<!--
                 <IDNo>00012</IDNo>
+		-->
+		<IDNo>T1J10120</IDNo>
             </titlStmt>
             <rspStmt>
                 <AuthEnty>Cynthia Fuchs Epstein</AuthEnty>
