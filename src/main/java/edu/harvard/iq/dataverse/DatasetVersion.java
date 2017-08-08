@@ -626,7 +626,8 @@ public class DatasetVersion implements Serializable {
                         }
                     }
                 }
-                return MarkupChecker.sanitizeBasicHTML(descriptionString);
+//                return MarkupChecker.sanitizeBasicHTML(descriptionString); // FIXME: put this back. It's not returning valid XML
+                return descriptionString;
             }
         }
         return "";

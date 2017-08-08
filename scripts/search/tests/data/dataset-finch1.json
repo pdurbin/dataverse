@@ -37,6 +37,12 @@
                     "multiple": false,
                     "typeName": "datasetContactEmail",
                     "value" : "finch@mailinator.com"
+                },
+                 "datasetContactName" : {
+                    "typeClass": "primitive",
+                    "multiple": false,
+                    "typeName": "datasetContactName",
+                    "value" : "f finch"
                 }
             }],
             "typeClass": "compound",
@@ -46,7 +52,7 @@
           {
             "value": [ {
                "dsDescriptionValue":{
-                "value":   "Darwin's finches (also known as the Galápagos finches) are a group of about fifteen species of passerine birds.",
+                "value":   "Darwin's finches (also known as the Galápagos finches) are a group of about fifteen species of passerine BEGIN<br></br>END birds.",
                 "multiple":false,
                "typeClass": "primitive",
                "typeName": "dsDescriptionValue"

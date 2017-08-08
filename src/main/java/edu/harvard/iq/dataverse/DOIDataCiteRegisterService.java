@@ -5,7 +5,9 @@
  */
 package edu.harvard.iq.dataverse;
 
+import edu.harvard.iq.dataverse.util.xml.XmlValidator;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -21,10 +23,13 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import javax.xml.parsers.ParserConfigurationException;
+import org.apache.commons.io.FileUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -55,6 +60,21 @@ public class DOIDataCiteRegisterService {
         metadataTemplate.setPublisherYear(metadata.get("datacite.publicationyear"));
 
         String xmlMetadata = metadataTemplate.generateXML();
+        logger.info("xmlMetadata: " + xmlMetadata);
+        String xmlMetadataFile = "/tmp/out.xml";
+        FileUtils.writeStringToFile(new File(xmlMetadataFile), xmlMetadata);
+//        boolean validXml = false;
+        boolean wellFormedXml = false;
+        try {
+            wellFormedXml = XmlValidator.xmlWellFormed(xmlMetadataFile);
+//            validXml = XmlValidator.validateXml(xmlMetadataFile, "/tmp/metadata.xsd");
+        } catch (SAXException ex) {
+            logger.info("SAXException caught checking XML: " + ex);
+        } catch (ParserConfigurationException ex) {
+            logger.info("ParserConfigurationException caught checking XML: " + ex);
+        }
+        logger.info("wellFormedXml: " + wellFormedXml);
+//        logger.info("validXml: " + validXml);
 
         String status = metadata.get("_status").trim();
         String target = metadata.get("_target");
