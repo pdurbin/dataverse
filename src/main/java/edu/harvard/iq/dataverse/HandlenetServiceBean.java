@@ -392,6 +392,7 @@ public class HandlenetServiceBean extends AbstractIdServiceBean {
         return updateIdentifierStatus(dataset, "public");
     }
 
+    // FIXME: Don't hard code the return value to true. Were there any exceptions thrown?
     private boolean updateIdentifierStatus(Dataset dataset, String statusIn) {
         logger.log(Level.FINE,"updateIdentifierStatus");
         reRegisterHandle(dataset); // No Need to register new - this is only called when a handle exists

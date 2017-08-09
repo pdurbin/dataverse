@@ -18,6 +18,7 @@ public interface IdServiceBean {
     
     List<String> getProviderInformation();
 
+    // TODO: Should this throw Exception like alreadyExists, modifyIdentifier, and deleteIdentifier?
     String createIdentifier(Dataset dataset) throws Throwable;
 
     HashMap getIdentifierMetadata(Dataset dataset);
@@ -44,7 +45,13 @@ public interface IdServiceBean {
 
     String getIdentifierFromDataset(Dataset dataset);
 
-    boolean publicizeIdentifier(Dataset studyIn);
+    /**
+     * Make the DOI or Handle public and send metadata to DataCite.
+     *
+     * @return False if any exceptions were thrown (FIXME: except for Handle,
+     * which always returns true).
+     */
+    boolean publicizeIdentifier(Dataset dataset);
 
     static IdServiceBean getBean(String protocol, CommandContext ctxt) {
         logger.log(Level.FINE,"getting bean, protocol=" + protocol);

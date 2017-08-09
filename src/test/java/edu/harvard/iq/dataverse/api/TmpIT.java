@@ -35,16 +35,15 @@ public class TmpIT {
         String authority = JsonPath.from(getDatasetJsonBeforePublishing.getBody().asString()).getString("data.authority");
         String identifier = JsonPath.from(getDatasetJsonBeforePublishing.getBody().asString()).getString("data.identifier");
         String datasetPersistentId = protocol + ":" + authority + "/" + identifier;
+        getDatasetJsonBeforePublishing.then().assertThat()
+                .body("data.latestVersion.metadataBlocks.citation.fields[3].value[0].dsDescriptionValue.value", equalTo("Darwin's finches (also known as the Galápagos finches) are a group of about fifteen species of passerine BEGIN<br></br>END birds."))
+                .statusCode(200);
 
         Response publishDataverse = UtilIT.publishDataverseViaSword(dataverseAlias, apiToken);
         assertEquals(200, publishDataverse.getStatusCode());
-        Response attemptToPublishZeroDotOne = UtilIT.publishDatasetViaNativeApiDeprecated(datasetPersistentId, "minor", apiToken);
-        attemptToPublishZeroDotOne.prettyPrint();
-        attemptToPublishZeroDotOne.then().assertThat()
-                .body("message", equalTo("Cannot publish as minor version. Re-try as major release."))
-                .statusCode(403);
 
         Response publishDataset = UtilIT.publishDatasetViaNativeApi(datasetPersistentId, "major", apiToken);
+        publishDataset.prettyPrint();
         assertEquals(200, publishDataset.getStatusCode());
 
     }

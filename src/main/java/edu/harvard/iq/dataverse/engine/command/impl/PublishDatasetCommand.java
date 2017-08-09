@@ -287,13 +287,18 @@ public class PublishDatasetCommand extends AbstractCommand<Dataset> {
             datasetDataverseUser.setAuthenticatedUser(au);
             ctxt.em().merge(datasetDataverseUser);
         }
-
+        // Be optimisitic that there will be no problems.
+        boolean noErrorsPublicizingIdentifier = true;
+        // FIXME: Put curly braces around this if block.
         if (idServiceBean!= null )
             try{
-                idServiceBean.publicizeIdentifier(savedDataset);
+                noErrorsPublicizingIdentifier = idServiceBean.publicizeIdentifier(savedDataset);
             }catch (Throwable e) {
                 throw new CommandException(BundleUtil.getStringFromBundle("dataset.publish.error", idServiceBean.getProviderInformation()),this); 
             }
+        if (!noErrorsPublicizingIdentifier) {
+            throw new CommandException("Unable to publicize persistent indentifier " + theDataset.getGlobalId() + " and send metadata to DataCite.", this);
+        }
         PrivateUrl privateUrl = ctxt.engine().submit(new GetPrivateUrlCommand(getRequest(), savedDataset));
         if (privateUrl != null) {
             logger.fine("Deleting Private URL for dataset id " + savedDataset.getId());
