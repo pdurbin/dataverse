@@ -78,12 +78,12 @@ echo
 
 if [ $SECURESETUP = 1 ]
 then
-    # Revoke the "burrito" super-key; 
+    # Revoke the "burrito" super-key;
     # Block the sensitive API endpoints;
     curl -X DELETE $SERVER/admin/settings/BuiltinUsers.KEY
     curl -X PUT -d admin,test $SERVER/admin/settings/:BlockedApiEndpoints
     echo "Access to the /api/admin and /api/test is now disabled, except for connections from localhost."
-else 
+else
     echo "IMPORTANT!!!"
     echo "You have run the setup script in the INSECURE mode!"
     echo "Do keep in mind, that access to your admin API is now WIDE-OPEN!"
@@ -94,6 +94,13 @@ else
     echo "and revoke the authentication token from the built-in user by executing the"
     echo "script post-install-api-block.sh."
 fi
+
+# Set passwords policies for builtin users
+curl -X PUT -d 8 "$SERVER/admin/settings/:PVMinLength"
+curl -X PUT -d 365 "$SERVER/admin/settings/:PVExpirationDays"
+curl -X PUT -d 10 "$SERVER/admin/settings/:PVValidatorExpirationMaxLength"
+curl -X PUT -d 20 "$SERVER/admin/settings/:PVGoodStrength"
+curl -X PUT -d 3 "$SERVER/admin/settings/:PVNumberOfCharacteristics"
 
 echo
 echo "Setup done."

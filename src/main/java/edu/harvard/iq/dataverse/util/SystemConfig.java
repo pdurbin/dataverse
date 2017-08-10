@@ -82,8 +82,9 @@ public class SystemConfig {
     private static final int defaultZipUploadFilesLimit = 1000; 
     private static final int defaultMultipleUploadFilesLimit = 1000;
 
-    private static String appVersionString = null; 
-    private static String buildNumberString = null; 
+    private static String appVersionString = null;
+    private static String buildNumberString = null;
+    private int passportValidatorMinLength;
     
     private static final String JVM_TIMER_SERVER_OPTION = "dataverse.timerServer";
     
@@ -549,8 +550,126 @@ public class SystemConfig {
             }
         }
         
-        return getTabularIngestSizeLimit();        
+        return getTabularIngestSizeLimit();
     }
+
+    /**
+     * getPVDictionaries
+     *
+     * @return A string of one or more pipe (|) separated file paths.
+     */
+    public String getPVDictionaries() {
+        return System.getProperty("pv.dictionaries", settingsService.get(SettingsServiceBean.Key.PVDictionaries.toString()));
+    }
+
+    /**
+     * getPVGoodStrength
+     *
+     * Get the minimum length of a valid password to apply an expiration rule. Defaults to 20.
+     *
+     * @return The length.
+     */
+    public int getPVGoodStrength() {
+        int goodStrengthLength = 20;
+        String _goodStrengthLength = System.getProperty("pv.goodstrength", settingsService.get(SettingsServiceBean.Key.PVGoodStrength.toString()));
+        try {
+            goodStrengthLength = Integer.parseInt(_goodStrengthLength);
+        } catch (NumberFormatException nfe) {
+            logger.warning("Invalid value for PVGoodStrength: " + _goodStrengthLength);
+        }
+        return goodStrengthLength;
+    }
+
+    /**
+     * getPVExpirationDays
+     *
+     * Get the number of days a password is valid after it was set or changed. Defaults to 365.
+     *
+     * @return The number.
+     */
+    public int getPVExpirationDays() {
+        int expirationDays = 365;
+        String _expirationDays = System.getProperty("pv.expirationdays", settingsService.get(SettingsServiceBean.Key.PVExpirationDays.toString()));
+        try {
+            expirationDays = Integer.parseInt(_expirationDays);
+        } catch (NumberFormatException nfe) {
+            logger.warning("Invalid value for PVExpirationDays: " + _expirationDays);
+        }
+        return expirationDays;
+    }
+
+    /**
+     * getPVExpirationMaxLength
+     *
+     * Get the maximum length of a password an expiration date is applicable to. Defaults to 10.
+     *
+     * @return The length.
+     */
+    public int getPVExpirationMaxLength() {
+        int expirationMaxLength = 10;
+        String _expirationMaxLength = System.getProperty("pv.expirationmaxlength", settingsService.get(SettingsServiceBean.Key.PVValidatorExpirationMaxLength.toString()));
+        try {
+            expirationMaxLength = Integer.parseInt(_expirationMaxLength);
+        } catch (NumberFormatException nfe) {
+            logger.warning("Invalid value for PVValidatorExpirationMaxLength: " + _expirationMaxLength);
+        }
+        return expirationMaxLength;
+    }
+
+    /**
+     * getPVMinLength
+     *
+     * Get the minimum length of a valid password. Defaults to 8.
+     *
+     * @return The length.
+     */
+    public int getPVMinLength() {
+        int passportValidatorMinLength = 8;
+        String _passportValidatorMinLength = System.getProperty("pv.minlength", settingsService.get(SettingsServiceBean.Key.PVMinLength.toString()));
+        try {
+            passportValidatorMinLength = Integer.parseInt(_passportValidatorMinLength);
+        } catch (NumberFormatException nfe) {
+            logger.warning("Invalid value for PwMinLength: " + _passportValidatorMinLength);
+        }
+        return passportValidatorMinLength;
+    }
+
+    /**
+     * getPVMaxLength
+     *
+     * Get the maximum length of a valid password. Defaults to 0 (disabled).
+     *
+     * @return The length.
+     */
+    public int getPVMaxLength() {
+        int passportValidatorMaxLength = 0;
+        String _passportValidatorMaxLength = System.getProperty("pv.maxlength", settingsService.get(SettingsServiceBean.Key.PVMaxLength.toString()));
+        try {
+            passportValidatorMaxLength = Integer.parseInt(_passportValidatorMaxLength);
+        } catch (NumberFormatException nfe) {
+            logger.warning("Invalid value for PwMaxLength: " + _passportValidatorMaxLength);
+        }
+        return passportValidatorMaxLength;
+    }
+
+    /**
+     * getPVNumberOfCharacteristics
+     *
+     * Get the number M characteristics. Defaults to 3.
+     *
+     * @return The number.
+     */
+    public int getPVNumberOfCharacteristics() {
+        int numberOfCharacteristics = 3;
+        String _numberOfCharacteristics = System.getProperty("pv.numberofcharacteristics", settingsService.get(SettingsServiceBean.Key.PVNumberOfCharacteristics.toString()));
+        try {
+            numberOfCharacteristics = Integer.parseInt(_numberOfCharacteristics);
+        } catch (NumberFormatException nfe) {
+            logger.warning("Invalid value for PVNumberOfCharacteristics: " + _numberOfCharacteristics);
+        }
+        return numberOfCharacteristics;
+    }
+
 
     public boolean isOAIServerEnabled() {
         boolean defaultResponse = false;

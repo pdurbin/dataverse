@@ -61,6 +61,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import static org.apache.commons.lang.StringUtils.isNumeric;
+import edu.harvard.iq.dataverse.validation.PasswordValidatorServiceBean;
 
 /**
  * Base class for API beans
@@ -183,6 +184,9 @@ public abstract class AbstractApiBean {
 
     @EJB
     protected PrivateUrlServiceBean privateUrlSvc;
+
+    @EJB
+    protected PasswordValidatorServiceBean passwordValidatorService;
 
     @EJB
     protected ConfirmEmailServiceBean confirmEmailSvc;

@@ -5,16 +5,24 @@ import static com.jayway.restassured.RestAssured.given;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.path.json.JsonPath;
 import com.jayway.restassured.response.Response;
+import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.logging.Logger;
 import javax.json.Json;
 import javax.json.JsonObjectBuilder;
 import static javax.ws.rs.core.Response.Status.OK;
-import static junit.framework.Assert.assertEquals;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 public class BuiltinUsersIT {
 
@@ -179,7 +187,100 @@ public class BuiltinUsersIT {
             String retrievedTokenUsingEmail = JsonPath.from(getApiTokenUsingEmail.asString()).getString("data.message");
             assertEquals(createdToken, retrievedTokenUsingEmail);
         }
+    }
 
+    /**
+     * testValidatePasswordCleanInstall
+     *
+     * Verify if the defaults kick in from {@link edu.harvard.iq.dataverse.util.SystemConfig} when
+     * running from a clean install where nothing was set with VM or admin API settings.
+     */
+    @Test
+    public void testValidatePasswordCleanInstall() {
+
+        Arrays.stream(SettingsServiceBean.Key.values())
+                .filter(key -> key.name().startsWith("PV"))
+                .forEach(key -> given().delete("/api/admin/settings/" + key));
+
+        Map<String, List<String>> expected = new HashMap<>();
+        // All is wrong here:
+        expected.put(" ", Arrays.asList(
+                     "INSUFFICIENT_CHARACTERISTICS",
+                     "INSUFFICIENT_DIGIT",
+                     "INSUFFICIENT_LOWERCASE",
+                     "INSUFFICIENT_SPECIAL",
+                     "INSUFFICIENT_UPPERCASE",
+                     "NO_GOODSTRENGTH",
+                     "TOO_SHORT"));
+        // Lowercase ok, but:
+        expected.put("potato", Arrays.asList(
+                     "INSUFFICIENT_CHARACTERISTICS",
+                     "INSUFFICIENT_DIGIT",
+                     "INSUFFICIENT_SPECIAL",
+                     "INSUFFICIENT_UPPERCASE",
+                     "NO_GOODSTRENGTH",
+                     "TOO_SHORT"));
+        // Uppercase ok, but:
+        expected.put("POTATO", Arrays.asList(
+                     "INSUFFICIENT_CHARACTERISTICS",
+                     "INSUFFICIENT_DIGIT",
+                     "INSUFFICIENT_SPECIAL",
+                     "INSUFFICIENT_LOWERCASE",
+                     "NO_GOODSTRENGTH",
+                     "TOO_SHORT"));
+        // Length and lowercase ok, but:
+        expected.put("potat  o", Arrays.asList(
+                     "INSUFFICIENT_CHARACTERISTICS",
+                     "INSUFFICIENT_DIGIT",
+                     "INSUFFICIENT_SPECIAL",
+                     "INSUFFICIENT_UPPERCASE",
+                     "NO_GOODSTRENGTH"
+             ));
+        // Length and uppercase ok, but:
+        expected.put("POTAT  O", Arrays.asList(
+                     "INSUFFICIENT_CHARACTERISTICS",
+                     "INSUFFICIENT_DIGIT",
+                     "INSUFFICIENT_SPECIAL",
+                     "INSUFFICIENT_LOWERCASE",
+                     "NO_GOODSTRENGTH"
+             ));
+        // correct length ,lower and upper case, but:
+        expected.put("PoTaT  O", Arrays.asList(
+                     "INSUFFICIENT_CHARACTERISTICS",
+                     "INSUFFICIENT_DIGIT",
+                     "INSUFFICIENT_SPECIAL",
+                     "NO_GOODSTRENGTH"
+             ));
+        // correct length and digit, but:
+        expected.put("potat1 o", Arrays.asList(
+                     "INSUFFICIENT_CHARACTERISTICS",
+                     "INSUFFICIENT_SPECIAL",
+                     "INSUFFICIENT_UPPERCASE",
+                     "NO_GOODSTRENGTH"
+             ));
+        // correct length and special character, but:
+        expected.put("potat$ o", Arrays.asList(
+                     "INSUFFICIENT_CHARACTERISTICS",
+                     "INSUFFICIENT_DIGIT",
+                     "INSUFFICIENT_UPPERCASE",
+                     "NO_GOODSTRENGTH"
+             ));
+        // correct length, lowercase, special character and digit. All ok...
+        expected.put("potat$ 0", new ArrayList<>());
+        // correct length, uppercase, special character and digit. All ok...
+        expected.put("POTAT$ o", new ArrayList<>());
+        // correct length, uppercase, lowercase and and special character. All ok...
+        expected.put("Potat$ o", new ArrayList<>());
+        // correct length, uppercase, lowercase and digit. All ok..
+        expected.put("Potat  0", new ArrayList<>());
+        // 20 character password length. All ok...
+        expected.put("                    ", new ArrayList<>());
+        for (Entry<String, List<String>> pair : expected.entrySet()) {
+            final Response response = given().body(pair.getKey()).when().post("/api/admin/validatePassword");
+            response.prettyPrint();
+            final List<String> actualErrors = JsonPath.from(response.body().asString()).get("data.errors");
+            assertEquals(pair.getValue(), actualErrors);
+        }
     }
 
     private Response createUser(String username, String firstName, String lastName, String email) {

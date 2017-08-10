@@ -41,7 +41,7 @@
                             <ul class="dropdown-menu pull-right text-left" role="menu">
                                 <ui:fragment rendered="#{DataverseUserPage.passwordEditable or DataverseUserPage.accountDetailsEditable}">
                                     <li>
-                                        <p:commandLink id="editAccount" rendered="#{DataverseUserPage.accountDetailsEditable}" 
+                                        <p:commandLink id="editAccount" rendered="#{DataverseUserPage.accountDetailsEditable}"
                                                        actionListener="#{DataverseUserPage.edit}" update="@form" oncomplete="bind_bsui_components();">
                                             <h:outputText value="#{bundle['account.info']}" />
                                         </p:commandLink>
@@ -461,8 +461,8 @@
                     <p:tabView id="accountInfoView" rendered="#{!empty DataverseUserPage.editMode}">
                         <p:tab id="accountInfoEdit" title="#{bundle['account.info']}">
                             <ui:fragment rendered="#{DataverseUserPage.editMode == 'CREATE' and DataverseUserPage.nonLocalLoginEnabled}">
-                                
-                                <p class="help-block"><span class="glyphicon glyphicon-info-sign"/> 
+
+                                <p class="help-block"><span class="glyphicon glyphicon-info-sign"/>
                                     <h:outputText value=" #{bundle['user.signup.otherLogInOptions.tip']}" escape="false"/>
                                 </p>
                             </ui:fragment>
@@ -507,7 +507,10 @@
                                         </span>
                                     </label>
                                     <div class="col-sm-9">
-                                        <p class="help-block"><span class="glyphicon glyphicon-info-sign"/> #{bundle['user.updatePassword.password']}</p>
+                                        <p class="help-block"><span class="glyphicon glyphicon-info-sign"/> <h:outputFormat value="#{bundle['user.updatePassword.password']}" escape="false">
+                                                +                                                <f:param value="#{PasswordResetPage.goodPasswordDescription}"/>
+                                                +                                            </h:outputFormat>
+                                            +                                        </p>
                                     </div>
                                     <div class="col-sm-4 col-sm-offset-3">
                                         <p:password id="inputPassword" tabindex="2" label="#{DataverseUserPage.editMode == 'CREATE' ? 'Password' : 'New Password'}" styleClass="form-control" match="retypePassword" value="#{DataverseUserPage.inputPassword}" validator="#{DataverseUserPage.validateNewPassword}"  />
@@ -611,10 +614,10 @@
                                 </ui:fragment>
                                 <div class="form-group">
                                     <div class="col-sm-12 button-block">
-                                        <p:commandButton id="save" styleClass="btn btn-default" tabindex="9" 
+                                        <p:commandButton id="save" styleClass="btn btn-default" tabindex="9"
                                                          value="#{DataverseUserPage.editMode == 'CREATE' ? bundle['user.createBtn']:bundle.saveChanges}"
                                                          action="#{DataverseUserPage.save}" update="@form,:messagePanel,:userDisplayInfoTitle" />
-                                        <p:commandButton id="cancel" styleClass="btn btn-default" tabindex="10" value="#{bundle.cancel}" 
+                                        <p:commandButton id="cancel" styleClass="btn btn-default" tabindex="10" value="#{bundle.cancel}"
                                                          action="#{DataverseUserPage.cancel}" process="@this" update="@form">
                                             <p:resetInput target="@form" />
                                         </p:commandButton>

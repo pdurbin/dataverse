@@ -291,7 +291,29 @@ public class SettingsServiceBean {
         NavbarAboutUrl,
         
         // Option to override multiple guides with a single url
-        NavbarGuidesUrl; 
+        NavbarGuidesUrl,
+        /**
+         * The dictionary filepaths separated by a pipe (|)
+         */
+        PVDictionaries,
+        /**
+         * The days and minimum length for when to apply an expiration date.
+         */
+        PVExpirationDays,
+        PVValidatorExpirationMaxLength,
+        /**
+         * The minimum length of a good, long, strong password.
+         */
+        PVGoodStrength,
+        /**
+         * A password minimum and maximum length
+         */
+        PVMinLength,
+        PVMaxLength,
+        /**
+         * The number of M characteristics
+         */
+        PVNumberOfCharacteristics;
 
         
         @Override

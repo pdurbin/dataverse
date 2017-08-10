@@ -17,6 +17,8 @@ import javax.persistence.Table;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import org.hibernate.validator.constraints.NotBlank;
+import java.sql.Timestamp;
+import javax.persistence.*;
 
 /**
  *
@@ -63,7 +65,9 @@ public class BuiltinUser implements Serializable {
     private String encryptedPassword;
     private String affiliation;
     private String position;
-    
+
+    @Column()
+    private Timestamp passwordModificationTime;
     public void updateEncryptedPassword( String encryptedPassword, int algorithmVersion ) {
         setEncryptedPassword(encryptedPassword);
         setPasswordEncryptionVersion(algorithmVersion);
@@ -163,6 +167,14 @@ public class BuiltinUser implements Serializable {
         return new AuthenticatedUserDisplayInfo(getFirstName(), getLastName(), getEmail(), getAffiliation(), getPosition() );
     }
 
+    public Timestamp getPasswordModificationTime() {
+        return passwordModificationTime;
+    }
+
+    public void setPasswordModificationTime(Timestamp expireTime) {
+        this.passwordModificationTime = expireTime;
+    }
+
     @Override
     public int hashCode() {
         int hash = 0;
@@ -191,5 +203,4 @@ public class BuiltinUser implements Serializable {
     public void setPasswordEncryptionVersion(int passwordEncryptionVersion) {
         this.passwordEncryptionVersion = passwordEncryptionVersion;
     }
-    
 }

@@ -55,6 +55,7 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
+import edu.harvard.iq.dataverse.validation.PasswordValidatorServiceBean;
 
 /**
  * The AuthenticationManager is responsible for registering and listing
@@ -98,7 +99,10 @@ public class AuthenticationServiceBean {
 
     @EJB
     UserServiceBean userService; 
-        
+
+    @EJB
+    private PasswordValidatorServiceBean passwordValidatorService;
+
     @PersistenceContext(unitName = "VDCNet-ejbPU")
     private EntityManager em;
     
@@ -107,7 +111,7 @@ public class AuthenticationServiceBean {
         
         // First, set up the factories
         try {
-            registerProviderFactory( new BuiltinAuthenticationProviderFactory(builtinUserServiceBean) );
+            registerProviderFactory(new BuiltinAuthenticationProviderFactory(builtinUserServiceBean, passwordValidatorService));
             registerProviderFactory( new ShibAuthenticationProviderFactory() );
             registerProviderFactory( new OAuth2AuthenticationProviderFactory() );
         } catch (AuthorizationSetupException ex) {
@@ -716,6 +720,8 @@ public class AuthenticationServiceBean {
         builtinUser.setLastName(authenticatedUser.getLastName());
         // Bean Validation will check for null and invalid email addresses
         builtinUser.setEmail(newEmailAddress);
+        Calendar c = Calendar.getInstance();
+        builtinUser.setPasswordModificationTime(new Timestamp(c.getTimeInMillis()));
         ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
         Validator validator = factory.getValidator();
         Set<ConstraintViolation<BuiltinUser>> violations = validator.validate(builtinUser);

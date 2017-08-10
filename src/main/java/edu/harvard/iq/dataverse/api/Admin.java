@@ -68,6 +68,9 @@ import java.math.BigDecimal;
 import java.util.ResourceBundle;
 import javax.inject.Inject;
 import javax.ws.rs.QueryParam;
+import java.util.Date;
+import java.util.List;
+
 /**
  * Where the secure, setup API calls live.
  * @author michael
@@ -820,7 +823,28 @@ public class Admin extends AbstractApiBean {
         }
         return ok(msg);
     }
-    
+
+    /**
+     * validatePassword
+     * <p>
+     * Validate a password with an API call
+     *
+     * @param password The password
+     * @return A response with the validation result.
+     */
+    @Path("validatePassword")
+    @POST
+    public Response validatePassword(String password) {
+
+        final List<String> errors = passwordValidatorService.validate(password, new Date(), false);
+        final JsonArrayBuilder errorArray = Json.createArrayBuilder();
+        errors.forEach(errorArray::add);
+        return ok(Json.createObjectBuilder()
+                .add("password", password)
+                .add("errors", errorArray)
+        );
+    }
+
     @Path("assignments/assignees/{raIdtf: .*}")
     @GET
     public Response getAssignmentsFor( @PathParam("raIdtf") String raIdtf ) {

@@ -21,7 +21,7 @@ public class BuiltinAuthenticationProviderTest {
     @Before
     public void setup() {
         bean = new MockBuiltinUserServiceBean();
-        sut = new BuiltinAuthenticationProvider(bean);
+        sut = new BuiltinAuthenticationProvider(bean, passwordValidatorService);
     }
 
     /**
