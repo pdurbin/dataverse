@@ -160,16 +160,25 @@ public class CreateDatasetCommand extends AbstractCommand<Dataset> {
         ctxt.ingest().addFiles(dsv, theDataset.getFiles());
         logger.log(Level.FINE,"doiProvider={0} protocol={1}  importType={2}  GlobalIdCreateTime=={3}", new Object[]{doiProvider, protocol,  importType, theDataset.getGlobalIdCreateTime()});
         // Attempt the registration if importing dataset through the API, or the app (but not harvest or migrate)
+        System.out.println("got here 10");
         if ((importType == null || importType.equals(ImportType.NEW))
                 && theDataset.getGlobalIdCreateTime() == null) {
                 String doiRetString = "";
                 idServiceBean = IdServiceBean.getBean(ctxt);
                 try{
+                    System.out.println("got here 20");
                     logger.log(Level.FINE,"creating identifier");
                     doiRetString = idServiceBean.createIdentifier(theDataset);
+//                } catch (Exception e){
+//                    System.out.println("got here 25");
+//                    logger.log(Level.WARNING, "Exception while creating Identifier: " + e.getMessage(), e);
+//                    String error = "Exception caught while calling idServiceBean.createIdentifier: " + e;
+//                    throw new IllegalCommandException("Dataset could not be created.  Registration failed", this);
                 } catch (Throwable e){
+                    System.out.println("got here 30");
                     logger.log(Level.WARNING, "Exception while creating Identifier: " + e.getMessage(), e);
                 }
+                System.out.println("got here 40");
 
                 // Check return value to make sure registration succeeded
                 if (!idServiceBean.registerWhenPublished() && doiRetString.contains(theDataset.getIdentifier())) {

@@ -609,12 +609,12 @@ public class DatasetVersion implements Serializable {
         //todo get "Production Date" from datasetfieldvalue table
         return "Production Date";
     }
-    
+
     /**
-     * datasetVersion Description
-     * @return a string with the description of the dataset
+     * Returns the dataset description as-is from the database (if available or
+     * empty string) without passing it sanitizeBasicHTML or similar. 
      */
-    public String getDescription() {
+    public String getDescriptionPristine() {
         for (DatasetField dsf : this.getDatasetFields()) {
             if (dsf.getDatasetFieldType().getName().equals(DatasetFieldConstant.description)) {
                 String descriptionString = "";
@@ -626,11 +626,25 @@ public class DatasetVersion implements Serializable {
                         }
                     }
                 }
-//                return MarkupChecker.sanitizeBasicHTML(descriptionString); // FIXME: put this back. It's not returning valid XML
                 return descriptionString;
             }
         }
         return "";
+    }
+    
+    /**
+     * @return A string with the description of the dataset that has been passed
+     * through the sanitizeBasicHTML method.
+     * 
+     * FIXME: Rename this to something like getDescriptionSanitizedHtml
+     */
+    public String getDescription() {
+        return MarkupChecker.sanitizeBasicHTML(getDescriptionPristine());
+    }
+
+
+    public String getDescriptionWellFormedXml() {
+        return MarkupChecker.sanitizeBasicHTML(getDescriptionPristine());
     }
     
     public List<String[]> getDatasetContacts(){

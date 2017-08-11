@@ -1,190 +1,31 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-package edu.harvard.iq.dataverse;
+package edu.harvard.iq.dataverse.persistentid;
 
-import edu.harvard.iq.dataverse.util.xml.XmlValidator;
+import edu.harvard.iq.dataverse.Dataset;
+import edu.harvard.iq.dataverse.DatasetAuthor;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.PreDestroy;
-import javax.ejb.Stateless;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
-import javax.xml.parsers.ParserConfigurationException;
-import org.apache.commons.io.FileUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.xml.sax.SAXException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
 
-/**
- *
- * @author luopc
- */
-@Stateless
-public class DOIDataCiteRegisterService {
+public class DataCiteUtil {
 
-    private static final Logger logger = Logger.getLogger(DOIDataCiteRegisterService.class.getCanonicalName());
+    private static final Logger logger = Logger.getLogger(DataCiteUtil.class.getCanonicalName());
 
-    @PersistenceContext(unitName = "VDCNet-ejbPU")
-    private EntityManager em;
-
-    private DataCiteRESTfullClient openClient() throws IOException {
-        return new DataCiteRESTfullClient(System.getProperty("doi.baseurlstring"), System.getProperty("doi.username"), System.getProperty("doi.password"));
-    }
-
-    public String createIdentifier(String identifier, HashMap<String, String> metadata, Dataset dataset) throws IOException {
-        DataCiteMetadataTemplate metadataTemplate = new DataCiteMetadataTemplate();
-        metadataTemplate.setIdentifier(identifier.substring(identifier.indexOf(':') + 1));
-        metadataTemplate.setCreators(Util.getListFromStr(metadata.get("datacite.creator")));
-        metadataTemplate.setAuthors(dataset.getLatestVersion().getDatasetAuthors());
-        // Do we want to send "pristine" with HTML tags? Plain text?
-        metadataTemplate.setDescription(dataset.getLatestVersion().getDescriptionWellFormedXml());
-        metadataTemplate.setContacts(dataset.getLatestVersion().getDatasetContacts());
-        metadataTemplate.setProducers(dataset.getLatestVersion().getDatasetProducers());
-        metadataTemplate.setTitle(dataset.getLatestVersion().getTitle());
-        metadataTemplate.setPublisher(metadata.get("datacite.publisher"));
-        metadataTemplate.setPublisherYear(metadata.get("datacite.publicationyear"));
-
-        String xmlMetadata = metadataTemplate.generateXML();
-        logger.info("xmlMetadata: " + xmlMetadata);
-        String xmlMetadataFile = "/tmp/out.xml";
-        FileUtils.writeStringToFile(new File(xmlMetadataFile), xmlMetadata);
-//        boolean validXml = false;
-        boolean wellFormedXml = false;
-        try {
-            wellFormedXml = XmlValidator.xmlWellFormed(xmlMetadataFile);
-//            validXml = XmlValidator.validateXml(xmlMetadataFile, "/tmp/metadata.xsd");
-        } catch (SAXException ex) {
-            logger.info("SAXException caught checking XML: " + ex);
-        } catch (ParserConfigurationException ex) {
-            logger.info("ParserConfigurationException caught checking XML: " + ex);
-        }
-        logger.info("wellFormedXml: " + wellFormedXml);
-//        logger.info("validXml: " + validXml);
-
-        String status = metadata.get("_status").trim();
-        String target = metadata.get("_target");
-        String retString = "";
-        if (status.equals("reserved")) {
-            DOIDataCiteRegisterCache rc = findByDOI(identifier);
-            if (rc == null) {
-                rc = new DOIDataCiteRegisterCache();
-                rc.setDoi(identifier);
-                rc.setXml(xmlMetadata);
-                rc.setStatus("reserved");
-                rc.setUrl(target);
-                em.persist(rc);
-            } else {
-                rc.setDoi(identifier);
-                rc.setXml(xmlMetadata);
-                rc.setStatus("reserved");
-                rc.setUrl(target);
-            }
-            retString = "success to reserved " + identifier;
-        } else if (status.equals("public")) {
-            DOIDataCiteRegisterCache rc = findByDOI(identifier);
-            if (rc != null) {
-                rc.setDoi(identifier);
-                rc.setXml(xmlMetadata);
-                rc.setStatus("public");
-                if (target == null || target.trim().length() == 0) {
-                    target = rc.getUrl();
-                } else {
-                    rc.setUrl(target);
-                }
-                try (DataCiteRESTfullClient client = openClient()) {
-                    retString = client.postMetadata(xmlMetadata);
-                    client.postUrl(identifier.substring(identifier.indexOf(":") + 1), target);
-                } catch (UnsupportedEncodingException ex) {
-                    Logger.getLogger(DOIDataCiteRegisterService.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        } else if (status.equals("unavailable")) {
-            DOIDataCiteRegisterCache rc = findByDOI(identifier);
-            try (DataCiteRESTfullClient client = openClient()) {
-                if (rc != null) {
-                    rc.setStatus("unavailable");
-                    retString = client.inactiveDataset(identifier.substring(identifier.indexOf(":") + 1));
-                }
-            } catch (IOException io) {
-
-            }
-        }
-        return retString;
-    }
-
-    public boolean testDOIExists(String identifier) {
-        boolean doiExists;
-        try (DataCiteRESTfullClient client = openClient()) {
-            doiExists = client.testDOIExists(identifier.substring(identifier.indexOf(":") + 1));
-        } catch (Exception e) {
-            logger.log(Level.INFO, identifier, e);
-            return false;
-        }
-        return doiExists;
-    }
-
-    public HashMap<String, String> getMetadata(String identifier) throws IOException {
-        HashMap<String, String> metadata = new HashMap<>();
-        try (DataCiteRESTfullClient client = openClient()) {
-            String xmlMetadata = client.getMetadata(identifier.substring(identifier.indexOf(":") + 1));
-            DataCiteMetadataTemplate template = new DataCiteMetadataTemplate(xmlMetadata);
-            metadata.put("datacite.creator", Util.getStrFromList(template.getCreators()));
-            metadata.put("datacite.title", template.getTitle());
-            metadata.put("datacite.publisher", template.getPublisher());
-            metadata.put("datacite.publicationyear", template.getPublisherYear());
-            DOIDataCiteRegisterCache rc = findByDOI(identifier);
-            if (rc != null) {
-                metadata.put("_status", rc.getStatus());
-            }
-        } catch (RuntimeException e) {
-            logger.log(Level.INFO, identifier, e);
-        }
-        return metadata;
-    }
-
-    public DOIDataCiteRegisterCache findByDOI(String doi) {
-        TypedQuery<DOIDataCiteRegisterCache> query = em.createNamedQuery("DOIDataCiteRegisterCache.findByDoi",
-                DOIDataCiteRegisterCache.class);
-        query.setParameter("doi", doi);
-        List<DOIDataCiteRegisterCache> rc = query.getResultList();
-        if (rc.size() == 1) {
-            return rc.get(0);
-        }
-        return null;
-    }
-
-    public void deleteIdentifier(String identifier) {
-        DOIDataCiteRegisterCache rc = findByDOI(identifier);
-        if (rc != null) {
-            em.remove(rc);
-        }
-    }
-
-}
-
-class DataCiteMetadataTemplate {
-
-    private static final Logger logger = Logger.getLogger("edu.harvard.iq.dataverse.DataCiteMetadataTemplate");
     private static String template;
 
     static {
-        try (InputStream in = DataCiteMetadataTemplate.class.getResourceAsStream("datacite_metadata_template.xml")) {
+        try (InputStream in = DataCiteUtil.class.getResourceAsStream("/tmp/datacite_metadata_template.xml")) {
             template = Util.readAndClose(in, "utf-8");
         } catch (Exception e) {
             logger.log(Level.SEVERE, "datacite metadata template load error");
@@ -238,10 +79,7 @@ class DataCiteMetadataTemplate {
         this.authors = authors;
     }
 
-    public DataCiteMetadataTemplate() {
-    }
-
-    public DataCiteMetadataTemplate(String xmlMetaData) {
+    public DataCiteUtil(String xmlMetaData) {
         this.xmlMetadata = xmlMetaData;
         Document doc = Jsoup.parseBodyFragment(xmlMetaData);
         Elements identifierElements = doc.select("identifier");
@@ -268,6 +106,34 @@ class DataCiteMetadataTemplate {
     }
 
     public String generateXML() {
+        try {
+            template = new String(Files.readAllBytes(Paths.get("/tmp/datacite_metadata_template.xml")));
+        } catch (IOException ex) {
+            Logger.getLogger(DataCiteUtil.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        if (template == null) {
+            logger.info("template was null!");
+            return null;
+        }
+        logger.info("template: " + template);
+
+        HashMap<String, String> metadata = new HashMap<>();
+        metadata.put("datacite.creator", "datacite.creator");
+        Dataset dataset = new Dataset();
+        setIdentifier("myIdentifier");
+        setCreators(Util.getListFromStr(metadata.get("datacite.creator")));
+        setAuthors(dataset.getLatestVersion().getDatasetAuthors());
+//        setDescription(dataset.getLatestVersion().getDescription());
+        setDescription("myDescription <br></br>");
+        setContacts(dataset.getLatestVersion().getDatasetContacts());
+        setProducers(dataset.getLatestVersion().getDatasetProducers());
+//        setTitle(dataset.getLatestVersion().getTitle());
+        setTitle("myTitle");
+//        setPublisher(metadata.get("datacite.publisher"));
+        setPublisher("myPublisher");
+//        setPublisherYear(metadata.get("datacite.publicationyear"));
+        setPublisherYear("2017");
+
         xmlMetadata = template.replace("${identifier}", this.identifier.trim())
                 .replace("${title}", this.title)
                 .replace("${publisher}", this.publisher)
@@ -322,7 +188,7 @@ class DataCiteMetadataTemplate {
     }
 
     public static void setTemplate(String template) {
-        DataCiteMetadataTemplate.template = template;
+        DataCiteUtil.template = template;
     }
 
     public String getIdentifier() {
@@ -364,6 +230,7 @@ class DataCiteMetadataTemplate {
     public void setPublisherYear(String publisherYear) {
         this.publisherYear = publisherYear;
     }
+
 }
 
 class Util {

@@ -233,6 +233,9 @@ public class DOIDataCiteServiceBean extends AbstractIdServiceBean {
             doiDataCiteRegisterService.createIdentifier(identifier, metadata, dataset);
             return true;
         } catch (Exception e) {
+            if (true) {
+                throw new RuntimeException("modifyMetadata failed: " +  e.getLocalizedMessage(), e);
+            }
             logger.log(Level.WARNING, "modifyMetadata failed");
             logger.log(Level.WARNING, "String {0}", e.toString());
             logger.log(Level.WARNING, "localized message {0}", e.getLocalizedMessage());

@@ -293,6 +293,8 @@ public class PublishDatasetCommand extends AbstractCommand<Dataset> {
         if (idServiceBean!= null )
             try{
                 noErrorsPublicizingIdentifier = idServiceBean.publicizeIdentifier(savedDataset);
+            } catch (RuntimeException ex) {
+                throw new CommandException("Unable to publicize persistent indentifier " + theDataset.getGlobalId() + " and send metadata to DataCite. The error was: " + ex.getCause().getLocalizedMessage(), this);
             }catch (Throwable e) {
                 throw new CommandException(BundleUtil.getStringFromBundle("dataset.publish.error", idServiceBean.getProviderInformation()),this); 
             }
