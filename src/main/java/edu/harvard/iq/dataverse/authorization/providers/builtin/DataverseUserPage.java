@@ -25,6 +25,7 @@ import edu.harvard.iq.dataverse.authorization.AuthenticatedUserDisplayInfo;
 import edu.harvard.iq.dataverse.authorization.AuthenticationProvider;
 import edu.harvard.iq.dataverse.authorization.AuthenticationProviderDisplayInfo;
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
+import edu.harvard.iq.dataverse.validation.PasswordValidatorServiceBean;
 import edu.harvard.iq.dataverse.authorization.UserRecordIdentifier;
 import edu.harvard.iq.dataverse.authorization.groups.Group;
 import edu.harvard.iq.dataverse.authorization.groups.GroupServiceBean;
@@ -35,7 +36,6 @@ import edu.harvard.iq.dataverse.confirmemail.ConfirmEmailException;
 import edu.harvard.iq.dataverse.confirmemail.ConfirmEmailServiceBean;
 import edu.harvard.iq.dataverse.confirmemail.ConfirmEmailUtil;
 import edu.harvard.iq.dataverse.mydata.MyDataPage;
-import edu.harvard.iq.dataverse.passwordreset.PasswordValidator;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import edu.harvard.iq.dataverse.util.BundleUtil;
 import edu.harvard.iq.dataverse.util.JsfHelper;
@@ -110,6 +110,8 @@ public class DataverseUserPage implements java.io.Serializable {
     MyDataPage mydatapage;
     @Inject
     PermissionsWrapper permissionsWrapper;
+    @EJB
+    PasswordValidatorServiceBean passwordValidatorService;
 
     @EJB
     AuthenticationServiceBean authSvc;
@@ -271,20 +273,13 @@ public class DataverseUserPage implements java.io.Serializable {
             context.addMessage(toValidate.getClientId(context), message);
             return;
 
-        } 
-
-        int minPasswordLength = 6;
-        boolean forceNumber = true;
-        boolean forceSpecialChar = false;
-        boolean forceCapitalLetter = false;
-        int maxPasswordLength = 255;
-
-        PasswordValidator validator = PasswordValidator.buildValidator(forceSpecialChar, forceCapitalLetter, forceNumber, minPasswordLength, maxPasswordLength);
-        boolean passwordIsComplexEnough = password!= null && validator.validatePassword(password);
-        if (!passwordIsComplexEnough) {
+        }
+       
+        List<String> passwordIsComplexEnough = passwordValidatorService.validate(password);
+        if (!passwordIsComplexEnough.isEmpty()) {
             ((UIInput) toValidate).setValid(false);
-            String messageDetail = "Password is not complex enough. The password must have at least one letter, one number and be at least " + minPasswordLength + " characters in length.";
-            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Password Error", messageDetail);
+
+            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Password Error", String.join("\n", passwordIsComplexEnough));
             context.addMessage(toValidate.getClientId(context), message);
         }
     }

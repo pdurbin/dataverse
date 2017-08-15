@@ -74,7 +74,7 @@ public class PasswordResetServiceBean {
 
             return passwordResetInitResponse;
             
-        } catch (Exception ex) {
+        } catch (PasswordResetException ex) {
             String msg = "Unable to save token for " + aUser.getEmail();
             throw new PasswordResetException(msg, ex);
         }
