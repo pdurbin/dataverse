@@ -263,18 +263,7 @@ public class DataverseUserPage implements java.io.Serializable {
 
     public void validateNewPassword(FacesContext context, UIComponent toValidate, Object value) {
         String password = (String) value;
-        if (StringUtils.isBlank(password)){
-            logger.log(Level.WARNING, "new password is blank");
 
-            ((UIInput) toValidate).setValid(false);
-
-            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR,
-                    "Password Error", "The new password is blank: re-type it again");
-            context.addMessage(toValidate.getClientId(context), message);
-            return;
-
-        }
-       
         List<String> passwordIsComplexEnough = passwordValidatorService.validate(password);
         if (!passwordIsComplexEnough.isEmpty()) {
             ((UIInput) toValidate).setValid(false);
@@ -523,7 +512,6 @@ public class DataverseUserPage implements java.io.Serializable {
         }
     }
 
-    
     /**
      * Determines whether the button to send a verification email appears on user page
      * @return 
