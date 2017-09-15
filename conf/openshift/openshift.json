@@ -26,11 +26,39 @@
             "port": 8080,
             "targetPort": 8080
           }
-        ],
+        ]
+      }
+    },
+    {
+      "kind": "ImageStream",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "ndslabs-dataverse"
+      },
+      "spec": {
+        "dockerImageRepository": "ndslabs/dataverse"
+      }
+    },
+    {
+      "kind": "DeploymentConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "frontend",
+        "annotations": {
+          "template.alpha.openshift.io/wait-for-ready": "true"
+        }
+      },
+      "spec": {
         "containers": [
           {
-            "name": "dataverse-glassfish",
-            "image": "ndslabs/dataverse"
+            "name": "ndslabs-dataverse",
+            "image": "ndslabs-dataverse",
+            "ports": [
+              {
+                "containerPort": 8080,
+                "protocol": "TCP"
+              }
+            ]
           }
         ]
       }
