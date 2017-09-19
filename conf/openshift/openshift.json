@@ -86,6 +86,28 @@
                     "protocol": "TCP"
                   }
                 ],
+                "env": [
+                  {
+                    "name": "POSTGRES_HOST",
+                    "value": "postgresHost"
+                  },
+                  {
+                    "name": "POSTGRES_PORT",
+                    "value": "5432"
+                  },
+                  {
+                    "name": "POSTGRES_DB",
+                    "value": "postgresDb"
+                  },
+                  {
+                    "name": "POSTGRES_USER",
+                    "value": "postgresUser"
+                  },
+                  {
+                    "name": "POSTGRES_PASSWORD",
+                    "value": "postgresPassword"
+                  }
+                ],
                 "imagePullPolicy": "IfNotPresent",
                 "securityContext": {
                   "capabilities": {},
