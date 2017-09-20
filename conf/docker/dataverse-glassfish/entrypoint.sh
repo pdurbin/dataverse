@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # Entrypoint script for Dataverse web application. This script waits
 # for dependent services (Rserve, Postgres, Solr) to start before
@@ -98,10 +98,16 @@ if [ "$1" = 'dataverse' ]; then
         exit 1 
     fi
     
+    echo changing to dvinstall directory
     cd ~/dvinstall
+    echo Copying the non-interactive file into place
     cp /tmp/default.config .
+    echo Looking at first few lines of default.config
+    head default.config
     # non-interactive install
-    ./install -y -f > install.out 2> install.err
+    echo Running non-interactive install
+    #./install -y -f > install.out 2> install.err
+    ./install -y -f
 
 #    if [ -n "$DVICAT_PORT_1247_TCP_PORT" ]; then
 #        ./setup-irods.sh
