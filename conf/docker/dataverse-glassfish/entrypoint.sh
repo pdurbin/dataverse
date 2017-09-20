@@ -100,6 +100,7 @@ if [ "$1" = 'dataverse' ]; then
     
     cd ~/dvinstall
     cp /tmp/default.config .
+    # non-interactive install
     ./install -y -f > install.out 2> install.err
 
 #    if [ -n "$DVICAT_PORT_1247_TCP_PORT" ]; then
