@@ -386,7 +386,7 @@ Check Status of Dataverse Deployment to Minishift
 Review Logs of Dataverse Deployment to Minishift
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``oc logs -c ndslabs-dataverse $(oc get po -o json | jq '.items[] | select(.kind=="Pod").metadata.name' -r | grep -v dataverse-glassfish-1-deploy)``
+``oc logs -c glassfish-container $(oc get po -o json | jq '.items[] | select(.kind=="Pod").metadata.name' -r | grep -v dataverse-glassfish-1-deploy)``
 
 Get a Shell (ssh/rsh) on Glassfish Server Deployed to Minishift
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
