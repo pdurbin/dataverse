@@ -428,6 +428,45 @@ The following resources might be helpful.
 - https://blog.openshift.com/part-2-creating-a-template-a-technical-walkthrough/
 - https://docs.openshift.com/enterprise/3.0/architecture/core_concepts/templates.html
 
+Docker
+------
+
+Minishift makes use of Docker images on Docker Hub. To build new Docker images and push them to Docker Hub, you'll need to install Docker.
+
+Installing Docker
+~~~~~~~~~~~~~~~~~
+
+On Linux, you can probably get Docker from your package manager.
+
+On Mac, download the ``.dmg`` from https://www.docker.com and install it. As of this writing is it known as Docker Community Edition for Mac.
+
+We're working with Docker in the context of Minishift so if you haven't installed Minishift yet, follow the instructions above and make sure you get the Dataverse Docker images running in Minishift before you start messing with them.
+
+Reusing the Docker Daemon from Minishift
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+See also https://docs.openshift.org/latest/minishift/using/docker-daemon.html
+
+``eval $(minishift docker-env)``
+
+Show Running Docker Processes on Minishift
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``docker ps``
+
+Get Set Up to Push Docker Images to Minishift Registry
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+FIXME: This doesn't seem to work. On push, it says "unauthorized: authentication required".
+
+See https://docs.openshift.org/latest/minishift/openshift/openshift-docker-registry.html
+
+``docker login -u developer -p $(oc whoami -t) $(minishift openshift registry)``
+
+``docker tag iqss/dataverse-glassfish:4040-docker-openshift $(minishift openshift registry)/iqss/dataverse-glassfish:4040-docker-openshift``
+
+``docker pdurbin$ docker push $(minishift openshift registry)/iqss/dataverse-glassfish:4040-docker-openshift``
+
 ----
 
 Previous: :doc:`intro` | Next: :doc:`version-control`

@@ -20,7 +20,7 @@
       },
       "spec": {
         "selector": {
-          "name": "ndslabs-dataverse"
+          "name": "iqss-dataverse-glassfish"
         },
         "ports": [
           {
@@ -36,10 +36,10 @@
       "kind": "ImageStream",
       "apiVersion": "v1",
       "metadata": {
-        "name": "ndslabs-dataverse"
+        "name": "iqss-dataverse-glassfish"
       },
       "spec": {
-        "dockerImageRepository": "ndslabs/dataverse"
+        "dockerImageRepository": "iqss/dataverse-glassfish"
       }
     },
     {
@@ -75,14 +75,14 @@
         "template": {
           "metadata": {
             "labels": {
-              "name": "ndslabs-dataverse"
+              "name": "iqss-dataverse-glassfish"
             }
           },
           "spec": {
             "containers": [
               {
-                "name": "ndslabs-dataverse",
-                "image": "ndslabs-dataverse",
+                "name": "iqss-dataverse-glassfish",
+                "image": "iqss-dataverse-glassfish",
                 "ports": [
                   {
                     "containerPort": 8080,
@@ -179,11 +179,11 @@
             "imageChangeParams": {
               "automatic": true,
               "containerNames": [
-                "ndslabs-dataverse"
+                "iqss-dataverse-glassfish"
               ],
               "from": {
                 "kind": "ImageStreamTag",
-                "name": "ndslabs-dataverse:latest"
+                "name": "dataverse-glassfish:4040-docker-openshift"
               }
             }
           },
@@ -219,7 +219,7 @@
         ],
         "replicas": 1,
         "selector": {
-          "name": "ndslabs-dataverse"
+          "name": "iqss-dataverse-glassfish"
         }
       }
     }
