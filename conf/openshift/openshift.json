@@ -111,6 +111,11 @@
                     "value": "dvndb"
                   }
                 ],
+                "resources": {
+                  "limits": {
+                    "memory": "512Mi"
+                  }
+                },
                 "imagePullPolicy": "IfNotPresent",
                 "securityContext": {
                   "capabilities": {},
@@ -140,6 +145,11 @@
                     "value": "pgDatabaseValue"
                   }
                 ],
+                "resources": {
+                  "limits": {
+                    "memory": "256Mi"
+                  }
+                },
                 "imagePullPolicy": "IfNotPresent",
                 "securityContext": {
                   "capabilities": {},
@@ -155,6 +165,11 @@
                     "protocol": "TCP"
                   }
                 ],
+                "resources": {
+                  "limits": {
+                    "memory": "256Mi"
+                  }
+                },
                 "imagePullPolicy": "IfNotPresent",
                 "securityContext": {
                   "capabilities": {},
