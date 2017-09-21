@@ -45,7 +45,7 @@ RUN cd /tmp \
     && cp /tmp/weld-osgi-bundle-2.2.10.Final-glassfish4.jar . \
     #&& cp /tmp/weld-osgi-bundle-2.2.10.SP1-glassfish4.jar .
     #&& echo "$GLASSFISH_DOWNLOAD_SHA1 weld-osgi-bundle-2.2.10.SP1-glassfish4.jar" | sha1sum -c - \
-    && rm -rf /usr/local/glassfish4/glassfish/domains/domain1 \
+    #&& rm -rf /usr/local/glassfish4/glassfish/domains/domain1 \
     && rm /tmp/glassfish-4.1.zip 
 
 #RUN exitEarlyBeforeJq
