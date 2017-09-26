@@ -27,6 +27,9 @@ ENV POSTGRES_USER "dvnapp"
 ENV RSERVE_USER "rserve"
 ENV RSERVE_PASSWORD "rserve"
 
+#RUN  groupadd glassfish && \  
+#     useradd -s /bin/bash -d /home/glassfish -m -g glassfish glassfish
+
 #RUN ls /tmp
 #
 RUN find /tmp
@@ -46,7 +49,7 @@ RUN cd /tmp \
     #&& cp /tmp/weld-osgi-bundle-2.2.10.SP1-glassfish4.jar .
     #&& echo "$GLASSFISH_DOWNLOAD_SHA1 weld-osgi-bundle-2.2.10.SP1-glassfish4.jar" | sha1sum -c - \
     #&& rm -rf /usr/local/glassfish4/glassfish/domains/domain1 \
-    && rm /tmp/glassfish-4.1.zip 
+    && ls /tmp/glassfish-4.1.zip 
 
 #RUN exitEarlyBeforeJq
 RUN yum -y install epel-release
@@ -63,13 +66,31 @@ RUN yum install -y jq
 #RUN mkdir -p /tmp/WEB-INF/classes/META-INF/ 
 #COPY WEB-INF/classes/META-INF/persistence.xml /tmp/WEB-INF/classes/META-INF/
 
-# Install Dataverse WAR
-RUN cd ~ \
-#    && wget https://github.com/IQSS/dataverse/releases/download/v4.7/dvinstall.zip \
-    && cp /tmp/dvinstall.zip . \
-    && unzip dvinstall.zip
-    #&& unzip dvinstall.zip \
-    #&& jar -uf dvinstall/dataverse.war -C /tmp/ /WEB-INF/classes/META-INF/persistence.xml
+#RUN mkdir -p /some/directory
+#
+#RUN chgrp -R 0 /some/directory && \
+#    chmod -R g=u /some/directory
+
+RUN mkdir -p /home/glassfish
+
+RUN chgrp -R 0 /home/glassfish && \
+    chmod -R g=u /home/glassfish
+
+#RUN chmod g=u /etc/passwd
+#ENTRYPOINT [ "uid_entrypoint" ]
+#USER 1001
+
+RUN chmod g=u /etc/passwd
+
+#USER glassfish
+
+## Install Dataverse WAR
+#RUN cd ~ \
+##    && wget https://github.com/IQSS/dataverse/releases/download/v4.7/dvinstall.zip \
+#    && cp /tmp/dvinstall.zip . \
+#    && unzip dvinstall.zip
+#    #&& unzip dvinstall.zip \
+#    #&& jar -uf dvinstall/dataverse.war -C /tmp/ /WEB-INF/classes/META-INF/persistence.xml
 
 # Install iRods iCommands
 #RUN  cd /tmp \
@@ -95,5 +116,9 @@ VOLUME /usr/local/glassfish4/glassfish/domains/domain1/files
 
 EXPOSE      8080 
 
+
+
+
 ENTRYPOINT ["/entrypoint.sh"]
+USER 1001
 CMD ["dataverse"]

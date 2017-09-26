@@ -4,6 +4,26 @@
 # for dependent services (Rserve, Postgres, Solr) to start before
 # initializing Glassfish.
 
+echo "whoami before..."
+whoami
+echo "checking whoami..."
+if ! whoami &> /dev/null; then
+  echo "got here 1"
+  if [ -w /etc/passwd ]; then
+    echo "got here 2"
+    # Fancy bash magic from https://github.com/RHsyseng/container-rhel-examples/blob/1208dcd7d4f431fc6598184dba6341b9465f4197/starter-arbitrary-uid/bin/uid_entrypoint#L4
+    #echo "${USER_NAME:-default}:x:$(id -u):0:${USER_NAME:-default} user:${HOME}:/sbin/nologin" >> /etc/passwd
+    #echo "${USER_NAME:-glassfish}:x:$(id -u):0:${USER_NAME:-glassfish} user:${HOME}:/sbin/nologin" >> /etc/passwd
+    echo "passwd before"
+    cat /etc/passwd
+    echo "${USER_NAME:-glassfish}:x:$(id -u):0:${USER_NAME:-glassfish} user:/home/glassfish:/bin/bash" >> /etc/passwd
+    echo "passwd after"
+    cat /etc/passwd
+  fi
+fi
+echo "whoami after"
+whoami
+echo "Done with whoami"
 
 
 set -e
@@ -98,8 +118,37 @@ if [ "$1" = 'dataverse' ]; then
         exit 1 
     fi
     
-    echo changing to dvinstall directory
-    cd ~/dvinstall
+    whoami
+    ls -ld /home
+    #ls -ld /home/glassfish
+    #mkdir /home/glassfish
+    mkdir /tmp/footmpdir
+    ls -ld /tmp/footmpdir
+    echo "just cd"
+    cd
+    echo "running pwd"
+    pwd
+    #cd /home/glassfish
+    #GFHOME="/some/directory"
+    GFHOME="/home/glassfish"
+    cd $GFHOME
+    echo foo >> foo.txt
+    cat foo.txt
+    ls -l foo.txt
+    echo "ls /tmp..."
+    ls /tmp
+    #ls -ld /tmp/dvinstall.zip /home/glassfish
+    ls -ld /tmp/dvinstall.zip $GFHOME
+    #cp /tmp/dvinstall.zip /home/glassfish
+    cp /tmp/dvinstall.zip $GFHOME
+    cp /tmp/glassfish-4.1.zip $GFHOME
+    unzip glassfish-4.1.zip
+    #cd /home/glassfish
+    unzip dvinstall.zip
+
+    #echo changing to dvinstall directory
+    #cd /home/glassfish/dvinstall
+    cd dvinstall
     echo Copying the non-interactive file into place
     cp /tmp/default.config .
     echo Looking at first few lines of default.config
