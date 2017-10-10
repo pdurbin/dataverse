@@ -73,6 +73,7 @@
                                 <f:setPropertyActionListener target="#{sendFeedbackDialog.recipient}" value="#{null}"/>
                                 <f:setPropertyActionListener target="#{sendFeedbackDialog.userMessage}" value=""/>
                                 <f:setPropertyActionListener target="#{sendFeedbackDialog.userEmail}" value=""/>
+                                <f:setPropertyActionListener target="#{sendFeedbackDialog.mathQuestionOnly}" value="#{false}"/>
                             </p:commandLink>
                         </o:form>
                         <li jsf:rendered="#{dataverseSession.user.superuser}">

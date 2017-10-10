@@ -72,9 +72,17 @@
                                             </div>
                                         </div>
                                     </ui:repeat>
+<!--                                    <div class="form-group" jsf:rendered="#{true}">
+                                        FOO
+                                    </div>-->
                                     <div class="form-group">
-                                        <div class="col-sm-offset-4 col-sm-9 button-block">
+                                        <div class="col-sm-offset-4 col-sm-9 button-block" jsf:rendered="#{true}">
                                             <p:commandButton id="login" styleClass="btn btn-default" value="#{bundle.login}" update="@all" action="#{LoginPage.login}"/>
+                                        </div>
+                                        <div class="col-sm-offset-4 col-sm-9 button-block" jsf:rendered="#{true}">
+                                            <p:commandLink styleClass="btn btn-default" value="#{bundle.login} WITH POPUP" oncomplete="PF('contactForm').show()" update=":contactDialog" actionListener="#{sendFeedbackDialog.initUserInput}">
+                                                <f:setPropertyActionListener target="#{sendFeedbackDialog.mathQuestionOnly}" value="#{true}"/>
+                                            </p:commandLink>
                                         </div>
                                     </div>
                                     <div class="form-group">

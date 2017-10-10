@@ -2,6 +2,7 @@ package edu.harvard.iq.dataverse;
 
 import edu.harvard.iq.dataverse.branding.BrandingUtil;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
+import edu.harvard.iq.dataverse.util.BundleUtil;
 import static edu.harvard.iq.dataverse.util.JsfHelper.JH;
 import edu.harvard.iq.dataverse.util.MailUtil;
 import java.util.Random;
@@ -38,6 +39,16 @@ public class SendFeedbackDialog implements java.io.Serializable {
     private DvObject recipient;
     private Logger logger = Logger.getLogger(SendFeedbackDialog.class.getCanonicalName());
     private InternetAddress systemAddress;
+    private boolean mathQuestionOnly;
+
+    public boolean isMathQuestionOnly() {
+        return mathQuestionOnly;
+    }
+
+    public void setMathQuestionOnly(boolean mathQuestionOnly) {
+        this.mathQuestionOnly = mathQuestionOnly;
+    }
+    
     
     @EJB
     MailServiceBean mailService;
@@ -105,6 +116,9 @@ public class SendFeedbackDialog implements java.io.Serializable {
     }
     
     public String getFormHeader() {
+        if (mathQuestionOnly) {
+            return BundleUtil.getStringFromBundle("contact.mathQuestionHeader");
+        }
         if (recipient == null) {
             return BrandingUtil.getContactHeader(systemAddress, dataverseService.findRootDataverse().getName());
         } else if (recipient.isInstanceofDataverse()) {
