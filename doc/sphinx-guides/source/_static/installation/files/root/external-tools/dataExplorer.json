@@ -1,0 +1,12 @@
+{
+  "displayName": "Data Explorer",
+  "description": "For exploring data.",
+  "toolUrl": "https://scholarsportal.github.io/Dataverse-Data-Explorer/",
+  "toolParameters": {
+    "queryParameters": [
+      {
+        "uri": "{siteUrl}/api/access/datafile/{fileId}/metadata/ddi"
+      }
+    ]
+  }
+}
