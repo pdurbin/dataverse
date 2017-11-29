@@ -607,12 +607,40 @@ public class DatasetVersion implements Serializable {
         return "";
     }
 
+    private List<String> getDescriptions() {
+        List<String> descriptions = new ArrayList<>();
+        for (DatasetField dsf : this.getDatasetFields()) {
+            if (dsf.getDatasetFieldType().getName().equals(DatasetFieldConstant.description)) {
+                String descriptionString = "";
+                if (dsf.getDatasetFieldCompoundValues() != null && dsf.getDatasetFieldCompoundValues().get(0) != null) {
+                    DatasetFieldCompoundValue descriptionValue = dsf.getDatasetFieldCompoundValues().get(0);
+                    for (DatasetField subField : descriptionValue.getChildDatasetFields()) {
+                        if (subField.getDatasetFieldType().getName().equals(DatasetFieldConstant.descriptionText) && !subField.isEmptyForDisplay()) {
+                            descriptionString = subField.getValue();
+                        }
+                    }
+                }
+                logger.fine("pristine description: " + descriptionString);
+            }
+        }
+        return descriptions;
+    }
+
     /**
      * @return Strip out all A string with the description of the dataset that
      * has been passed through the stripAllTags method to remove all HTML tags.
      */
     public String getDescriptionPlainText() {
         return MarkupChecker.stripAllTags(getDescription());
+    }
+
+    public List<String> getDescriptionsPlainText() {
+        List<String> descriptionsPlainText = new ArrayList<>();
+        for (String description : getDescriptions()) {
+            String descriptionWithoutTags = MarkupChecker.stripAllTags(description);
+            descriptionsPlainText.add(descriptionWithoutTags);
+        }
+        return descriptionsPlainText;
     }
 
     /**
@@ -1267,7 +1295,8 @@ public class DatasetVersion implements Serializable {
          */
         job.add("dateModified", this.getPublicationDateAsString());
         job.add("version", this.getVersionNumber().toString());
-        job.add("description", this.getDescriptionPlainText());
+        JsonArrayBuilder descriptions = getJsonLdDescriptions();
+        job.add("description", descriptions);
         /**
          * "keywords" - contains subject(s), datasetkeyword(s) and topicclassification(s)
          * metadata fields for the version. -- L.A. 
@@ -1359,6 +1388,14 @@ public class DatasetVersion implements Serializable {
         );
         jsonLd = job.build().toString();
         return jsonLd;
+    }
+
+    private JsonArrayBuilder getJsonLdDescriptions() {
+        JsonArrayBuilder descriptions = Json.createArrayBuilder();
+        for (String descriptionPlainText : getDescriptionsPlainText()) {
+            descriptions.add(descriptionPlainText);
+        }
+        return descriptions;
     }
 
 }

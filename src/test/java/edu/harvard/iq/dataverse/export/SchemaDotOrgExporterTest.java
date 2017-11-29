@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 
 public class SchemaDotOrgExporterTest {
 
@@ -165,7 +166,61 @@ public class SchemaDotOrgExporterTest {
         assertEquals("Birds Inc.", json2.getJsonArray("author").getJsonObject(0).getString("affiliation"));
         assertEquals("1955-11-05", json2.getString("dateModified"));
         assertEquals("1", json2.getString("version"));
-        assertEquals("Darwin's finches (also known as the Galápagos finches) are a group of about fifteen species of passerine birds.", json2.getString("description"));
+        assertEquals("Darwin's finches (also known as the Galápagos finches) are a group of about fifteen species of passerine birds.", json2.getJsonArray("description").getString(0));
+        assertEquals("Medicine, Health and Life Sciences", json2.getJsonArray("keywords").getString(0));
+        assertEquals("https://schema.org/version/3.3", json2.getString("schemaVersion"));
+        assertEquals("DataCatalog", json2.getJsonObject("includedInDataCatalog").getString("@type"));
+        assertEquals("LibraScholar", json2.getJsonObject("includedInDataCatalog").getString("name"));
+        assertEquals("https://librascholar.org", json2.getJsonObject("includedInDataCatalog").getString("url"));
+        assertEquals("Organization", json2.getJsonObject("provider").getString("@type"));
+        assertEquals("Dataverse", json2.getJsonObject("provider").getString("name"));
+    }
+
+    @Test
+    public void testExportDataset2() throws Exception {
+        System.out.println("exportDataset");
+        // FIXME: Test a dataset with two descriptions.
+        File datasetVersionJson = new File("src/test/resources/json/dataset-finch1-2descriptions.json");
+        String datasetVersionAsJson = new String(Files.readAllBytes(Paths.get(datasetVersionJson.getAbsolutePath())));
+
+        JsonReader jsonReader1 = Json.createReader(new StringReader(datasetVersionAsJson));
+        JsonObject json1 = jsonReader1.readObject();
+        JsonParser jsonParser = new JsonParser(datasetFieldTypeSvc, null, null);
+        DatasetVersion version = jsonParser.parseDatasetVersion(json1.getJsonObject("datasetVersion"));
+        version.setVersionState(DatasetVersion.VersionState.RELEASED);
+        SimpleDateFormat dateFmt = new SimpleDateFormat("yyyyMMdd");
+        Date publicationDate = dateFmt.parse("19551105");
+        version.setReleaseTime(publicationDate);
+        version.setVersionNumber(1l);
+        // TODO: It might be nice to test TermsOfUseAndAccess some day
+        version.setTermsOfUseAndAccess(null);
+        Dataset dataset = new Dataset();
+        dataset.setProtocol("doi");
+        dataset.setAuthority("myAuthority");
+        dataset.setIdentifier("myIdentifier");
+        version.setDataset(dataset);
+        Dataverse dataverse = new Dataverse();
+        dataverse.setName("LibraScholar");
+        dataset.setOwner(dataverse);
+        System.setProperty(SITE_URL, "https://librascholar.org");
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        schemaDotOrgExporter.exportDataset(version, json1, byteArrayOutputStream);
+        String jsonLd = byteArrayOutputStream.toString();
+        System.out.println("out:" + jsonLd);
+        System.out.println("schema.org JSON-LD: " + JsonUtil.prettyPrint(jsonLd));
+        JsonReader jsonReader2 = Json.createReader(new StringReader(jsonLd));
+        JsonObject json2 = jsonReader2.readObject();
+        assertEquals("http://schema.org", json2.getString("@context"));
+        assertEquals("Dataset", json2.getString("@type"));
+        assertEquals("http://dx.doi.org/myAuthority/myIdentifier", json2.getString("identifier"));
+        assertEquals("Darwin's Finches", json2.getString("name"));
+        assertEquals("Finch, Fiona", json2.getJsonArray("author").getJsonObject(0).getString("name"));
+        assertEquals("Birds Inc.", json2.getJsonArray("author").getJsonObject(0).getString("affiliation"));
+        assertEquals("1955-11-05", json2.getString("dateModified"));
+        assertEquals("1", json2.getString("version"));
+        assertEquals("Darwin's finches (also known as the Galápagos finches) are a group of about fifteen species of passerine birds.", json2.getJsonArray("description").getString(0));
+        assertEquals("This is the second description.", json2.getJsonArray("description").getString(1));
         assertEquals("Medicine, Health and Life Sciences", json2.getJsonArray("keywords").getString(0));
         assertEquals("https://schema.org/version/3.3", json2.getString("schemaVersion"));
         assertEquals("DataCatalog", json2.getJsonObject("includedInDataCatalog").getString("@type"));
