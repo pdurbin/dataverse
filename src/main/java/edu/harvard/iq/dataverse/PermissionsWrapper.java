@@ -12,6 +12,7 @@ import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.engine.command.impl.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 import javax.ejb.EJB;
 import javax.faces.view.ViewScoped;
 import javax.inject.Inject;
@@ -24,6 +25,8 @@ import javax.inject.Named;
 @ViewScoped
 @Named
 public class PermissionsWrapper implements java.io.Serializable {
+
+    private static final Logger logger = Logger.getLogger(PermissionsWrapper.class.getName());
 
     @EJB
     PermissionServiceBean permissionService;
@@ -198,15 +201,19 @@ public class PermissionsWrapper implements java.io.Serializable {
 
         // Check permissions
         //
-        if ( permissionService.on(dvo).has(Permission.DownloadFile) ){
+        logger.fine("Checking hasDownloadFilePermission on DvObject: " + dvo);
+        logger.fine("IP Address: " + dvRequestService.getDataverseRequest().getSourceAddress());
+        if (permissionService.requestOn(dvRequestService.getDataverseRequest(), dvo).has(Permission.DownloadFile)) {
 
             // Yes, has permission, store result
+            logger.fine("The user or IP address has permission to download the file. Caching the result.");
             fileDownloadPermissionMap.put(dvo.getId(), true);
             return true;
             
         } else {
         
             // No permission, store result
+            logger.fine("The user or IP address does not have permission to download the file. Caching the result.");
             fileDownloadPermissionMap.put(dvo.getId(), false);
             return false;
         }

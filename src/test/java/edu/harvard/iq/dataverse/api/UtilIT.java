@@ -477,7 +477,22 @@ public class UtilIT {
                 //.header(API_TOKEN_HTTP_HEADER, apiToken)
                 .get("/api/access/datafile/" + fileId + "?key=" + apiToken);
     }
+    
+    static Response downloadFileTestButtonRender(Long fileId) {
+        String nullApiToken = null;
+        return downloadFileTestButtonRender(fileId, nullApiToken);
+    }
 
+    static Response downloadFileTestButtonRender(Long fileId, String apiToken) {
+        RequestSpecification requestSpecification = given();
+        if (apiToken != null) {
+            requestSpecification = given()
+                    .urlEncodingEnabled(false)
+                    .header(UtilIT.API_TOKEN_HTTP_HEADER, apiToken);
+        }
+        return requestSpecification.get("/api/admin/test/ipgroups/" + fileId);
+    }
+    
     static Response getSwordAtomEntry(String persistentId, String apiToken) {
         Response response = given()
                 .auth().basic(apiToken, EMPTY_STRING)

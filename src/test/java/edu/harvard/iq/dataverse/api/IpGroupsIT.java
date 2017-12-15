@@ -83,6 +83,12 @@ public class IpGroupsIT {
         Response downloadFileUser2Fail = UtilIT.downloadFile(fileId.intValue(), apiToken2);
         assertEquals(FORBIDDEN.getStatusCode(), downloadFileUser2Fail.getStatusCode());
 
+        Response buttonPresentFailUser2 = UtilIT.downloadFileTestButtonRender(fileId, apiToken2);
+        buttonPresentFailUser2.prettyPrint();
+        buttonPresentFailUser2.then().assertThat()
+                .body("data.canDownloadFile", equalTo(false))
+                .statusCode(OK.getStatusCode());
+
         String aliasInOwner = "groupFor" + dataverseAlias;
         String displayName = "Group for " + dataverseAlias;
         String user2identifier = "@" + username2;
@@ -107,14 +113,24 @@ public class IpGroupsIT {
 
         Response downloadFileUser2Works = UtilIT.downloadFile(fileId.intValue(), apiToken2);
         assertEquals(OK.getStatusCode(), downloadFileUser2Works.getStatusCode());
+        Response buttonShowsUser2 = UtilIT.downloadFileTestButtonRender(fileId, apiToken2);
+        buttonShowsUser2.prettyPrint();
+        buttonShowsUser2.then().assertThat()
+                .body("data.canDownloadFile", equalTo(false))
+                .statusCode(OK.getStatusCode());
+        if (true) {
+            return;
+        }
         // END: group sanity check
 
         System.out.println("file id: " + fileId);
         Response downloadFile = UtilIT.downloadFile(fileId.intValue(), apiToken);
         assertEquals(OK.getStatusCode(), downloadFile.getStatusCode());
+        // test
 
         Response downloadFileNoPrivs = UtilIT.downloadFile(fileId.intValue(), userWithNoRolesApiToken);
         assertEquals(FORBIDDEN.getStatusCode(), downloadFileNoPrivs.getStatusCode());
+        //test
 
         JsonObjectBuilder ipGroupAllJson = Json.createObjectBuilder();
         String uniqueIdentifierForIpGroup = "ipGroup" + UtilIT.getRandomIdentifier();
@@ -141,10 +157,12 @@ public class IpGroupsIT {
         Response downloadFileBasedOnIPGroup = UtilIT.downloadFile(fileId.intValue(), userWithNoRolesApiToken);
         // Should get an OK response (able to download file) based on IP Group membership. Has API token but no individual role.
         assertEquals(OK.getStatusCode(), downloadFileBasedOnIPGroup.getStatusCode());
+        // test
 
         Response anonDownload = UtilIT.downloadFile(fileId.intValue());
         // Should get an OK response (able to download file) based on IP Group membership. No API token.
         assertEquals(OK.getStatusCode(), anonDownload.getStatusCode());
+        // test
 
     }
 
