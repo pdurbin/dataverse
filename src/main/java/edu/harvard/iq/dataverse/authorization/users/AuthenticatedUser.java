@@ -113,6 +113,20 @@ public class AuthenticatedUser implements User, Serializable {
     private boolean superuser;
 
     /**
+     * A short bio of the user.
+     */
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    /**
      * @todo Consider storing a hash of *all* potentially interesting Shibboleth
      * attribute key/value pairs, not just the Identity Provider (IdP).
      */
