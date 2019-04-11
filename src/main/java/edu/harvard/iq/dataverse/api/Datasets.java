@@ -1176,10 +1176,12 @@ public class Datasets extends AbstractApiBean {
     @GET
     @Produces({"image/png"})
     @Path("{id}/thumbnail")
-    public Response getDatasetThumbnail(@PathParam("id") String idSupplied) {
-        try {
+//    public Response getDatasetThumbnail(@PathParam("id") String idSupplied) {
+    public Response getDatasetThumbnail(@PathParam("id") String idSupplied, @QueryParam("width") int width) {
+        // FIXME: document this API. 
+       try {
             Dataset dataset = findDatasetOrDie(idSupplied);
-            InputStream is = DatasetUtil.getThumbnailAsInputStream(dataset);
+            InputStream is = DatasetUtil.getThumbnailAsInputStream(dataset, width);
             if(is == null) {
                 return notFound("Thumbnail not available");
             }

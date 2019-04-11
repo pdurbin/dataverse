@@ -39,6 +39,7 @@ public class DatasetUtil {
     public static String datasetLogoFilenameFinal = "dataset_logo_original";
     public static String datasetLogoThumbnail = "dataset_logo";
     public static String thumb48addedByImageThumbConverter = ".thumb48";
+    public static String thumbPrefix = ".thumb";
 
     public static List<DatasetThumbnail> getThumbnailCandidates(Dataset dataset, boolean considerDatasetLogoAsCandidate) {
         List<DatasetThumbnail> thumbnails = new ArrayList<>();
@@ -107,7 +108,7 @@ public class DatasetUtil {
      * @param datasetVersion
      * @return
      */
-    public static DatasetThumbnail getThumbnail(Dataset dataset, DatasetVersion datasetVersion) {
+    public static DatasetThumbnail getThumbnail(Dataset dataset, DatasetVersion datasetVersion, int width) {
         if (dataset == null) {
             return null;
         }
@@ -120,13 +121,19 @@ public class DatasetUtil {
         catch(IOException ioex){
             logger.warning("getThumbnail(): Failed to initialize dataset StorageIO for " + dataset.getStorageIdentifier() + " (" + ioex.getMessage() + ")");
         }
-        
+
+        String thumbnailFilenameOnDisk = datasetLogoThumbnail + thumbPrefix + width;
+        logger.info("Checking if " + datasetLogoThumbnail + thumb48addedByImageThumbConverter + " exists...");
+        logger.info("Checking if " + thumbnailFilenameOnDisk + " exists...");
+
         InputStream in = null;
         try {
             if (dataAccess == null) {
                 logger.warning("getThumbnail(): Failed to initialize dataset StorageIO for " + dataset.getStorageIdentifier());
-            } else if (dataAccess.getAuxFileAsInputStream(datasetLogoThumbnail + thumb48addedByImageThumbConverter) != null) {
-                in = dataAccess.getAuxFileAsInputStream(datasetLogoThumbnail + thumb48addedByImageThumbConverter);
+//            } else if (dataAccess.getAuxFileAsInputStream(datasetLogoThumbnail + thumb48addedByImageThumbConverter) != null) {
+            } else if (dataAccess.getAuxFileAsInputStream(thumbnailFilenameOnDisk) != null) {
+//                in = dataAccess.getAuxFileAsInputStream(datasetLogoThumbnail + thumb48addedByImageThumbConverter);
+                in = dataAccess.getAuxFileAsInputStream(thumbnailFilenameOnDisk);
             }
         } catch (IOException ex) {
             logger.fine("Dataset-level thumbnail file does not exist, or failed to open; will try to find an image file that can be used as the thumbnail.");
@@ -160,7 +167,9 @@ public class DatasetUtil {
                         logger.fine("Dataset (id :" + dataset.getId() + ") does not have a thumbnail available that could be selected automatically.");
                         return null;
                     } else {
-                        String imageSourceBase64 = ImageThumbConverter.getImageThumbnailAsBase64(thumbnailFile, ImageThumbConverter.DEFAULT_CARDIMAGE_SIZE);
+                        //FIXME: figure this out... DEFAULT_CARDIMAGE_SIZE = 48... use width instead? vs 64, etc
+//                        String imageSourceBase64 = ImageThumbConverter.getImageThumbnailAsBase64(thumbnailFile, ImageThumbConverter.DEFAULT_CARDIMAGE_SIZE);
+                        String imageSourceBase64 = ImageThumbConverter.getImageThumbnailAsBase64(thumbnailFile, width);
                         DatasetThumbnail defaultDatasetThumbnail = new DatasetThumbnail(imageSourceBase64, thumbnailFile);
                         logger.fine("thumbnailFile (id :" + thumbnailFile.getId() + ") will get thumbnail through automatic selection from DataFile id " + thumbnailFile.getId());
                         return defaultDatasetThumbnail;
@@ -170,7 +179,8 @@ public class DatasetUtil {
                 logger.fine("Dataset (id :" + dataset.getId() + ") has a thumbnail the user selected but the file must have later been restricted. Returning null.");
                 return null;
             } else {
-                String imageSourceBase64 = ImageThumbConverter.getImageThumbnailAsBase64(thumbnailFile, ImageThumbConverter.DEFAULT_CARDIMAGE_SIZE);
+//                String imageSourceBase64 = ImageThumbConverter.getImageThumbnailAsBase64(thumbnailFile, ImageThumbConverter.DEFAULT_CARDIMAGE_SIZE);
+                String imageSourceBase64 = ImageThumbConverter.getImageThumbnailAsBase64(thumbnailFile, width);
                 DatasetThumbnail userSpecifiedDatasetThumbnail = new DatasetThumbnail(imageSourceBase64, thumbnailFile);
                 logger.fine("Dataset (id :" + dataset.getId() + ")  will get thumbnail the user specified from DataFile id " + thumbnailFile.getId());
                 return userSpecifiedDatasetThumbnail;
@@ -179,11 +189,12 @@ public class DatasetUtil {
         }
     }
 
-    public static DatasetThumbnail getThumbnail(Dataset dataset) {
+//    public static DatasetThumbnail getThumbnail(Dataset dataset) {
+    public static DatasetThumbnail getThumbnail(Dataset dataset, int width) {
         if (dataset == null) {
             return null;
         }
-        return getThumbnail(dataset, null);
+        return getThumbnail(dataset, null, width);
     }
 
     public static boolean deleteDatasetLogo(Dataset dataset) {
@@ -347,15 +358,24 @@ public class DatasetUtil {
             logger.fine("Failed to delete temporary thumbnail file");
         }
         
+        logger.info("Thumbnail saved to " + thumbFileLocation + ". Temporary file deleted : " + tmpFileWasDeleted + ". Original file deleted : " + originalTempFileWasDeleted);
         logger.fine("Thumbnail saved to " + thumbFileLocation + ". Temporary file deleted : " + tmpFileWasDeleted + ". Original file deleted : " + originalTempFileWasDeleted);
         return dataset;
     }
 
     public static InputStream getThumbnailAsInputStream(Dataset dataset) {
+        return getThumbnailAsInputStream(dataset, ImageThumbConverter.UNSPECIFIED_SIZE);
+    }
+
+    public static InputStream getThumbnailAsInputStream(Dataset dataset, int width) {
         if (dataset == null) {
             return null;
         }
-        DatasetThumbnail datasetThumbnail = dataset.getDatasetThumbnail();
+        if (width == ImageThumbConverter.UNSPECIFIED_SIZE) {
+            width = ImageThumbConverter.DEFAULT_CARDIMAGE_SIZE;
+        }
+        logger.info("width: " + width);
+        DatasetThumbnail datasetThumbnail = dataset.getDatasetThumbnail(width);
         if (datasetThumbnail == null) {
             return null;
         } else {
@@ -397,6 +417,23 @@ public class DatasetUtil {
         return false;
     }
 
+    public static boolean isThumbnailPresent(Dataset dataset, int size) {
+        if (dataset == null) {
+            return false;
+        }
+        
+        StorageIO<Dataset> dataAccess = null;
+        
+        try {
+            dataAccess = DataAccess.getStorageIO(dataset);
+            logger.info("datasetLogoThumbnail + thumb48addedByImageThumbConverter: " + datasetLogoThumbnail + thumb48addedByImageThumbConverter);
+            return dataAccess.isAuxObjectCached(datasetLogoThumbnail + thumb48addedByImageThumbConverter);
+        } catch (IOException ioex) {
+        }
+        return false;
+    }
+
+    
     public static List<DatasetField> getDatasetSummaryFields(DatasetVersion datasetVersion, String customFields) {
         
         List<DatasetField> datasetFields = new ArrayList<>();

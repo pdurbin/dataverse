@@ -1220,9 +1220,18 @@ public class UtilIT {
     }
 
     static Response getDatasetThumbnail(String datasetPersistentId, String apiToken) {
+        String width = null;
+        return getDatasetThumbnail(datasetPersistentId, width, apiToken);
+    }
+
+    static Response getDatasetThumbnail(String datasetPersistentId, String width, String apiToken) {
+        String optionalWidth = "";
+        if (width != null) {
+            optionalWidth = "&width=" + width;
+        }
         return given()
                 .header(API_TOKEN_HTTP_HEADER, apiToken)
-                .get("/api/datasets/:persistentId/thumbnail" + "?persistentId=" + datasetPersistentId);
+                .get("/api/datasets/:persistentId/thumbnail" + "?persistentId=" + datasetPersistentId + optionalWidth);
     }
 
     static Response getDatasetThumbnailMetadata(Integer datasetId, String apiToken) {

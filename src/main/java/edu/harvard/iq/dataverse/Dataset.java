@@ -1,5 +1,6 @@
 package edu.harvard.iq.dataverse;
 
+import edu.harvard.iq.dataverse.dataaccess.ImageThumbConverter;
 import edu.harvard.iq.dataverse.dataset.DatasetThumbnail;
 import edu.harvard.iq.dataverse.dataset.DatasetUtil;
 import edu.harvard.iq.dataverse.harvest.client.HarvestingClient;
@@ -790,7 +791,11 @@ public class Dataset extends DvObjectContainer {
     }
 
     public DatasetThumbnail getDatasetThumbnail() {
-        return DatasetUtil.getThumbnail(this);
+        return DatasetUtil.getThumbnail(this, ImageThumbConverter.UNSPECIFIED_SIZE);
+    }
+
+    public DatasetThumbnail getDatasetThumbnail(int width) {
+        return DatasetUtil.getThumbnail(this, width);
     }
     
     /** 
@@ -802,7 +807,7 @@ public class Dataset extends DvObjectContainer {
      * @return A thumbnail of the dataset (may be {@code null}).
      */
     public DatasetThumbnail getDatasetThumbnail(DatasetVersion datasetVersion) {
-        return DatasetUtil.getThumbnail(this, datasetVersion);
+        return DatasetUtil.getThumbnail(this, datasetVersion, ImageThumbConverter.UNSPECIFIED_SIZE);
     }
 
 }

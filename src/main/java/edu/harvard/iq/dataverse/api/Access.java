@@ -284,6 +284,7 @@ public class Access extends AbstractApiBean {
 
         logger.fine("checking if thumbnails are supported on this file.");
         if (FileUtil.isThumbnailSupported(df)) {
+            // TODO: add integration test.
             dInfo.addServiceAvailable(new OptionalAccessService("thumbnail", "image/png", "imageThumb=true", "Image Thumbnail (64x64)"));
         }
 

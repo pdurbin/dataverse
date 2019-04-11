@@ -72,6 +72,7 @@ import edu.harvard.iq.dataverse.authorization.AuthTestDataServiceBean;
 import edu.harvard.iq.dataverse.authorization.RoleAssignee;
 import edu.harvard.iq.dataverse.authorization.UserRecordIdentifier;
 import edu.harvard.iq.dataverse.authorization.users.User;
+import edu.harvard.iq.dataverse.dataaccess.ImageThumbConverter;
 import edu.harvard.iq.dataverse.dataset.DatasetThumbnail;
 import edu.harvard.iq.dataverse.dataset.DatasetUtil;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
@@ -1046,12 +1047,13 @@ public class Admin extends AbstractApiBean {
 	@GET
 	@Path("datasets/thumbnailMetadata/{id}")
 	public Response getDatasetThumbnailMetadata(@PathParam("id") Long idSupplied) {
+            // Promote from admin to datasets?
 		Dataset dataset = datasetSvc.find(idSupplied);
 		if (dataset == null) {
 			return error(Response.Status.NOT_FOUND, "Could not find dataset based on id supplied: " + idSupplied + ".");
 		}
 		JsonObjectBuilder data = Json.createObjectBuilder();
-		DatasetThumbnail datasetThumbnail = dataset.getDatasetThumbnail();
+		DatasetThumbnail datasetThumbnail = dataset.getDatasetThumbnail(ImageThumbConverter.DEFAULT_THUMBNAIL_SIZE);
 		data.add("isUseGenericThumbnail", dataset.isUseGenericThumbnail());
 		data.add("datasetLogoPresent", DatasetUtil.isDatasetLogoPresent(dataset));
 		if (datasetThumbnail != null) {

@@ -37,15 +37,15 @@ public class DatasetUtilTest {
 
     @Test
     public void testGetThumbnailNullDataset() {
-        assertNull(DatasetUtil.getThumbnail(null));
-        assertNull(DatasetUtil.getThumbnail(null, null));
+        assertNull(DatasetUtil.getThumbnail(null, ImageThumbConverter.UNSPECIFIED_SIZE));
+        assertNull(DatasetUtil.getThumbnail(null, null, ImageThumbConverter.UNSPECIFIED_SIZE));
 
         Dataset dataset = MocksFactory.makeDataset();
         dataset.setStorageIdentifier("file://");
         dataset.setUseGenericThumbnail(true);
 
-        assertNull(DatasetUtil.getThumbnail(dataset));
-        assertNull(DatasetUtil.getThumbnail(dataset, new DatasetVersion()));
+        assertNull(DatasetUtil.getThumbnail(dataset, ImageThumbConverter.UNSPECIFIED_SIZE));
+        assertNull(DatasetUtil.getThumbnail(dataset, new DatasetVersion(), ImageThumbConverter.UNSPECIFIED_SIZE));
     }
 
     @Test
@@ -56,7 +56,7 @@ public class DatasetUtilTest {
         thumbnailFile.setId(42l);
         thumbnailFile.setRestricted(true);
         dataset.setThumbnailFile(thumbnailFile);
-        DatasetThumbnail result = DatasetUtil.getThumbnail(dataset);
+        DatasetThumbnail result = DatasetUtil.getThumbnail(dataset, ImageThumbConverter.UNSPECIFIED_SIZE);
         assertNull(result);
     }
     /**

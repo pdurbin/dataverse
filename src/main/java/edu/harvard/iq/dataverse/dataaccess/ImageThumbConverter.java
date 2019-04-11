@@ -63,6 +63,7 @@ public class ImageThumbConverter {
     public static int DEFAULT_CARDIMAGE_SIZE = 48;
     public static int DEFAULT_THUMBNAIL_SIZE = 64;
     public static int DEFAULT_PREVIEW_SIZE = 400;
+    public static int UNSPECIFIED_SIZE = -1;
 
     private static final Logger logger = Logger.getLogger(ImageThumbConverter.class.getCanonicalName());
 
@@ -362,6 +363,7 @@ public class ImageThumbConverter {
         try {
             Channel outputChannel = storageIO.openAuxChannel(THUMBNAIL_SUFFIX + size, DataAccessOption.WRITE_ACCESS);
             outputStream = Channels.newOutputStream((WritableByteChannel) outputChannel);
+            logger.info("Opened an auxiliary channel/output stream " + THUMBNAIL_SUFFIX + size + " on " + storageIO.getDataFile().getStorageIdentifier());
             logger.fine("Opened an auxiliary channel/output stream " + THUMBNAIL_SUFFIX + size + " on " + storageIO.getDataFile().getStorageIdentifier());
         } catch (Exception ioex) {
             logger.fine("Failed to open an auxiliary channel/output stream " + THUMBNAIL_SUFFIX + size + " on " + storageIO.getDataFile().getStorageIdentifier());
@@ -430,6 +432,7 @@ public class ImageThumbConverter {
      */
     public static String getImageThumbnailAsBase64(DataFile file, int size) {
 
+        logger.info("entering getImageThumbnailAsBase64, size " + size + ", for " + file.getStorageIdentifier());
         logger.fine("entering getImageThumbnailAsBase64, size " + size + ", for " + file.getStorageIdentifier());
 
         // if thumbnails are not even supported on this file type, no need
