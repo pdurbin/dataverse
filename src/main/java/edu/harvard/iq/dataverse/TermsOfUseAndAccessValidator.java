@@ -28,5 +28,11 @@ public class TermsOfUseAndAccessValidator implements ConstraintValidator<Validat
         //return !(value.getTemplate() != null && value.getDatasetVersion() != null);
         return true;
     }
+
+    public static TermsOfUseAndAccess update(TermsOfUseAndAccess previous, TermsOfUseAndAccess incoming) {
+//        previous.setTermsOfUse(incoming.getTermsOfUse() != null ? incoming.getTermsOfUse() : previous.getTermsOfUse());
+        previous.setDisclaimer(incoming.getDisclaimer() != null ? incoming.getDisclaimer() : previous.getDisclaimer());
+        return previous;
+    }
   
 }

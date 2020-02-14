@@ -78,6 +78,8 @@ import edu.harvard.iq.dataverse.export.ExportService;
 import edu.harvard.iq.dataverse.ingest.IngestServiceBean;
 import edu.harvard.iq.dataverse.privateurl.PrivateUrl;
 import edu.harvard.iq.dataverse.S3PackageImporter;
+import edu.harvard.iq.dataverse.TermsOfUseAndAccess;
+import edu.harvard.iq.dataverse.TermsOfUseAndAccessValidator;
 import static edu.harvard.iq.dataverse.api.AbstractApiBean.error;
 import edu.harvard.iq.dataverse.api.dto.RoleAssignmentDTO;
 import edu.harvard.iq.dataverse.batch.util.LoggingUtil;
@@ -126,6 +128,7 @@ import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import javax.json.stream.JsonParsingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -574,6 +577,7 @@ public class Datasets extends AbstractApiBean {
             DatasetVersion managedVersion;
             if ( updateDraft ) {
                 final DatasetVersion editVersion = ds.getEditVersion();
+                // Why doesn't this work? Or does it work?
                 editVersion.setDatasetFields(incomingVersion.getDatasetFields());
                 editVersion.setTermsOfUseAndAccess( incomingVersion.getTermsOfUseAndAccess() );
                 Dataset managedDataset = execCommand(new UpdateDatasetVersionCommand(ds, req));
@@ -1958,5 +1962,77 @@ public class Datasets extends AbstractApiBean {
         }
     }
 
+    @GET
+    @Path("{identifier}/terms")
+    public Response getTerms(@PathParam("identifier") String id, @QueryParam("type") DatasetLock.Reason lockType) {
+        Dataset dataset = null;
+        try {
+            dataset = findDatasetOrDie(id);
+            return ok(json(dataset.getLatestVersion().getTermsOfUseAndAccess()));
+        } catch (WrappedResponse wr) {
+            return wr.getResponse();
+        }
+    }
+
+    @POST
+    @Path("{identifier}/terms")
+    public Response updateTerms(String body, @PathParam("identifier") String id) {
+        
+//        processDatasetUpdate(null, null, null, Boolean.FALSE);
+        JsonObject dvJson;
+        try (StringReader rdr = new StringReader(body)) {
+            dvJson = Json.createReader(rdr).readObject();
+        } catch (JsonParsingException jpe) {
+            logger.log(Level.SEVERE, "Json: {0}", body);
+            return error(Response.Status.BAD_REQUEST, "Error parsing Json: " + jpe.getMessage());
+        }
+        Dataset dataset = null;
+        try {
+            DataverseRequest dataverseRequest = createDataverseRequest(findUserOrDie());
+            dataset = findDatasetOrDie(id);
+            DatasetVersion datasetVersion = dataset.getEditVersion();
+            boolean updateDraft = dataset.getLatestVersion().isDraft();
+            TermsOfUseAndAccess previous = datasetVersion.getTermsOfUseAndAccess();
+            TermsOfUseAndAccess incoming = jsonParser().parseTermsOfUseAndAccess(dvJson);
+            datasetVersion.setTermsOfUseAndAccess(TermsOfUseAndAccessValidator.update(previous, incoming));
+//            termsOfUseAndAccess.setSpecialPermissions(dvJson.getString("foo"));
+            DatasetVersion managedVersion = null;
+            if (updateDraft) {
+                managedVersion = execCommand(new UpdateDatasetVersionCommand(dataset, dataverseRequest)).getEditVersion();
+            } else {
+//                managedVersion = execCommand(new CreateDatasetVersionCommand(dataverseRequest, dataset, datasetVersion));
+            }
+            return ok(json(managedVersion));
+        } catch (WrappedResponse wr) {
+            return wr.getResponse();
+        }
+    }
+
+    @DELETE
+    @Path("{identifier}/terms/{termToDelete}")
+    public Response deleteTerm(@PathParam("identifier") String id, @PathParam("termToDelete") String termToDelete) {
+        Dataset dataset = null;
+        try {
+            DataverseRequest dataverseRequest = createDataverseRequest(findUserOrDie());
+            dataset = findDatasetOrDie(id);
+            DatasetVersion datasetVersion = dataset.getEditVersion();
+            boolean updateDraft = dataset.getLatestVersion().isDraft();
+            TermsOfUseAndAccess terms = datasetVersion.getTermsOfUseAndAccess();
+            if (termToDelete.equals("disclaimer")) {
+                terms.setDisclaimer(null);
+            }
+            DatasetVersion managedVersion = null;
+            if (updateDraft) {
+                managedVersion = execCommand(new UpdateDatasetVersionCommand(dataset, dataverseRequest)).getEditVersion();
+            } else {
+//                managedVersion = execCommand(new CreateDatasetVersionCommand(dataverseRequest, dataset, datasetVersion));
+            }
+            return ok(json(managedVersion));
+        } catch (WrappedResponse wr) {
+            return wr.getResponse();
+        }
+    }
+
+    
 }
 

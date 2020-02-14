@@ -20,6 +20,7 @@ import edu.harvard.iq.dataverse.authorization.groups.impl.ipaddress.ip.IpAddress
 import edu.harvard.iq.dataverse.authorization.groups.impl.ipaddress.ip.IpAddressRange;
 import edu.harvard.iq.dataverse.DataverseTheme.Alignment;
 import edu.harvard.iq.dataverse.FileMetadata;
+import edu.harvard.iq.dataverse.TermsOfUseAndAccess;
 import edu.harvard.iq.dataverse.authorization.users.GuestUser;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.mocks.MockDatasetFieldSvc;
@@ -445,6 +446,16 @@ public class JsonParserTest {
             System.out.println(dsJson != null);
             DatasetVersion actual = sut.parseDatasetVersion(dsJson);
         }
+    }
+
+    @Test
+    public void testParseTerms() {
+        JsonObject jsonObject = Json.createObjectBuilder()
+                .add("termsOfUse", "myTerms")
+                .build();
+        TermsOfUseAndAccess termsOfUseAndAccess = sut.parseTermsOfUseAndAccess(jsonObject);
+        System.out.println("terms: " + termsOfUseAndAccess.getTermsOfUse());
+        
     }
     
     @Test

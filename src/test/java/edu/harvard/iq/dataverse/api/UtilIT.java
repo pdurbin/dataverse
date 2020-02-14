@@ -2334,5 +2334,68 @@ public class UtilIT {
                 .header(API_TOKEN_HTTP_HEADER, apiToken)
                 .get("/api/datasets/" + datasetId + "/versions/" + version + "/downloadsize");
     }
+
+    static Response getTerms(String idOrPersistentIdOfDataset, String metric, String apiToken) {
+        System.out.println("metric: " + metric);
+          String idInPath = idOrPersistentIdOfDataset; // Assume it's a number.
+        String optionalQueryParam = ""; // If idOrPersistentId is a number we'll just put it in the path.
+        if (!NumberUtils.isNumber(idOrPersistentIdOfDataset)) {
+            idInPath = ":persistentId";
+//            optionalQueryParam = "&persistentId=" + idOrPersistentIdOfDataset;
+            optionalQueryParam = "?persistentId=" + idOrPersistentIdOfDataset;
+        }
+        RequestSpecification requestSpecification = given();
+        if (apiToken != null) {
+            requestSpecification = given()
+                    .header(UtilIT.API_TOKEN_HTTP_HEADER, apiToken);
+        }
+//        return requestSpecification.get("/api/datasets/" + idInPath + "/terms/" + metric + optionalQueryParam);
+        return requestSpecification.get("/api/datasets/" + idInPath + "/terms" + optionalQueryParam);
+    }
+
+    static Response updateTerms(String idOrPersistentIdOfDataset, JsonObject jsonObject, String apiToken) {
+//        System.out.println("metric: " + metric);
+          String idInPath = idOrPersistentIdOfDataset; // Assume it's a number.
+        String optionalQueryParam = ""; // If idOrPersistentId is a number we'll just put it in the path.
+        if (!NumberUtils.isNumber(idOrPersistentIdOfDataset)) {
+            idInPath = ":persistentId";
+//            optionalQueryParam = "&persistentId=" + idOrPersistentIdOfDataset;
+            optionalQueryParam = "?persistentId=" + idOrPersistentIdOfDataset;
+        }
+        RequestSpecification requestSpecification = given();
+        if (apiToken != null) {
+            requestSpecification = given()
+                    .header(UtilIT.API_TOKEN_HTTP_HEADER, apiToken);
+        }
+
+//        return requestSpecification.get("/api/datasets/" + idInPath + "/terms/" + metric + optionalQueryParam);
+        System.out.println("json: " + jsonObject.toString());
+        requestSpecification.body(jsonObject.toString()).contentType(ContentType.JSON);
+        return requestSpecification.post("/api/datasets/" + idInPath + "/terms" + optionalQueryParam);
+    }
+
+    static Response removeTerms(String idOrPersistentIdOfDataset, String field, String apiToken) {
+//        System.out.println("metric: " + metric);
+          String idInPath = idOrPersistentIdOfDataset; // Assume it's a number.
+        String optionalQueryParam = ""; // If idOrPersistentId is a number we'll just put it in the path.
+        if (!NumberUtils.isNumber(idOrPersistentIdOfDataset)) {
+            idInPath = ":persistentId";
+//            optionalQueryParam = "&persistentId=" + idOrPersistentIdOfDataset;
+            optionalQueryParam = "?persistentId=" + idOrPersistentIdOfDataset;
+        }
+        RequestSpecification requestSpecification = given();
+        if (apiToken != null) {
+            requestSpecification = given()
+                    .header(UtilIT.API_TOKEN_HTTP_HEADER, apiToken);
+        }
+
+//        return requestSpecification.get("/api/datasets/" + idInPath + "/terms/" + metric + optionalQueryParam);
+//        System.out.println("json: " + jsonObject.toString());
+//        requestSpecification.body(jsonObject.toString()).contentType(ContentType.JSON);
+        return requestSpecification.delete("/api/datasets/" + idInPath + "/terms/" + field + optionalQueryParam);
+    }
+
+    
+    
     
 }

@@ -351,8 +351,13 @@ public class JsonPrinter {
 
         return bld;
     }
-    
-    
+
+    public static JsonObjectBuilder json(TermsOfUseAndAccess terms) {
+        JsonObjectBuilder bld = NullSafeJsonBuilder.jsonObjectBuilder()
+                .add("disclaimer", terms.getDisclaimer());
+        return bld;
+    }
+
     public static JsonObjectBuilder jsonDataFileList(List<DataFile> dataFiles){
     
         if (dataFiles==null){

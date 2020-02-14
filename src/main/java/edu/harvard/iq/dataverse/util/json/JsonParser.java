@@ -344,6 +344,12 @@ public class JsonParser {
         return TermsOfUseAndAccess.License.NONE;       
     }
 
+    public TermsOfUseAndAccess parseTermsOfUseAndAccess(JsonObject jsonObject) {
+        TermsOfUseAndAccess termsOfUseAndAccess = new TermsOfUseAndAccess();
+        termsOfUseAndAccess.setTermsOfUse(jsonObject.getString("termsOfUse", null));
+        termsOfUseAndAccess.setDisclaimer(jsonObject.getString("disclaimer", null));
+        return termsOfUseAndAccess;
+    }
     public List<DatasetField> parseMetadataBlocks(JsonObject json) throws JsonParseException {
         Set<String> keys = json.keySet();
         List<DatasetField> fields = new LinkedList<>();

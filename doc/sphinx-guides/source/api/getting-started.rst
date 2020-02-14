@@ -74,6 +74,24 @@ Uploading Files
 
 See :ref:`add-file-api`.
 
+Changing Terms and Licenses
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+curl -X GET /terms
+
+curl -X POST /terms
+
+{
+  "specialPermissions": "so special",
+  "depositorRequirements": "dance",
+  "requestAccess": true,
+  "license": "CC-BY"
+}
+
+(This would be an error since CC-BY is not supported.)
+
+curl -X DELETE /terms/disclaimer
+
 Publishing a Dataverse
 ~~~~~~~~~~~~~~~~~~~~~~
 
