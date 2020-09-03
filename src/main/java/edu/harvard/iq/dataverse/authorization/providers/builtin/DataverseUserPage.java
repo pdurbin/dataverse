@@ -64,6 +64,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
+import org.primefaces.PrimeFaces;
 import org.primefaces.event.TabChangeEvent;
 
 /**
@@ -529,6 +530,32 @@ public class DataverseUserPage implements java.io.Serializable {
         }
     }
 
+    public void handleConfirmEmailClick() {
+        // cases:
+        // - auto verified by auth provider: Should never get here, should never have a "Verify Email" button to click
+        // - already verified: should never get here, should never have a button to click, unless we want to allow re-verification?
+        // - unexpired token: Go check your email, should you have a "Verify Email" button to keep clicking?
+        // - expired token: Why is it hanging out in the database?
+        // - no token: It expired or you never had one
+        ConfirmEmailData confirmEmailData = confirmEmailService.findSingleConfirmEmailDataByUser(currentUser);
+        if (confirmEmailData != null) {
+            String userEmail = currentUser.getEmail();
+            if (confirmEmailData.isExpired()) {
+                // expired token
+                JsfHelper.addInfoMessage(BundleUtil.getStringFromBundle("confirmEmail.expiredToken"));
+//                sendConfirmEmail();
+            } else {
+                // unexpired token
+                List<String> args = Arrays.asList(userEmail);
+                JsfHelper.addInfoMessage(BundleUtil.getStringFromBundle("confirmEmail.alreadySent", args));
+//                openConfirmEmailPopup();
+            }
+        } else {
+            // no token
+            sendConfirmEmail();
+        }
+    }
+
     public void sendConfirmEmail() {
         logger.fine("called sendConfirmEmail()");
         String userEmail = currentUser.getEmail();
@@ -544,18 +571,60 @@ public class DataverseUserPage implements java.io.Serializable {
         }
     }
 
-    
+// Just playing around with popups.
+//    public void openConfirmEmailPopup() {
+//        PrimeFaces.current().executeScript("PF('deleteConfirmation').show();handleResizeDialog('deleteConfirmation');");
+//    }
+
     /**
      * Determines whether the button to send a verification email appears on user page
      * TODO: cant this be refactored to use confirmEmailService.hasVerifiedEmail(currentUser) ?
      * @return 
      */ 
     public boolean showVerifyEmailButton() {
-        final Timestamp emailConfirmed = currentUser.getEmailConfirmed();
-        final ConfirmEmailData confirmedDate = confirmEmailService.findSingleConfirmEmailDataByUser(currentUser);
-        return (!getUserAuthProvider().isEmailVerified())
-                && confirmedDate == null
-                && emailConfirmed == null;
+        // Only show "Verify Email" button if auth provider doesn't automatically verify it.
+        return !getUserAuthProvider().isEmailVerified(); 
+
+//Todo: hide button if already verified
+//        if ( !getUserAuthProvider().isEmailVerified() ) {
+//            if (currentUser.getEmailConfirmed() == null) {
+//                return true;
+//            } else {
+//                return false;
+//            }
+//        }
+
+//original
+//        if (confirmEmailService.findSingleConfirmEmailDataByUser(currentUser) == null
+//                && currentUser.getEmailConfirmed() == null) {
+//            return true;
+//        }
+//        return false;
+        
+//existing/michael
+//        final Timestamp emailConfirmed = currentUser.getEmailConfirmed();
+//        final ConfirmEmailData confirmedDate = confirmEmailService.findSingleConfirmEmailDataByUser(currentUser);
+//        return (!getUserAuthProvider().isEmailVerified())
+//                && confirmedDate == null
+//                && emailConfirmed == null;
+
+//pdurbin
+//        if (getUserAuthProvider().isEmailVerified()) {
+//            // Don't show button to users who's auth provider verifies their email.
+//            return false;
+//        } else {
+//            
+//            if (currentUser.getEmailConfirmed() == null && confirmEmailService.findSingleConfirmEmailDataByUser(currentUser) == null) {
+//                // Not confirmed and no pending data.
+//                return true;
+//            } else {
+//                return false;
+//            }
+//        }
+
+//oliver
+//        return !confirmEmailService.hasVerifiedEmail(currentUser);
+
     }
 
     public boolean isEmailIsVerified() {

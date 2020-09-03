@@ -117,6 +117,7 @@ public class ConfirmEmailServiceBean {
                 confirmationUrl,
                 ConfirmEmailUtil.friendlyExpirationTime(systemConfig.getMinutesUntilConfirmEmailTokenExpires())
         ));
+        logger.log(Level.INFO, "messageBody:{0}", messageBody);
         logger.log(Level.FINE, "messageBody:{0}", messageBody);
 
         try {

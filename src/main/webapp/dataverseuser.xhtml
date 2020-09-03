@@ -444,8 +444,17 @@
                                                 </ui:fragment>
                                             </p>
                                         </div>
+                                        <div class="col-sm-1" jsf:rendered="#{false}">
+                                            <p:commandLink styleClass="btn btn-default bootstrap-button-tooltip"
+                                                           action="#{manageGroupsPage.setSelectedGroup(explicitGroup)}"
+                                                           update="@form"
+                                                           oncomplete="PF('deleteConfirmation').show()"
+                                                           title="Info"> <!--#{bundle['dataverse.manageGroups.tab.action.btn.delete']}"> -->
+                                                <span class="glyphicon glyphicon-info-sign"></span>
+                                            </p:commandLink>
+                                        </div>
                                         <div class="col-sm-1">
-                                            <h:commandLink rendered="#{DataverseUserPage.showVerifyEmailButton()}" styleClass="btn btn-default" action="#{DataverseUserPage.sendConfirmEmail()}">
+                                            <h:commandLink rendered="#{DataverseUserPage.showVerifyEmailButton()}" styleClass="btn btn-default" action="#{DataverseUserPage.handleConfirmEmailClick()}">
                                                 <span class="glyphicon glyphicon-ok"></span> #{bundle['confirmEmail.submitRequest']}
                                             </h:commandLink>
                                         </div>
@@ -716,6 +725,15 @@
                             </div>
                         </p:tab>
                     </p:tabView>
+                                           <p:dialog id="deleteGroupConfirm" rendered="#{manageGroupsPage.showDeletePopup}" header="#{bundle['dataverse.manageGroups.tab.action.btn.delete.dialog.header']}" widgetVar="deleteConfirmation" modal="true">
+                                                <p class="help-block">
+                                                    <span class="glyphicon glyphicon-warning-sign text-warning"/> <span class="text-warning">#{bundle['dataverse.manageGroups.tab.action.btn.delete.dialog.tip']}</span>
+                                                </p>
+                                                <div class="button-block">
+                                                    <p:commandButton styleClass="btn btn-default" value="#{bundle.continue}" onclick="PF('deleteConfirmation').hide()" action="#{manageGroupsPage.deleteGroup()}" update="@all"/>
+                                                    <p:commandButton styleClass="btn btn-link" value="#{bundle.cancel}" onclick="PF('deleteConfirmation').hide()" action="#{manageGroupsPage.unrenderDeletePopup()}" update="@all"/>
+                                                </div>
+                                            </p:dialog>
                 </h:form>
             </ui:define>
         </ui:composition>
