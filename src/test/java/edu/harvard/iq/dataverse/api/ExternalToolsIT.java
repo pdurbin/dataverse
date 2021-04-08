@@ -144,6 +144,54 @@ public class ExternalToolsIT {
     }
 
     @Test
+    public void testAddDpCreator() {
+
+        // Delete all external tools before testing.
+        Response getTools = UtilIT.getExternalTools();
+        getTools.prettyPrint();
+        getTools.then().assertThat()
+                .statusCode(OK.getStatusCode());
+        String body = getTools.getBody().asString();
+        JsonReader bodyObject = Json.createReader(new StringReader(body));
+        JsonArray tools = bodyObject.readObject().getJsonArray("data");
+        for (int i = 0; i < tools.size(); i++) {
+            JsonObject tool = tools.getJsonObject(i);
+            int id = tool.getInt("id");
+            Response deleteExternalTool = UtilIT.deleteExternalTool(id);
+            deleteExternalTool.prettyPrint();
+        }
+
+        JsonObjectBuilder job = Json.createObjectBuilder();
+        job.add("displayName", "DPCreator");
+        job.add("description", "This tool is awesome.");
+        job.add("types", Json.createArrayBuilder().add("explore"));
+        job.add("scope", "file");
+        job.add("contentType", "text/tab-separated-values");
+        job.add("toolUrl", "http://localhost:8000");
+        job.add("toolParameters", Json.createObjectBuilder()
+                .add("queryParameters", Json.createArrayBuilder()
+                        .add(Json.createObjectBuilder()
+                                .add("fileid", "{fileId}")
+                                .build())
+                        .add(Json.createObjectBuilder()
+                                .add("siteUrl", "{siteUrl}")
+                                .build())
+                        .add(Json.createObjectBuilder()
+                                .add("datasetPid", "{datasetPid}")
+                                .build())
+                        .add(Json.createObjectBuilder()
+                                .add("key", "{apiToken}")
+                                .build())
+                        .build())
+                .build());
+        Response addExternalTool = UtilIT.addExternalTool(job.build());
+        addExternalTool.prettyPrint();
+        addExternalTool.then().assertThat()
+                .statusCode(OK.getStatusCode())
+                .body("data.displayName", CoreMatchers.equalTo("DPCreator"));
+    }
+
+    @Test
     public void testDatasetLevelTool1() {
 
         // Delete all external tools before testing.

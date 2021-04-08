@@ -319,7 +319,37 @@ public class FileDownloadServiceBean implements java.io.Serializable {
         guestbookResponse.setDownloadtype(externalTool.getDisplayName());
         String toolUrl = externalToolHandler.getToolUrlWithQueryParams();
         logger.fine("Exploring with " + toolUrl);
-        PrimeFaces.current().executeScript("window.open('"+toolUrl + "', target='_blank');");
+        // FIXME: Add logic for old-style GET URL with query parameters
+        // vs. new style POST of form data.
+//        PrimeFaces.current().executeScript("window.open('"+toolUrl + "', target='_blank');");
+        String script = "var f = document.createElement(\"form\");\n"
+                + "f.setAttribute('method',\"post\");\n"
+                + "f.setAttribute('action',\"http://localhost:8000\");\n"
+                + "\n"
+                + "f.setAttribute('target',\"_blank\");\n"
+                + "\n"
+//                + "var i = document.createElement(\"input\"); //input element, text\n"
+//                + "i.setAttribute('type',\"text\");\n"
+//                + "i.setAttribute('name',\"username\");\n"
+//                + "i.setAttribute('value',\"FIXME\");\n"
+                + externalToolHandler.getFormKeysAndValues()
+                + "\n"
+                + "var s = document.createElement(\"input\"); //input element, Submit button\n"
+                + "s.setAttribute('type',\"submit\");\n"
+                + "s.setAttribute('value',\"Submit\");\n"
+                + "\n"
+//                + "f.appendChild(i);\n"
+                + "f.appendChild(s);\n"
+                + "\n"
+                + "//and some more input elements here\n"
+                + "//and dont forget to add a submit button\n"
+                + "\n"
+                + "document.getElementsByTagName('body')[0].appendChild(f);"
+                + "\n"
+//                + "window.open('', 'TheWindow', target='_blank');\n"
+                + "\n"
+                + "f.submit();\n"; // Then remove? See https://github.com/IQSS/dataverse/pull/6957/files
+        PrimeFaces.current().executeScript(script);
         // This is the old logic from TwoRavens, null checks and all.
         if (guestbookResponse != null && guestbookResponse.isWriteResponse()
                 && ((fmd != null && fmd.getDataFile() != null) || guestbookResponse.getDataFile() != null)) {

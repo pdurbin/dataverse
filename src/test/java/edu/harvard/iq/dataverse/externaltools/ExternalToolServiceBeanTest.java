@@ -10,6 +10,7 @@ import edu.harvard.iq.dataverse.GlobalId;
 import edu.harvard.iq.dataverse.authorization.users.ApiToken;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.json.Json;
 import javax.json.JsonObjectBuilder;
 import static org.junit.Assert.assertEquals;
@@ -103,6 +104,32 @@ public class ExternalToolServiceBeanTest {
         String toolUrl = externalToolHandler.getToolUrlWithQueryParams();
         System.out.println("result: " + toolUrl);
         assertEquals("http://awesometool.com?fileid=42&key=7196b5ce-f200-4286-8809-03ffdbc255d7&fileMetadataId=2&dvLocale=en", toolUrl);
+        // What we POST to an external tool.
+        Map<String, String> queryParamsAsMap = externalToolHandler.getQueryParametersAsMap();
+        assertEquals("{fileMetadataId=2, dvLocale=en, key=7196b5ce-f200-4286-8809-03ffdbc255d7, fileid=42}", queryParamsAsMap.toString());
+        String formKeysAndValues = externalToolHandler.getFormKeysAndValues();
+        String expectedFormFragment = ""
+                + "var var1 = document.createElement(\"input\");\n"
+                + "var1.setAttribute('type',\"text\");\n"
+                + "var1.setAttribute('name',\"fileMetadataId\");\n"
+                + "var1.setAttribute('value',\"2\");\n"
+                + "f.appendChild(var1);\n"
+                + "var var2 = document.createElement(\"input\");\n"
+                + "var2.setAttribute('type',\"text\");\n"
+                + "var2.setAttribute('name',\"dvLocale\");\n"
+                + "var2.setAttribute('value',\"en\");\n"
+                + "f.appendChild(var2);\n"
+                + "var var3 = document.createElement(\"input\");\n"
+                + "var3.setAttribute('type',\"text\");\n"
+                + "var3.setAttribute('name',\"key\");\n"
+                + "var3.setAttribute('value',\"7196b5ce-f200-4286-8809-03ffdbc255d7\");\n"
+                + "f.appendChild(var3);\n"
+                + "var var4 = document.createElement(\"input\");\n"
+                + "var4.setAttribute('type',\"text\");\n"
+                + "var4.setAttribute('name',\"fileid\");\n"
+                + "var4.setAttribute('value',\"42\");\n"
+                + "f.appendChild(var4);\n";
+        assertEquals(expectedFormFragment, formKeysAndValues.toString());
     }
 
     @Test

@@ -10,7 +10,10 @@ import edu.harvard.iq.dataverse.externaltools.ExternalTool.ReservedWord;
 import edu.harvard.iq.dataverse.util.SystemConfig;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -128,6 +131,45 @@ public class ExternalToolHandler {
         } else {
             return "?" + String.join("&", params) + "&preview=true";
         }
+    }
+
+    public Map<String, String> getQueryParametersAsMap() {
+        String toolParameters = externalTool.getToolParameters();
+        JsonReader jsonReader = Json.createReader(new StringReader(toolParameters));
+        JsonObject obj = jsonReader.readObject();
+        JsonArray queryParams = obj.getJsonArray("queryParameters");
+        if (queryParams == null || queryParams.isEmpty()) {
+            return Collections.EMPTY_MAP;
+        }
+        Map<String, String> params = new HashMap<>();
+        queryParams.getValuesAs(JsonObject.class).forEach((queryParam) -> {
+            queryParam.keySet().forEach((key) -> {
+                String value = queryParam.getString(key);
+                String param = getQueryParam(key, value);
+                if (param != null && !param.isEmpty()) {
+                    // length + 1 to get the equals (=) sign
+                    String justTheValue = param.substring(key.length() + 1);
+                    params.put(key, justTheValue);
+                }
+            });
+        });
+        return params;
+    }
+
+    public String getFormKeysAndValues() {
+        StringBuilder sb = new StringBuilder();
+        int count = 1;
+        for (Map.Entry<String, String> entry : getQueryParametersAsMap().entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            sb.append("var var" + count + " = document.createElement(\"input\");\n");
+            sb.append("var" + count + ".setAttribute('type',\"text\");\n");
+            sb.append("var" + count + ".setAttribute('name',\"" + key + "\");\n");
+            sb.append("var" + count + ".setAttribute('value',\"" + value + "\");\n");
+            sb.append("f.appendChild(var" + count + ");\n");
+            count++;
+        }
+        return sb.toString();
     }
 
     private String getQueryParam(String key, String value) {
