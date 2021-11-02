@@ -17,7 +17,8 @@
                     <span class="icon-dataset" jsf:rendered="#{empty DatasetPage.thumbnailString or DatasetPage.workingVersion.deaccessioned}"/>
                 </div>
                 <span class="citation-select" onclick="if (event.target) { selectText(event.target); } else{ selectText(this); }">
-                    <h:outputText value="#{DatasetPage.displayCitation}" escape="false"/>
+                    <!--<h:outputText value="#{DatasetPage.displayCitation}" escape="false"/>-->
+                    <h:outputText value="FIXME" escape="false"/>
                 </span>
                 <span class="glyphicon glyphicon-question-sign text-primary" jsf:rendered="#{!DatasetPage.dataset.released}" 
                       data-toggle="tooltip" data-placement="top" data-original-title="#{bundle['dataset.cite.title.released']}"/>

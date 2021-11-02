@@ -3180,4 +3180,17 @@ public Response completeMPUpload(String partETagBody, @QueryParam("globalid") St
         csvSB.append("\n");
         return ok(csvSB.toString(), MediaType.valueOf(FileUtil.MIME_TYPE_CSV), "datasets.status.csv");
     }
+
+//    @Consumes("application/ld+json, application/json-ld")
+    @GET
+    @Path("{id}/validateForInvalidCharacters")
+    public Response validateDatasetForInvalidCharacters(@PathParam("id") String id) {
+        try {
+            Dataset ds = findDatasetOrDie(id);
+            return ok("validateDatasetForInvalidCharacters");
+        } catch (WrappedResponse wr) {
+            return wr.getResponse();
+        }
+    }
+
 }

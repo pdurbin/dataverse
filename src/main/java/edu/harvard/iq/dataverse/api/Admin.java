@@ -1097,9 +1097,14 @@ public class Admin extends AbstractApiBean {
                 cause = cause.getCause();
             }
         }
+        try {
+            datasetService.validateDataset(dbId);
+        } catch (Exception ex) {
+            return error(Status.BAD_REQUEST, ex.getLocalizedMessage());
+        }
         return ok(msg);
     }
-    
+
     // This API does the same thing as /validateDataFileHashValue/{fileId}, 
     // but for all the files in the dataset, with streaming output.
     @GET
@@ -1169,6 +1174,27 @@ public class Admin extends AbstractApiBean {
             
         };
         return Response.ok(stream).build();
+    }
+
+    @Path("fix/dataset/{id}")
+    @POST
+    public Response fixDataset(@PathParam("id") String id) {
+        Dataset dataset;
+        try {
+            dataset = findDatasetOrDie(id);
+        } catch (Exception ex) {
+            return error(Response.Status.NOT_FOUND, "No Such Dataset");
+        }
+
+        Long dbId = dataset.getId();
+        try {
+            datasetService.fixDataset(dbId);
+        } catch (Exception ex) {
+            return error(Status.BAD_REQUEST, ex.getLocalizedMessage());
+        }
+        String msg = "fixed";
+        return ok(msg);
+
     }
 
 	@Path("assignments/assignees/{raIdtf: .*}")

@@ -11,7 +11,7 @@
         <!-- input text start UPDATE: UI:REMOVE applied due to duplicate ID errors, left code as reference incase test scripts complain -->
         <span id="pre-input-#{dsf.datasetFieldType.name}" class="pre-input-tag"/></ui:remove>
     <ui:fragment rendered="#{cvoc==null}">
-        <p:inputText value="#{dsfv.valueForEdit}" id="inputText" pt:aria-required="#{dsf.required}"
+        <p:inputText value="FIXME" id="inputText" pt:aria-required="#{dsf.required}"
                  styleClass="form-control #{dsfv.datasetField.datasetFieldType.name == 'title' and DatasetPage.editMode == 'CREATE'  ? 'datasetfield-title' : ''}"
                  rendered="#{!dsfv.datasetField.datasetFieldType.controlledVocabulary
                              and (dsfv.datasetField.datasetFieldType.fieldType == 'TEXT'

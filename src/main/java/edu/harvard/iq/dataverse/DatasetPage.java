@@ -1654,6 +1654,7 @@ public class DatasetPage implements java.io.Serializable {
      *
      */
      private void updateDatasetFieldInputLevels() {
+         logger.info("BEGIN updateDatasetFieldInputLevels");
          Long dvIdForInputLevel = ownerId;
 
          // OPTIMIZATION (?): replaced "dataverseService.find(ownerId)" with
@@ -1712,6 +1713,7 @@ public class DatasetPage implements java.io.Serializable {
                    dsf.setInclude(true);
                }
         }
+        logger.info("END updateDatasetFieldInputLevels");
      }
 
     public void handleChange() {
@@ -2412,6 +2414,7 @@ public class DatasetPage implements java.io.Serializable {
     }
 
     public void edit(EditMode editMode) {
+        logger.info("BEGIN edit called with " + editMode);
         this.editMode = editMode;
         if (this.readOnly) {
             dataset = datasetService.find(dataset.getId());
@@ -2424,8 +2427,8 @@ public class DatasetPage implements java.io.Serializable {
             // JH.addMessage(FacesMessage.SEVERITY_INFO, BundleUtil.getStringFromBundle("dataset.message.editFiles"));
             // FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Upload + Edit Dataset Files", " - You can drag and drop your files from your desktop, directly into the upload widget."));
         } else if (editMode.equals(EditMode.METADATA)) {
-            datasetVersionUI = datasetVersionUI.initDatasetVersionUI(workingVersion, true);
-            updateDatasetFieldInputLevels();
+//            datasetVersionUI = datasetVersionUI.initDatasetVersionUI(workingVersion, true);
+//            updateDatasetFieldInputLevels();
             JH.addMessage(FacesMessage.SEVERITY_INFO, BundleUtil.getStringFromBundle("dataset.message.editMetadata.label"), BundleUtil.getStringFromBundle("dataset.message.editMetadata.message"));
             //FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Edit Dataset Metadata", " - Add more metadata about your dataset to help others easily find it."));
         } else if (editMode.equals(EditMode.LICENSE)){
@@ -2433,6 +2436,7 @@ public class DatasetPage implements java.io.Serializable {
             //FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Edit Dataset License and Terms", " - Update your dataset's license and terms of use."));
         }
         this.readOnly = false;
+        logger.info("END edit called with " + editMode);
     }
 
     public String sendBackToContributor() {

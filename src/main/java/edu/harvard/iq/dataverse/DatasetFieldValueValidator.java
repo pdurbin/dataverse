@@ -33,6 +33,7 @@ public class DatasetFieldValueValidator implements ConstraintValidator<ValidateD
     }
 
     public boolean isValid(DatasetFieldValue value, ConstraintValidatorContext context) {
+//        System.out.println("calling isValid with " + value.getValue());
 
         context.disableDefaultConstraintViolation(); // we do this so we can have different messages depending on the different issue
 

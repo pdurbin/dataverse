@@ -59,6 +59,7 @@ public class DatasetVersionUI implements Serializable {
     }
     
     public DatasetVersionUI  initDatasetVersionUI(DatasetVersion datasetVersion, boolean createBlanks) {
+        System.out.println("BEGIN initDatasetVersionUI");
         /*takes in the values of a dataset version 
          and apportions them into lists for 
          viewing and editng in the dataset page.
@@ -136,6 +137,7 @@ public class DatasetVersionUI implements Serializable {
         
         setMetadataValueBlocks(datasetVersion);
         
+        System.out.println("END initDatasetVersionUI");        
         return this;
     }
 

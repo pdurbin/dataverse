@@ -271,6 +271,35 @@ public class DatasetServiceBean implements java.io.Serializable {
         }
     }
 
+    public void validateDataset(Long id) {
+        Dataset dataset = find(id);
+        for (DatasetVersion version : dataset.getVersions()) {
+            for (DatasetField datasetField : version.getFlatDatasetFields()) {
+                if (datasetField.getValue() != null && datasetField.getValue().contains("\f")) {
+                    throw new RuntimeException("Field " + datasetField.getDatasetFieldType().getName() + " contains \f");
+                }
+            }
+            for (FileMetadata fileMetadata : version.getFileMetadatas()) {
+                // TODO: What do to here?
+            }
+        }
+    }
+
+    public void fixDataset(Long id) {
+        logger.info("fixing dataset id " + id + "...");
+        Dataset dataset = find(id);
+        // TODO: fix the dataset. Remove bad characters.
+        for (DatasetVersion version : dataset.getVersions()) {
+            for (DatasetField datasetField : version.getFlatDatasetFields()) {
+                if (datasetField.getValue() != null && datasetField.getValue().contains("\f")) {
+                    logger.info("found a bad character, fixing...");
+                    datasetField.setSingleValue(datasetField.getValue().replaceAll("\f", ""));
+                    em.merge(version);
+                }
+            }
+        }
+    }
+
     public String generateDatasetIdentifier(Dataset dataset, GlobalIdServiceBean idServiceBean) {
         String identifierType = settingsService.getValueForKey(SettingsServiceBean.Key.IdentifierGenerationStyle, "randomString");
         String shoulder = settingsService.getValueForKey(SettingsServiceBean.Key.Shoulder, "");

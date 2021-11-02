@@ -76,7 +76,7 @@
                                           <td jsf:rendered="#{!anonymized or !settingsWrapper.shouldBeAnonymized(dsf)}">
                                             <!-- Primitive datasetFields -->
                                             <ui:fragment rendered="#{dsf.datasetFieldType.primitive}">
-                                                <h:outputText value="#{dsf.value}"
+                                                <h:outputText value="#{dsf.value}HERE3"
                                                     rendered="#{!dsf.datasetFieldType.allowMultiples and cvocConf.containsKey(dsf.datasetFieldType.id)}"
                                                     escape="#{dsf.datasetFieldType.isEscapeOutputText()}">
                                                     <f:passThroughAttribute name="lang" value="#{DatasetPage.getFieldLanguage(cvocConf.get(dsf.datasetFieldType.id).getString('languages'))}" />
@@ -84,7 +84,8 @@
                                                     <f:passThroughAttribute name="data-cvoc-protocol" value="#{cvocConf.get(dsf.datasetFieldType.id).getString('protocol','')}" />
                                                     <f:passThroughAttribute name="data-cvoc-managedfields" value="#{cvocConf.get(dsf.datasetFieldType.id).get('managedfields').toString()}" />
                                                 </h:outputText>
-                                                <h:outputText value="#{dsf.getDisplayValue(mdLangCode)}"
+                                                <!--<h:outputText value="#{dsf.getDisplayValue(mdLangCode)}"-->
+                                                <h:outputText value="FIXME"
                                                     rendered="#{!dsf.datasetFieldType.allowMultiples and !cvocConf.containsKey(dsf.datasetFieldType.id)}"
                                                     escape="#{dsf.datasetFieldType.isEscapeOutputText()}"/>
                                                 <ui:repeat value="#{dsf.getValues_nondisplay()}" var="value" varStatus="loop" rendered="#{dsf.datasetFieldType.allowMultiples and cvocConf.containsKey(dsf.datasetFieldType.id)}">

@@ -209,6 +209,36 @@ public class UtilIT {
                 .post("/api/admin/validateDataFileHashValue/" + fileId + "?key=" + apiToken);
         return response;
     }
+
+    public static Response validateDataset(String datasetId) {
+        Response response = given()
+                .get("/api/admin/validate/dataset/" + datasetId);
+        return response;
+    }
+
+    public static Response fixDataset(String datasetId) {
+        Response response = given()
+                .post("/api/admin/fix/dataset/" + datasetId);
+        return response;
+    }
+
+    public static Response validateDatasetForInvalidCharacters(String datasetPersistentId,  String apiToken) {
+//        Response response = given()
+//                .body(fileId)
+//                .contentType(ContentType.JSON)
+//                .post("/api/admin/validateDataFileHashValue/" + fileId + "?key=" + apiToken);
+//        return response;
+//        String jsonIn = jsonObject.toString();
+        RequestSpecification requestSpecification = given();
+        if (apiToken != null) {
+            requestSpecification = given()
+                    .header(UtilIT.API_TOKEN_HTTP_HEADER, apiToken);
+//                    .body(jsonIn)
+//                    .contentType("application/json");
+        }
+        return requestSpecification
+                .get("/api/datasets/:persistentId/validateForInvalidCharacters?persistentId=" + datasetPersistentId);
+    }
     
     private static String getAuthenticatedUserAsJsonString(String persistentUserId, String firstName, String lastName, String authenticationProviderId, String identifier) {
         JsonObjectBuilder builder = Json.createObjectBuilder();
