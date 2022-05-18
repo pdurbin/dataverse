@@ -1,7 +1,5 @@
 package edu.harvard.iq.dataverse.util;
 
-import com.ocpsoft.pretty.PrettyContext;
-
 import edu.harvard.iq.dataverse.DataFile;
 import edu.harvard.iq.dataverse.DataverseServiceBean;
 import edu.harvard.iq.dataverse.DvObjectContainer;
@@ -372,7 +370,8 @@ public class SystemConfig {
      * URL Tracking: 
      */
     public String getPageURLWithQueryString() {
-        return PrettyContext.getCurrentInstance().getRequestURL().toURL() + PrettyContext.getCurrentInstance().getRequestQueryString().toQueryString();
+//        return PrettyContext.getCurrentInstance().getRequestURL().toURL() + PrettyContext.getCurrentInstance().getRequestQueryString().toQueryString();
+        return "FIXME";
     }
 
     /**

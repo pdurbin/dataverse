@@ -55,10 +55,10 @@ import jakarta.ws.rs.core.Response;
 
 import edu.harvard.iq.dataverse.util.json.NullSafeJsonBuilder;
 import org.apache.commons.io.IOUtils;
-import org.ocpsoft.common.util.Strings;
 
 import static edu.harvard.iq.dataverse.api.AbstractApiBean.STATUS_ERROR;
 import static edu.harvard.iq.dataverse.api.AbstractApiBean.STATUS_OK;
+import edu.harvard.iq.dataverse.util.StringUtil;
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
 /**
@@ -1211,7 +1211,7 @@ public class AddReplaceFileHelper{
                     this.systemConfig);
 
         } catch (IOException ex) {
-            if (!Strings.isNullOrEmpty(ex.getMessage())) {
+            if (!StringUtil.isEmpty(ex.getMessage())) {
                 this.addErrorSevere(getBundleErr("ingest_create_file_err") + " " + ex.getMessage());
             } else {
                 this.addErrorSevere(getBundleErr("ingest_create_file_err"));
