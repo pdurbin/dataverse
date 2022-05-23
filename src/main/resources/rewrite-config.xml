@@ -1,0 +1,14 @@
+<xml>
+    <url-mapping id="password_reset">
+        <pattern value="/passwordreset"/>
+        <view-id value="/passwordreset.xhtml"/>
+    </url-mapping>
+    <url-mapping id="user">
+        <pattern value="/user"/>
+        <view-id value="/pages/dataverseuser.xhtml"/>
+    </url-mapping>
+    <url-mapping id="dashboard">
+        <pattern value="/dashboard"/>
+        <view-id value="/faces/dashboard.xhtml"/>
+    </url-mapping>
+</xml>

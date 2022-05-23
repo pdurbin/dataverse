@@ -1,7 +1,5 @@
 package edu.harvard.iq.dataverse.util;
 
-import com.ocpsoft.pretty.PrettyContext;
-
 import edu.harvard.iq.dataverse.DataFile;
 import edu.harvard.iq.dataverse.DataverseServiceBean;
 import edu.harvard.iq.dataverse.DvObjectContainer;
@@ -371,8 +369,10 @@ public class SystemConfig {
     /**
      * URL Tracking: 
      */
+    // TODO: Delete this? A call to pageURLWithQueryString added in Javascript in 44d1863 but later removed in #5416.
     public String getPageURLWithQueryString() {
-        return PrettyContext.getCurrentInstance().getRequestURL().toURL() + PrettyContext.getCurrentInstance().getRequestQueryString().toQueryString();
+//        return PrettyContext.getCurrentInstance().getRequestURL().toURL() + PrettyContext.getCurrentInstance().getRequestQueryString().toQueryString();
+        return "FIXME? DELETEME?";
     }
 
     /**

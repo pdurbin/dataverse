@@ -13,6 +13,7 @@
             <supported-locale>fr</supported-locale>
             <supported-locale>zh_CN</supported-locale>
         </locale-config>
+        <!--<view-handler>edu.harvard.iq.dataverse.util.urlrewrite.RewriteViewHandler</view-handler>-->
     </application>
     <render-kit>
         <renderer>

@@ -178,6 +178,7 @@ public class LoginPage implements java.io.Serializable {
             }
             
             try {            
+                logger.log(Level.INFO, "redirectPage = {0}", redirectPage);
                 redirectPage = URLDecoder.decode(redirectPage, "UTF-8");
             } catch (UnsupportedEncodingException ex) {
                 Logger.getLogger(LoginPage.class.getName()).log(Level.SEVERE, null, ex);

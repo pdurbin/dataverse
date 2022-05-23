@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import static javax.ejb.TransactionAttributeType.REQUIRES_NEW;
@@ -20,7 +21,6 @@ import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import org.apache.commons.lang3.StringUtils;
-import org.ocpsoft.common.util.Strings;
 
 /**
  * Your goto bean for everything {@link DvObject}, that's not tied to any
@@ -257,7 +257,8 @@ public class DvObjectServiceBean implements java.io.Serializable {
             return null;
         }
         
-        String datasetIdStr = Strings.join(objectIds, ", ");
+        Set<String> objectIdsAsStrings = objectIds.stream().map(e -> String.valueOf(e)).collect(Collectors.toSet());
+        String datasetIdStr = String.join(",", objectIdsAsStrings);
         
         String qstr = "WITH RECURSIVE path_elements AS ((" +
             " SELECT id, owner_id FROM dvobject WHERE id in (" + datasetIdStr + "))" +
