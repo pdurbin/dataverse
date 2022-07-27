@@ -186,8 +186,13 @@ public class CreatePrivateUrlCommandTest {
         PrivateUrl privateUrl = null;
         try {
             privateUrl = testEngine.submit(new CreatePrivateUrlCommand(null, dataset, true));
+            System.out.println("privateUrl: " + privateUrl);
             assertTrue(false);
         } catch (CommandException ex) {
+            System.out.println("got here, exception: " + ex);
+        } catch (Exception ex) {
+            System.out.println("exception: " + ex);
+            ex.printStackTrace();
         }
         assertNull(privateUrl);
     }

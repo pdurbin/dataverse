@@ -273,7 +273,27 @@ public class Dataset extends DvObjectContainer {
     }
 
     public DatasetVersion getLatestVersion() {
+//        System.out.println("Called getLatestVersion");
+//        for (DatasetVersion version : getVersions()) {
+//            System.out.println("getLatestVersion found " + version + ". " + version.getVersionState());
+//        }
+//        System.out.println("num versions found by getLatestVersion: " + getVersions().size());
         return getVersions().get(0);
+    }
+
+    /**
+     * @return Returns the first version that can be found that has an id
+     * (versions are stored in order, oldest first). If no such versions can be
+     * found, null is returned.
+     */
+    public DatasetVersion getLatestVersionSkipNullIds() {
+        for (DatasetVersion version : getVersions()) {
+            if (version.getId() == null) {
+                continue;
+            }
+            return version;
+        }
+        return null;
     }
 
     public DatasetVersion getLatestVersionForCopy() {
@@ -290,6 +310,11 @@ public class Dataset extends DvObjectContainer {
     }
 
     public void setVersions(List<DatasetVersion> versions) {
+        if (versions != null) {
+            System.out.println("setting dataset to this many versions: " + versions.size());
+        } else {
+            System.out.println("setting dataset to no versions (null)");
+        }
         this.versions = versions;
     }
 

@@ -4162,8 +4162,10 @@ public class DatasetPage implements java.io.Serializable {
      * See: dataset-versions.xhtml, remoteCommand 'postLoadVersionTablList'
     */
     public void postLoadSetVersionTabList(){
+        logger.info("postLoadSetVersionTabList was called");
 
         if (this.getVersionTabList().isEmpty() && workingVersion.isDeaccessioned()){
+            logger.info("about to call setVersionTabList(resetVersionTabList())");
             setVersionTabList(resetVersionTabList());
         }
 
@@ -4289,6 +4291,7 @@ public class DatasetPage implements java.io.Serializable {
                     fm.setVarGroups(variableService.findAllGroupsByFileMetadata(fm.getId()));
                 }
                 version.setContributorNames(datasetVersionService.getContributorsNames(version));
+                logger.info("calling addversion1 for " + version);
                 retList.add(version);
             }
 
@@ -4296,10 +4299,12 @@ public class DatasetPage implements java.io.Serializable {
             for (DatasetVersion version : dataset.getVersions()) {
                 if (version.isReleased() || version.isDeaccessioned()) {
                     version.setContributorNames(datasetVersionService.getContributorsNames(version));
+                    logger.info("calling addversion2 for " + version);
                     retList.add(version);
                 }
             }
         }
+        logger.info("num from resetVersionTabList: " + retList.size());
         return retList;
     }
 
@@ -5542,6 +5547,7 @@ public class DatasetPage implements java.io.Serializable {
      * @param id - the id of the datasetversion to archive.
      */
     public void archiveVersion(Long id) {
+        logger.info("archiveVersion was called");
         if (session.getUser() instanceof AuthenticatedUser) {
             AuthenticatedUser au = ((AuthenticatedUser) session.getUser());
 
@@ -5667,9 +5673,11 @@ public class DatasetPage implements java.io.Serializable {
     // wrapper method to see if the file has been deleted (or replaced) in the current version
     public boolean isFileDeleted (DataFile dataFile) {
         if (dataFile.getDeleted() == null) {
+            logger.info("dataFile.getDeleted() is null. Running setDeleted");
             dataFile.setDeleted(datafileService.hasBeenDeleted(dataFile));
         }
 
+        logger.info("Returning from isFileDeleted with " + dataFile.getDeleted());
         return dataFile.getDeleted();
     }
     

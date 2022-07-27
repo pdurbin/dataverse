@@ -45,6 +45,12 @@
     <ui:remove>
         <!--TODO - consider moving the validateFilesOutcome param here/ other refactoring to simplify managing selection state - see issue #8180/PR #8182 -->
     </ui:remove>
+    <div>
+        <pre>
+DatasetPage.dataset.versions.size(): #{DatasetPage.dataset.versions.size()}
+DatasetPage.dataset.latestVersion.versionState: #{DatasetPage.dataset.latestVersion.versionState}
+        </pre>
+    </div>
     <p:dataTable id="filesTable" 
                  rows="10" paginator="#{DatasetPage.fileMetadatasSearch.size() gt 10}" paginatorPosition="bottom"
                  paginatorTemplate="{FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} #{bundle['file.dynamicCounter.filesPerPage']} {RowsPerPageDropdown}"
@@ -534,10 +540,19 @@
                 </div>
 
                 <!-- File Options -->
+                <div>
+                    <pre>
+widgetWrapper.widgetView: #{widgetWrapper.widgetView}
+DatasetPage.sessionUserAuthenticated: #{DatasetPage.sessionUserAuthenticated} 
+DatasetPage.canUpdateDataset(): #{DatasetPage.canUpdateDataset()}
+DatasetPage.isFileDeleted: #{DatasetPage.isFileDeleted(fileMetadata.dataFile)}}
+                    </pre>
+                </div>
                 <div class="btn-group" jsf:rendered="#{!widgetWrapper.widgetView 
                                                         and DatasetPage.sessionUserAuthenticated 
                                                         and DatasetPage.canUpdateDataset()
-                                                        and DatasetPage.isFileDeleted(fileMetadata.dataFile)}">
+                                                        and DatasetPage.isFileDeleted(fileMetadata.dataFile)
+                                                        and DatasetPage.hasValidTermsOfAccess}">
                     <a type="button" class="btn-file-options btn btn-link bootstrap-button-tooltip dropdown-toggle #{DatasetPage.lockedFromEdits ? 'disabled' : ''}" 
                        disabled="#{DatasetPage.lockedFromEdits ? 'disabled' : ''}"
                        title="#{bundle['file.optionsBtn']}" onclick="PF('fileAlreadyDeletedPrevious').show()"
@@ -548,7 +563,8 @@
                 <div class="btn-group" jsf:rendered="#{!widgetWrapper.widgetView 
                                                         and DatasetPage.sessionUserAuthenticated 
                                                         and DatasetPage.canUpdateDataset()
-                                                        and !DatasetPage.isFileDeleted(fileMetadata.dataFile)}">
+                                                        and !DatasetPage.isFileDeleted(fileMetadata.dataFile)
+                                                        and DatasetPage.hasValidTermsOfAccess}">
                     <!-- Kebab / Edit / File Options Dropdown -->
                     <a type="button" class="btn-file-options btn btn-link bootstrap-button-tooltip dropdown-toggle #{DatasetPage.lockedFromEdits ? 'disabled' : ''}" 
                        disabled="#{DatasetPage.lockedFromEdits ? 'disabled' : ''}"

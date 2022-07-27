@@ -327,14 +327,17 @@ public class DataFileServiceBean implements java.io.Serializable {
     }
     
     public FileMetadata findFileMetadataByDatasetVersionIdAndDataFileId(Long datasetVersionId, Long dataFileId) {
+        logger.info("Called findFileMetadata. datasetVersionId: " + datasetVersionId + " dataFileId: " + dataFileId);
 
         Query query = em.createQuery("select o from FileMetadata o where o.datasetVersion.id = :datasetVersionId  and o.dataFile.id = :dataFileId");
         query.setParameter("datasetVersionId", datasetVersionId);
         query.setParameter("dataFileId", dataFileId);
         try {
             FileMetadata retVal = (FileMetadata) query.getSingleResult();
+            logger.info("Running findFileMetadata... and returning retVal of " + retVal);
             return retVal;
         } catch(Exception ex) {
+            logger.info("Running findFileMetadata... and returning null. Exception: " + ex);
             return null;
         }
     }
@@ -1377,7 +1380,17 @@ public class DataFileServiceBean implements java.io.Serializable {
     
     public boolean hasBeenDeleted(DataFile df){
         Dataset dataset = df.getOwner();
-        DatasetVersion dsv = dataset.getLatestVersion();
+        /**
+         * We call the "skip null ids" variant of getLatestVersion because
+         * otherwise dsv.getId() can be null and when that null dataset version
+         * id is passed into the findFileMetadata method below a null is
+         * returned when we check if null == null we end up returning the wrong
+         * answer (true) when someone is asking if the file has been deleted or
+         * not.
+         */
+//        DatasetVersion dsv = dataset.getLatestVersion();
+        DatasetVersion dsv = dataset.getLatestVersionSkipNullIds();
+        logger.info("Running hasBeenDeleted on " + df + " datasetVersion is " + dsv);
         
         return findFileMetadataByDatasetVersionIdAndDataFileId(dsv.getId(), df.getId()) == null;
         

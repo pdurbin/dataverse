@@ -49,6 +49,14 @@
         </p:commandButton>
     </div>
 
+   <div>
+       <pre>
+DatasetPage.dataset.versions.size(): #{DatasetPage.dataset.versions.size()}
+DatasetPage.dataset.latestVersion.versionState: #{DatasetPage.dataset.latestVersion.versionState}
+DatasetPage.versionTabList.size: #{DatasetPage.versionTabList.size()}
+DatasetPage.versionTabListForPostLoad.size: #{DatasetPage.versionTabListForPostLoad.size()}
+       </pre>
+   </div>
     <p:dataTable id="versionsTable" value="#{DatasetPage.versionTabListForPostLoad}" var="versionTab" widgetVar="versionsTable"
                  rowIndexVar="rowNum" selection="#{DatasetPage.selectedVersions}" disabledSelection="#{versionTab.deaccessioned}" rowKey="#{versionTab}">
         <!-- start: checkbox column -->
