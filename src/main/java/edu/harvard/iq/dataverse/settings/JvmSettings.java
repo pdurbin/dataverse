@@ -211,6 +211,7 @@ public enum JvmSettings {
      * @return The setting as a String
      */
     public String lookup() {
+        System.out.println("lookup() called");
         return lookup(String.class);
     }
     
@@ -233,13 +234,16 @@ public enum JvmSettings {
      * @throws IllegalArgumentException When the settings value could not be converted to target type.
      */
     public <T> T lookup(Class<T> klass) {
+        System.out.println("lookup(String.class) called on " + klass);
         if (needsVarArgs()) {
+            System.out.println("about to throw this: Cannot lookup a setting containing placeholders with this method");
             throw new IllegalArgumentException("Cannot lookup a setting containing placeholders with this method.");
         }
         
         // This must be done with the full-fledged lookup, as we cannot store the config in an instance or static
         // variable, as the alias config source depends on this enum (circular dependency). This is easiest
         // avoided by looking up the static cached config at the cost of a method invocation.
+        System.out.println("calling ConfigProvider.getConfig().getValue(this.getScopedKey(), klass);");
         return ConfigProvider.getConfig().getValue(this.getScopedKey(), klass);
     }
     
