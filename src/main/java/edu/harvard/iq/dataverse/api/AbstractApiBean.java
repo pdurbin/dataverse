@@ -24,6 +24,7 @@ import edu.harvard.iq.dataverse.PermissionServiceBean;
 import edu.harvard.iq.dataverse.RoleAssigneeServiceBean;
 import edu.harvard.iq.dataverse.UserNotificationServiceBean;
 import edu.harvard.iq.dataverse.UserServiceBean;
+import edu.harvard.iq.dataverse.DataverseSession;
 import edu.harvard.iq.dataverse.actionlogging.ActionLogServiceBean;
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
 import edu.harvard.iq.dataverse.authorization.DataverseRole;
@@ -63,6 +64,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ejb.EJB;
 import javax.ejb.EJBException;
+import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
@@ -253,6 +255,9 @@ public abstract class AbstractApiBean {
     @EJB 
     GuestbookResponseServiceBean gbRespSvc;
 
+    @Inject
+    DataverseSession session;
+
     @PersistenceContext(unitName = "VDCNet-ejbPU")
     protected EntityManager em;
 
@@ -363,7 +368,7 @@ public abstract class AbstractApiBean {
         final String requestApiKey = getRequestApiKey();
         final String requestWFKey = getRequestWorkflowInvocationID();
         if (requestApiKey == null && requestWFKey == null) {
-            return GuestUser.get();
+            return getSessionUserOrGuest();
         }
         PrivateUrlUser privateUrlUser = privateUrlSvc.getPrivateUrlUserFromToken(requestApiKey);
         // For privateUrlUsers restricted to anonymized access, all api calls are off-limits except for those used in the UI
@@ -380,6 +385,14 @@ public abstract class AbstractApiBean {
             return privateUrlUser;
         }
         return findAuthenticatedUserOrDie(requestApiKey, requestWFKey);
+    }
+
+    private User getSessionUserOrGuest() {
+        User sessionUser = session.getUser();
+        if (sessionUser != null) {
+            return sessionUser;
+        }
+        return GuestUser.get();
     }
 
     /**
