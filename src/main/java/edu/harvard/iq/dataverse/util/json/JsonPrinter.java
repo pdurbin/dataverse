@@ -340,6 +340,13 @@ public class JsonPrinter {
                 .add("authority", ds.getAuthority())
                 .add("publisher", BrandingUtil.getInstallationBrandName())
                 .add("publicationDate", ds.getPublicationDateFormattedYYYYMMDD())
+                .add("storageIdentifier", ds.getStorageIdentifier())
+                .add("isHarvested", ds.isHarvested())
+                .add("remoteArchiveURL", ds.getRemoteArchiveURL())
+                .add("isReleased", ds.isReleased())
+                .add("isDeaccessioned", ds.isDeaccessioned())
+                .add("nextMajorVersionString", ds.getNextMajorVersionString())
+                .add("nextMinorVersionString", ds.getNextMinorVersionString())
                 .add("storageIdentifier", ds.getStorageIdentifier());
         if (DvObjectContainer.isMetadataLanguageSet(ds.getMetadataLanguage())) {
             bld.add("metadataLanguage", ds.getMetadataLanguage());
