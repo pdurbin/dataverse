@@ -44,6 +44,7 @@ import static edu.harvard.iq.dataverse.util.json.NullSafeJsonBuilder.jsonObjectB
 
 import edu.harvard.iq.dataverse.workflow.Workflow;
 import edu.harvard.iq.dataverse.workflow.step.WorkflowStepData;
+import edu.harvard.iq.dataverse.workflows.WorkflowComment;
 
 import java.util.*;
 import javax.json.Json;
@@ -403,6 +404,18 @@ public class JsonPrinter {
         bld.add("metadataBlocks", jsonByBlocks(dsv.getDatasetFields()));
 
         bld.add("files", jsonFileMetadatas(dsv.getFileMetadatas()));
+
+        JsonArrayBuilder jsonWorkflowComments = Json.createArrayBuilder();
+        for (WorkflowComment workflowComment : dsv.getWorkflowComments()) {
+            NullSafeJsonBuilder workflowJsonObject = NullSafeJsonBuilder.jsonObjectBuilder();
+            workflowJsonObject.add("id", workflowComment.getId());
+            workflowJsonObject.add("type", workflowComment.getType().name());
+            workflowJsonObject.add("message", workflowComment.getMessage());
+            workflowJsonObject.add("isToBeShown", workflowComment.isToBeShown());
+            workflowJsonObject.add("created", workflowComment.getCreated());
+            jsonWorkflowComments.add(workflowJsonObject);
+        }
+        bld.add("workflowComments", jsonWorkflowComments);
 
         return bld;
     }
