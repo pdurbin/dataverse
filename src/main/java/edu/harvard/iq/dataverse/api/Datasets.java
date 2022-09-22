@@ -516,6 +516,14 @@ public class Datasets extends AbstractApiBean {
                         getDatasetVersionOrDie(req, versionId, findDatasetOrDie(datasetId), uriInfo, headers )
                                 .getDatasetFields())));
     }
+
+    @GET
+    @Path("{id}/versions/{versionId}/citation")
+    public Response getVersionCitation( @PathParam("id") String datasetId, @PathParam("versionId") String versionId, @DefaultValue("true") @QueryParam("isOnlineVersion") Boolean isOnlineVersion, @DefaultValue("false") @QueryParam("isAnonymized") Boolean isAnonymized, @Context UriInfo uriInfo, @Context HttpHeaders headers) {
+        return response( req -> ok(
+                getDatasetVersionOrDie(req, versionId, findDatasetOrDie(datasetId), uriInfo, headers).getCitation(isOnlineVersion, isAnonymized)
+        ));
+    }
     
     @GET
     @Path("{id}/versions/{versionNumber}/metadata/{block}")
