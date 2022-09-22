@@ -405,6 +405,8 @@ public class JsonPrinter {
 
         bld.add("files", jsonFileMetadatas(dsv.getFileMetadatas()));
 
+        bld.add("hasRestrictedFile", dsv.isHasRestrictedFile());
+
         JsonArrayBuilder jsonWorkflowComments = Json.createArrayBuilder();
         for (WorkflowComment workflowComment : dsv.getWorkflowComments()) {
             NullSafeJsonBuilder workflowJsonObject = NullSafeJsonBuilder.jsonObjectBuilder();
