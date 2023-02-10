@@ -1,0 +1,91 @@
+//http://plantuml.com/rectangle.html#Component
+@startuml
+'left to right direction
+top to bottom direction
+'skinparam defaultFontName Arial Black
+'skinparam linetype ortho
+'skinparam linetype polyline
+
+rectangle "Clients" {
+}
+
+rectangle "LoadBalancer" {
+}
+
+rectangle "WebServer1" {
+  rectangle "Apache" as "Apache1" {
+  }
+  rectangle "Payara" as "Payara1" {
+    rectangle "dataverse.war" as dataverse.war1 {
+    }
+  }
+  Apache1 --> Payara1
+}
+
+'/'
+rectangle "WebServer2" {
+  rectangle "Apache" as "Apache2" {
+  }
+  rectangle "Payara" as "Payara2" {
+    rectangle "dataverse.war" as dataverse.war2 {
+    }
+  }
+  Apache2 --> Payara2
+  note "same downstream\nconnections\nas WebServer1" as ws2note #white
+}
+''/
+
+rectangle "DatabaseServer1" {
+  rectangle "PostgreSQL" {
+  }
+}
+
+rectangle "SolrServer1" {
+  rectangle "Solr" {
+  }
+}
+
+rectangle "RserveServer1" {
+  rectangle "Rserve" {
+  }
+} 
+
+'rectangle IngestServer1 {
+'rectangle Foo {
+rectangle "IngestServer1" {
+  rectangle "IngestService" {
+  node node #white [
+    <i>ImageIngestModule
+    ====
+    <i>AnotherIngestModule
+    ====
+    TabularIngestModule
+  ]
+} 
+
+Clients --> LoadBalancer
+
+LoadBalancer --> Apache1
+LoadBalancer --> Apache2
+
+WebServer1 -[hidden]> WebServer2
+
+'Payara1 --> DatabaseServer1
+Payara1 --> PostgreSQL
+'Payara2 --> DatabaseServer1
+
+'Payara1 --> SolrServer1
+Payara1 --> Solr
+'Payara2 --> SolrServer1 
+
+'Payara1 --> RserveServer1
+Payara1 --> Rserve
+'Payara2 --> RserveServer1
+
+Payara1 --> IngestService
+'Payara2 --> IngestService
+'Payara1 --> "IngestServer1"
+
+IngestService -> Rserve
+
+@enduml

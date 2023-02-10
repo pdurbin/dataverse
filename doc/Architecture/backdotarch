@@ -1,0 +1,91 @@
+digraph {
+  //rankdir="LR";
+  //node [fontsize=10,labelfontsize=20]
+  node [fontsize=10]
+  fontsize=10
+  //ordering="in"
+  compound=true
+
+    browser [label="Web Browser"]
+
+    lb [label="Load Balancer",shape=box]
+
+    apache1 [label="Apache",shape=box]
+    apache2 [label="Apache",shape=box]
+
+    browser -> lb
+
+    lb -> apache1[label=" "] // " " makes the line longer
+    lb -> apache2[label=" "]
+
+    subgraph cluster_webserver1 {
+      label="Web Server 1"
+      labeljust="l"
+      //fontsize="10"
+      //labelloc="b"
+      apache1 -> war1
+    subgraph cluster_payara1 {
+      label="Payara"
+      labeljust="l"
+      //labelloc="t"
+      war1 [label="dataverse.war",shape=box]
+      }
+    }
+
+    subgraph cluster_webserver2 {
+      label="Web Server 2"
+      labeljust="r"
+      //labelloc="b"
+      apache2 -> war2
+      //apache2 -> cluster_payara
+      subgraph cluster_payara2 {
+        label="Payara"
+        //labelloc="b"
+        war2 [label="dataverse.war",shape=box]
+      }
+    }
+
+    subgraph cluster_dbserver1 {
+      label="Database Server 1"
+      labelloc="b"
+      postgres [label="PostgreSQL",shape=box]
+      war1 -> postgres
+      war2 -> postgres
+    }
+
+    subgraph cluster_solrserver1 {
+      label="Solr Server 1"
+      labelloc="b"
+      solr [label="Solr",shape=box]
+      war1 -> solr
+      war2 -> solr
+    }
+
+    subgraph cluster_rserveserver1 {
+      label="Rserve Server 1"
+      labelloc="b"
+      rserve [label="Rserve",shape=box]
+      war1 -> rserve
+      war2 -> rserve
+    }
+
+    subgraph cluster_ingestserver1 {
+      //rankdir=TB
+      label="Ingest Server 1"
+      //{rank=same; rserve; solr}
+      //labeljust="r"
+      labelloc="b"
+      //war1 -> ingesttab[lhead=cluster_ingestmodules]
+      //war2 -> ingesttab[lhead=cluster_ingestmodules]
+      war1 -> ingestmodules[lhead=cluster_ingestmodules]
+      war2 -> ingestmodules[lhead=cluster_ingestmodules]
+      //war2 -> cluster_ingestserver1
+      //apache2 -> cluster_payara
+      subgraph cluster_ingestmodules {
+        //edge[len=0.5]
+        label="Ingest Service"
+        ingestmodules [shape=record,label="{Tabular Ingest|Future Ingest 1|Future Ingest 2}"];
+      }
+    }
+
+}
