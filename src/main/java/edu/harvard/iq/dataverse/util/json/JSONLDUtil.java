@@ -461,6 +461,7 @@ public class JSONLDUtil {
                     if(!datasetFieldSvc.isValidCVocValue(dsft, strValue)) {
                         throw new BadRequestException("Invalid values submitted for " + dsft.getName() + " which is limited to specific vocabularies.");
                     }
+                    System.out.println("3datasetFieldSvc.registerExternalTerm");
                     datasetFieldSvc.registerExternalTerm(cvocMap.get(dsft.getId()), strValue);
                 }
                 DatasetFieldValue datasetFieldValue = new DatasetFieldValue();

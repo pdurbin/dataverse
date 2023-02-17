@@ -52,6 +52,7 @@ public class MockDatasetFieldSvc extends DatasetFieldServiceBean {
     }
     
     public Map<Long, JsonObject> getCVocConf(boolean byTermUriField){
+        System.out.println("return that hashmap!");
         return new HashMap<Long, JsonObject>();
     }
 

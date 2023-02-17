@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.json.JsonArrayBuilder;
@@ -317,6 +318,37 @@ public class JsonPrinterTest {
         assertTrue(typesSet.size() == 2);
         assertTrue(typesSet.contains("REVOKEROLE"));
         assertTrue(typesSet.contains("ASSIGNROLE"));
+    }
+
+    @Test
+    public void testExpandedValue() {
+        System.out.println("testExpandedValue...");
+        Map<Long, JsonObject> cvoc = null;
+        cvoc = datasetFieldTypeSvc.getCVocConf(true);
+        System.out.println("cvoc=" + cvoc);
+        MetadataBlock block = new MetadataBlock();
+        block.setName("citation");
+        List<DatasetField> fields = new ArrayList<>();
+        DatasetField datasetContactField = new DatasetField();
+        DatasetFieldType datasetContactDatasetFieldType = datasetFieldTypeSvc.findByName("datasetContact");
+        datasetContactDatasetFieldType.setMetadataBlock(block);
+        datasetContactField.setDatasetFieldType(datasetContactDatasetFieldType);
+        List<DatasetFieldCompoundValue> vals = new LinkedList<>();
+        DatasetFieldCompoundValue val = new DatasetFieldCompoundValue();
+        val.setParentDatasetField(datasetContactField);
+        val.setChildDatasetFields(Arrays.asList(
+                constructPrimitive("datasetContactEmail", "foo@bar.com"),
+                constructPrimitive("datasetContactName", "Foo Bar"),
+                constructPrimitive("datasetContactAffiliation", "Bar University")
+        ));
+        vals.add(val);
+        datasetContactField.setDatasetFieldCompoundValues(vals);
+        fields.add(datasetContactField);
+        
+        DatasetFieldServiceBean nullDFServiceBean = null;
+        JsonPrinter.injectSettingsService(new MockSettingsSvc(), nullDFServiceBean);
+
+        JsonObject jsonObject = JsonPrinter.json(block, fields).build();
     }
 
 }

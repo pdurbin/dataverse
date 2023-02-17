@@ -756,7 +756,7 @@ public class JsonPrinter {
 
         @Override
         public void addExpandedValuesArray(DatasetField f) {
-            // Invariant: all values are multiple. Diffrentiation between multiple and single is done at endField.
+            // Invariant: all values are multiple. Differentiation between multiple and single is done at endField.
             valueArrStack.push(Json.createArrayBuilder());
         }
 
@@ -770,7 +770,7 @@ public class JsonPrinter {
                         f.getDatasetFieldType().isAllowMultiples() ? jsonValues
                                 : jsonValues.get(0));
                 if (!expandedValues.isEmpty()) {
-                    jsonField.add("expandedvalue",
+                    jsonField.add("expandedvalue",//expandedvalue
                             f.getDatasetFieldType().isAllowMultiples() ? expandedValues
                                     : expandedValues.get(0));
                 }

@@ -272,25 +272,34 @@ public class DatasetFieldServiceBean implements java.io.Serializable {
      * @return - a map of JsonObjects containing configuration information keyed by the DatasetFieldType id (Long)
      */
     public Map<Long, JsonObject> getCVocConf(boolean byTermUriField){
+        logger.info("getCVocConf byTermUriField: " + byTermUriField);
         
         //ToDo - change to an API call to be able to provide feedback if the json is invalid?
         String cvocSetting = settingsService.getValueForKey(SettingsServiceBean.Key.CVocConf);
+        logger.info("cvocSetting: " + cvocSetting);
         if (cvocSetting == null || cvocSetting.isEmpty()) {
             oldHash=null;
+            logger.info("cvocSetting is null or empty. returning early.");
             return new HashMap<>();
         }
         String newHash = DigestUtils.md5Hex(cvocSetting);
-        if (newHash.equals(oldHash)) {
-            return byTermUriField ? cvocMapByTermUri : cvocMap;
-        } 
+        // TODO: re-enable this hash comparison return early thing.
+//        if (newHash.equals(oldHash)) {
+//            logger.info("new hash equals old hash. returning early.");
+//            return byTermUriField ? cvocMapByTermUri : cvocMap;
+//        } 
         oldHash=newHash;
         cvocMap=new HashMap<>();
         cvocMapByTermUri=new HashMap<>();
         
         try (JsonReader jsonReader = Json.createReader(new StringReader(settingsService.getValueForKey(SettingsServiceBean.Key.CVocConf)))) {
             JsonArray cvocConfJsonArray = jsonReader.readArray();
+            logger.info("about to iterate over json objects");
             for (JsonObject jo : cvocConfJsonArray.getValuesAs(JsonObject.class)) {
+                logger.info("jo: " + jo);
                 DatasetFieldType dft = findByNameOpt(jo.getString("field-name"));
+                //   dft: [DatasetFieldType name:grantNumber id:47]]]
+                logger.info("dft: " + dft);
                 if (dft == null) {
                     logger.warning("Ignoring External Vocabulary setting for non-existent field: "
                       + jo.getString("field-name"));
@@ -333,6 +342,8 @@ public class DatasetFieldServiceBean implements java.io.Serializable {
             } catch(JsonException e) {
                 logger.warning("Ignoring External Vocabulary setting due to parsing error: " + e.getLocalizedMessage());
             }
+        logger.info("probably not returning: " + cvocMapByTermUri);
+        logger.info("returning (probably):" + cvocMap);
         return byTermUriField ? cvocMapByTermUri : cvocMap;
     }
 
@@ -344,8 +355,10 @@ public class DatasetFieldServiceBean implements java.io.Serializable {
         DatasetFieldType dft =df.getDatasetFieldType(); 
         logger.fine("Registering for field: " + dft.getName());
         JsonObject cvocEntry = getCVocConf(false).get(dft.getId());
+        logger.info("cvocEntry: " + cvocEntry);
         if(dft.isPrimitive()) {
             for(DatasetFieldValue dfv: df.getDatasetFieldValues()) {
+                System.out.println("4datasetFieldSvc.registerExternalTerm");
                 registerExternalTerm(cvocEntry, dfv.getValue());
             }
             } else {
@@ -355,6 +368,7 @@ public class DatasetFieldServiceBean implements java.io.Serializable {
                         for (DatasetField cdf : cv.getChildDatasetFields()) {
                             logger.fine("Found term uri field type id: " + cdf.getDatasetFieldType().getId());
                             if(cdf.getDatasetFieldType().equals(termdft)) {
+                                System.out.println("5datasetFieldSvc.registerExternalTerm");
                                 registerExternalTerm(cvocEntry, cdf.getValue());
                             }
                         }
@@ -438,9 +452,14 @@ public class DatasetFieldServiceBean implements java.io.Serializable {
      * @param term - the term uri as a string
      */
     public void registerExternalTerm(JsonObject cvocEntry, String term) {
+        logger.info("registerExternalTerm cvocEntry: " + cvocEntry);
+        logger.info("registerExternalTerm term: " + term);
         String retrievalUri = cvocEntry.getString("retrieval-uri");
+        logger.info("retrievalUri: " + retrievalUri);
         String prefix = cvocEntry.getString("prefix", null);
+        logger.info("prefix: " + prefix);
         if(term.isBlank()) {
+            logger.info("Ignoring blank term. Returning early.");
             logger.fine("Ingoring blank term");
             return;
         }
@@ -454,6 +473,7 @@ public class DatasetFieldServiceBean implements java.io.Serializable {
             } catch (NoResultException nre) {
                 evv = new ExternalVocabularyValue(term, null);
             }
+            logger.info("evv: " + evv);
             if (evv.getValue() == null) {
                 String adjustedTerm = (prefix==null)? term: term.replace(prefix, "");
                 retrievalUri = retrievalUri.replace("{0}", adjustedTerm);
@@ -492,7 +512,7 @@ public class DatasetFieldServiceBean implements java.io.Serializable {
                             logger.severe("Error retrieving: " + retrievalUri + " : " + je.getMessage());
                         }
                     } else {
-                        logger.severe("Received response code : " + statusCode + " when retrieving " + retrievalUri
+                        logger.severe("Received response code : " + statusCode + " when retrieving " + retrievalUri // HERE
                                 + " : " + data);
                     }
                 } catch (IOException ioe) {

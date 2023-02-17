@@ -750,6 +750,7 @@ public class JsonParser {
     public List<DatasetFieldValue> parsePrimitiveValue(DatasetFieldType dft , JsonObject json) throws JsonParseException {
 
         Map<Long, JsonObject> cvocMap = datasetFieldSvc.getCVocConf(true);
+        logger.info("cvocMap: " + cvocMap);
         boolean extVocab=false;
         if(cvocMap.containsKey(dft.getId())) {
             extVocab=true;
@@ -771,6 +772,7 @@ public class JsonParser {
                     if(!datasetFieldSvc.isValidCVocValue(dft, datasetFieldValue.getValue())) {
                         throw new JsonParseException("Invalid values submitted for " + dft.getName() + " which is limited to specific vocabularies.");
                     }
+                    System.out.println("1datasetFieldSvc.registerExternalTerm");
                     datasetFieldSvc.registerExternalTerm(cvocMap.get(dft.getId()), datasetFieldValue.getValue());
                 }
                 vals.add(datasetFieldValue);
@@ -787,6 +789,7 @@ public class JsonParser {
                 if(!datasetFieldSvc.isValidCVocValue(dft, datasetFieldValue.getValue())) {
                     throw new JsonParseException("Invalid values submitted for " + dft.getName() + " which is limited to specific vocabularies.");
                 }
+                System.out.println("2datasetFieldSvc.registerExternalTerm");
                 datasetFieldSvc.registerExternalTerm(cvocMap.get(dft.getId()), datasetFieldValue.getValue());
             }
             vals.add(datasetFieldValue);

@@ -107,17 +107,23 @@ public class DatasetFieldWalker {
                l.endCompoundValue(dsfcv);
            }
         }
+        System.out.println("about to call l.addExpandedValuesArray on " + fld.getDatasetFieldType().getName() + "=" + fld.getValue());
         l.addExpandedValuesArray(fld); 
+        System.out.println("                                     cvocMap="+cvocMap);
+        System.out.println("              datasetFieldType.isPrimitive()="+datasetFieldType.isPrimitive());
+        System.out.println("cvocMap.containsKey(datasetFieldType.getId()="+cvocMap.containsKey(datasetFieldType.getId()));
         if(datasetFieldType.isPrimitive() && cvocMap.containsKey(datasetFieldType.getId())) {
+            System.out.println("we are in if(datasetFieldType.isPrimitive() && cvocMap.containsKey(datasetFieldType.getId()))");
             for ( DatasetFieldValue evv : sort(fld.getDatasetFieldValues(), DatasetFieldValue.DisplayOrder) ) {
                 if (settingsService != null && settingsService.isTrueForKey(SettingsServiceBean.Key.ExcludeEmailFromExport, false) && DatasetFieldType.FieldType.EMAIL.equals(evv.getDatasetField().getDatasetFieldType().getFieldType())) {
                     continue;
                 }
-                l.externalVocabularyValue(evv, cvocMap.get(datasetFieldType.getId()));
+                l.externalVocabularyValue(evv, cvocMap.get(datasetFieldType.getId())); // cvoc
             }
             
         }
         l.endField(fld);
+        System.out.println("---");
     }
     
     
