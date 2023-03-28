@@ -1994,7 +1994,7 @@ public class FilesIT {
         Response postv1draft2 = UtilIT.getDatasetVersion(datasetPid, "1.0", apiToken);
         postv1draft2.prettyPrint();
         postv1draft2.then().assertThat()
-                .body("data.files[0].dataFile.filename", equalTo("orcid_16x16.png"))
+                .body("data.files[1].dataFile.filename", equalTo("orcid_16x16.png"))
                 .statusCode(OK.getStatusCode());
 
         // Delete file 3, the current version is still draft
