@@ -56,7 +56,11 @@ public class NetcdfIT {
         uploadFile.prettyPrint();
         uploadFile.then().assertThat().statusCode(OK.getStatusCode());
         
-        UtilIT.nativeGet(datasetId, apiToken).prettyPrint();
+        Response getJson = UtilIT.nativeGet(datasetId, apiToken);
+        getJson.prettyPrint();
+        getJson.then().assertThat()
+                .statusCode(OK.getStatusCode())
+                .body("data.latestVersion.metadataBlocks.geospatial.fields[0].value[0]", equalTo("Massachusetts"));
         if (true) return;
 
         long fileId = JsonPath.from(uploadFile.body().asString()).getLong("data.files[0].dataFile.id");

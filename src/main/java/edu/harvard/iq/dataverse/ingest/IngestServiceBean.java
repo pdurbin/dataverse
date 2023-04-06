@@ -1442,11 +1442,11 @@ public class IngestServiceBean {
                 Map<String, Set<String>> fileMetadataMap = fileMetadataIngest.getMetadataMap();
                 for (DatasetFieldType dsft : mdb.getDatasetFieldTypes()) {
                     if (dsft.isPrimitive()) {
-                        logger.info("primitive type: " + dsft);
+                        logger.info("primitive type: " + dsft);// [DatasetFieldType name:astroType id:116]
                         if (!dsft.isHasParent()) {
                             String dsfName = dsft.getName();
                             // See if the plugin has found anything for this field: 
-                            logger.info("iterating over dsft: " + dsft + "map: " + fileMetadataMap.get(dsfName));
+                            logger.info("iterating over dsft: " + dsft + "map: " + fileMetadataMap.get(dsfName));// [DatasetFieldType name:astroType id:116]map: [Image]
                             if (fileMetadataMap.get(dsfName) != null && !fileMetadataMap.get(dsfName).isEmpty()) {
 
                                 logger.fine("Ingest Service: found extracted metadata for field " + dsfName);
@@ -1561,7 +1561,7 @@ public class IngestServiceBean {
                                             // (the implementation below may be inefficient - ?)
 
                                             for (String fValue : mValues) {
-                                                logger.info("Non controlled vocab value " + fValue + " ... " + dsfName);
+                                                logger.info("Non controlled vocab value " + fValue + " ... " + dsfName);// Non controlled vocab value Image ... astroType
                                                 if (!dsft.isControlledVocabulary()) {
                                                     Iterator<DatasetFieldValue> dsfvIt = dsf.getDatasetFieldValues().iterator();
 
@@ -1679,7 +1679,7 @@ public class IngestServiceBean {
                                         childDsf.setDatasetFieldType(cdsft);
                                         
                                         DatasetFieldValue newDsfv = new DatasetFieldValue(childDsf);
-                                        // Correctly shows "Boston"
+                                        // not cv... for field city, part of the compound field geographicCoverage setting value to Boston
                                         logger.info("not cv... for field " + dsfName + ", part of the compound field "+dsft.getName() + " setting value to " +(String)fileMetadataMap.get(dsfName).toArray()[0]);
                                         newDsfv.setValue((String)fileMetadataMap.get(dsfName).toArray()[0]);
                                         childDsf.getDatasetFieldValues().add(newDsfv);
@@ -1742,7 +1742,24 @@ public class IngestServiceBean {
                             }
                         }
                     }
-                } 
+                }
+                logger.info("dumping values...");
+                /*
+                key: coverage.Spatial value: (54.0 32.5)
+                key: astroType value: Image
+                key: astroInstrument value: ISSA-FLD
+                key: astroFacility value: IRAS
+                ---
+                key: country value: United States
+                key: city value: Boston
+                */
+                for (Map.Entry<String, Set<String>> entry : fileMetadataMap.entrySet()) {
+                    String key = entry.getKey();
+                    Set<String> val = entry.getValue();
+                    for (String string : val) {
+                        logger.info("key: " + key + " value: " + string);
+                    }
+                }
             }
         }  
     }

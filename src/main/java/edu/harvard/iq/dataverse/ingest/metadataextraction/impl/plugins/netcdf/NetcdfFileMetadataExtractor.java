@@ -28,6 +28,7 @@ public class NetcdfFileMetadataExtractor extends FileMetadataExtractor {
     private static final String COUNTRY = DatasetFieldConstant.country;
     private static final String CITY = DatasetFieldConstant.city;
     private static final String GEOGRAPHIC_BOUNDING_BOX = DatasetFieldConstant.geographicBoundingBox;
+    private static final String GEOGRAPHIC_UNIT = DatasetFieldConstant.geographicUnit;
 
     public NetcdfFileMetadataExtractor(FileMetadataExtractorSpi originatingProvider) {
         super(originatingProvider);
@@ -49,10 +50,12 @@ public class NetcdfFileMetadataExtractor extends FileMetadataExtractor {
         Map<String, Set<String>> metadataMap = new HashMap<>();
 //        metadataMap.put(ATTRIBUTE_TYPE, new HashSet<String>());
 //        metadataMap.put(GEOGRAPHIC_BOUNDING_BOX, new HashSet<String>());
-        metadataMap.put(COUNTRY, new HashSet<String>());
+        metadataMap.put(COUNTRY, new HashSet<>());
         metadataMap.get(COUNTRY).add("United States");
-        metadataMap.put(CITY, new HashSet<String>());
+        metadataMap.put(CITY, new HashSet<>());
         metadataMap.get(CITY).add("Boston");
+        metadataMap.put(GEOGRAPHIC_UNIT, new HashSet<>());
+        metadataMap.get(GEOGRAPHIC_UNIT).add("Massachusetts");
         fileMetadataIngest.setMetadataMap(metadataMap);
         Map<String, Set<String>> fileMetadataMap = fileMetadataIngest.getMetadataMap();
         for (Map.Entry<String, Set<String>> entry : fileMetadataMap.entrySet()) {
