@@ -1578,6 +1578,8 @@ public class IngestServiceBean {
 
                                                     logger.info("value exists: " + valueExists);
                                                     if (!valueExists) {
+                                                        // Creating a new value for field astroFacility: IRAS
+                                                        // Creating a new value for field geographicUnit: Massachusetts
                                                         logger.info("Creating a new value for field " + dsfName + ": " + fValue);
                                                         DatasetFieldValue newDsfv = new DatasetFieldValue(dsf);
                                                         newDsfv.setValue(fValue);
@@ -1592,7 +1594,7 @@ public class IngestServiceBean {
                                                     if (definedVocabularyValues != null) {
                                                         for (ControlledVocabularyValue definedVocabValue : definedVocabularyValues) {
                                                             if (fValue.equals(definedVocabValue.getStrValue())) {
-                                                                logger.fine("Yes, " + fValue + " is a valid controlled vocabulary value for the field " + dsfName);
+                                                                logger.info("Yes, " + fValue + " is a valid controlled vocabulary value for the field " + dsfName);
                                                                 legitControlledVocabularyValue = definedVocabValue;
                                                                 break;
                                                             }
@@ -1610,7 +1612,7 @@ public class IngestServiceBean {
                                                                 ControlledVocabularyValue cvv = cvvIt.next();
                                                                 if (fValue.equals(cvv.getStrValue())) {
                                                                     // or should I use if (legitControlledVocabularyValue.equals(cvv)) ?
-                                                                    logger.fine("Controlled vocab. value " + fValue + " already exists for field " + dsfName);
+                                                                    logger.info("Controlled vocab. value " + fValue + " already exists for field " + dsfName);
                                                                     valueExists = true;
                                                                     break;
                                                                 }
@@ -1618,7 +1620,8 @@ public class IngestServiceBean {
                                                         }
 
                                                         if (!valueExists) {
-                                                            logger.fine("Adding controlled vocabulary value " + fValue + " to field " + dsfName);
+                                                            logger.info("Adding controlled vocabulary value " + fValue + " to field " + dsfName);
+                                                            // DatasetFieldValue
                                                             dsf.getControlledVocabularyValues().add(legitControlledVocabularyValue);
                                                         }
                                                     }
@@ -1630,115 +1633,37 @@ public class IngestServiceBean {
                             }
                         }
                     } else {
-                        logger.info("compound field: " + dsft);
                         // A compound field: 
                         // See if the plugin has found anything for the fields that 
                         // make up this compound field; if we find at least one 
                         // of the child values in the map of extracted values, we'll 
                         // create a new compound field value and its child 
-                        // 
-                        DatasetFieldCompoundValue compoundDsfv = new DatasetFieldCompoundValue();
-                        int nonEmptyFields = 0; 
+                        //
+                        // compound field1: [DatasetFieldType name:geographicBoundingBox id:85
                         for (DatasetFieldType cdsft : dsft.getChildDatasetFieldTypes()) {
                             String dsfName = cdsft.getName();
-                            logger.info("testing... iterating, field " + dsfName + ", part of the compound field "+dsft.getName());
-                            if (fileMetadataMap.get(dsfName) != null && !fileMetadataMap.get(dsfName).isEmpty()) {  
-                                logger.info("Ingest Service: found extracted metadata for field " + dsfName + ", part of the compound field "+dsft.getName());
+                            if (fileMetadataMap.get(dsfName) != null) {
+                                String value = (String) fileMetadataMap.get(dsfName).toArray()[0];
+                                // compound field is [DatasetFieldType name:geographicCoverage id:79] and value to insert is Boston
+                                logger.info("compound field is " + dsft + " and dsfName is " + dsfName + " and value to insert is " + value);
+                                DatasetField childField = new DatasetField();
+                                DatasetFieldType city = new DatasetFieldType();
+//                                city.setdatasetfieldtype(dsfName);
+                                childField.setDatasetFieldType(dsft); //city
+//                                childField.setDatasetFieldType(dsft); //change to city
+                                DatasetFieldValue childValue = new DatasetFieldValue(childField);
+                                childValue.setValue(value);
+                                childField.getDatasetFieldValues().add(childValue);
+                                DatasetFieldCompoundValue parentCompoundValue = new DatasetFieldCompoundValue();
+                                DatasetField parentDatasetField = new DatasetField();
+                                parentDatasetField.setDatasetFieldType(dsft);
+                                parentCompoundValue.setParentDatasetField(parentDatasetField);
+                                childField.setParentDatasetFieldCompoundValue(parentCompoundValue);
+                                parentCompoundValue.getChildDatasetFields().add(childField);
+                                logger.info("was it added? compound field  " + dsft + " and value to insert was " + value);
                                 
-                                if (!cdsft.isPrimitive()) {
-                                    logger.info("is not primitive ... found extracted metadata for field " + dsfName + ", part of the compound field "+dsft.getName());
-                                }
-                                if (cdsft.isPrimitive()) {
-                                    logger.info("is primitive ... found extracted metadata for field " + dsfName + ", part of the compound field "+dsft.getName());
-                                    // probably an unnecessary check - child fields
-                                    // of compound fields are always primitive... 
-                                    // but maybe it'll change in the future. 
-                                    if (cdsft.isControlledVocabulary()) {
-                                        logger.info("is controlled vocab... found extracted metadata for field " + dsfName + ", part of the compound field "+dsft.getName());
-
-                                        // FIXME actually check the controlled vocabulary!
-                                        DatasetField childDsf = new DatasetField();
-                                        childDsf.setDatasetFieldType(cdsft);
-                                        
-                                        DatasetFieldValue newDsfv = new DatasetFieldValue(childDsf);
-                                        newDsfv.setValue((String)fileMetadataMap.get(dsfName).toArray()[0]);
-                                        childDsf.getDatasetFieldValues().add(newDsfv);
-                                        
-                                        childDsf.setParentDatasetFieldCompoundValue(compoundDsfv);
-                                        compoundDsfv.getChildDatasetFields().add(childDsf);
-                                        
-                                        nonEmptyFields++;
-                                    }
-                                    if (!cdsft.isControlledVocabulary()) {
-                                        logger.info("not controlled vocab... found extracted metadata for field " + dsfName + ", part of the compound field "+dsft.getName());
-                                        // FIXME: Delete this. Yes, country is inside geographicCoverage
-                                        // TODO: can we have controlled vocabulary
-                                        // sub-fields inside compound fields?
-                                        
-                                        DatasetField childDsf = new DatasetField();
-                                        childDsf.setDatasetFieldType(cdsft);
-                                        
-                                        DatasetFieldValue newDsfv = new DatasetFieldValue(childDsf);
-                                        // not cv... for field city, part of the compound field geographicCoverage setting value to Boston
-                                        logger.info("not cv... for field " + dsfName + ", part of the compound field "+dsft.getName() + " setting value to " +(String)fileMetadataMap.get(dsfName).toArray()[0]);
-                                        newDsfv.setValue((String)fileMetadataMap.get(dsfName).toArray()[0]);
-                                        childDsf.getDatasetFieldValues().add(newDsfv);
-                                        
-                                        childDsf.setParentDatasetFieldCompoundValue(compoundDsfv);
-                                        compoundDsfv.getChildDatasetFields().add(childDsf);
-                                        
-                                        nonEmptyFields++;
-                                    }
-                                } 
-                            }
-                        }
-                        
-
-                        // FIXME: put this back! Remove the false that
-                        // we're using to disable the check. We're getting an NPE at
-                        // String cdsfValue = cdsf.getDatasetFieldValues().get(0).getValue();
-                        // with country populated with "United States".
-                        if (false && nonEmptyFields > 0) {
-                            // let's go through this dataset's fields and find the 
-                            // actual parent for this sub-field: 
-                            for (DatasetField dsf : editVersion.getFlatDatasetFields()) {
-                                if (dsf.getDatasetFieldType().equals(dsft)) {
-                                    
-                                    // Now let's check that the dataset version doesn't already have
-                                    // this compound value - we are only interested in aggregating 
-                                    // unique values. Note that we need to compare compound values 
-                                    // as sets! -- i.e. all the sub fields in 2 compound fields 
-                                    // must match in order for these 2 compounds to be recognized 
-                                    // as "the same":
-                                    
-                                    boolean alreadyExists = false; 
-                                    for (DatasetFieldCompoundValue dsfcv : dsf.getDatasetFieldCompoundValues()) {
-                                        int matches = 0; 
-
-                                        for (DatasetField cdsf : dsfcv.getChildDatasetFields()) {
-                                            String cdsfName = cdsf.getDatasetFieldType().getName();
-                                            String cdsfValue = cdsf.getDatasetFieldValues().get(0).getValue();
-                                            if (cdsfValue != null && !cdsfValue.equals("")) {
-                                                String extractedValue = (String)fileMetadataMap.get(cdsfName).toArray()[0];
-                                                logger.fine("values: existing: "+cdsfValue+", extracted: "+extractedValue);
-                                                if (cdsfValue.equals(extractedValue)) {
-                                                    matches++;
-                                                }
-                                            }
-                                        }
-                                        if (matches == nonEmptyFields) {
-                                            alreadyExists = true; 
-                                            break;
-                                        }
-                                    }
-                                                                        
-                                    if (!alreadyExists) {
-                                        // save this compound value, by attaching it to the 
-                                        // version for proper cascading:
-                                        compoundDsfv.setParentDatasetField(dsf);
-                                        dsf.getDatasetFieldCompoundValues().add(compoundDsfv);
-                                    }
-                                }
+//                                childField.setParentDatasetFieldType();
+//                                dsft.getChildDatasetFieldTypes().add(childField);
                             }
                         }
                     }
