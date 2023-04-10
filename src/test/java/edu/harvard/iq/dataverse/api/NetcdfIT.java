@@ -5,8 +5,11 @@ import com.jayway.restassured.path.json.JsonPath;
 import com.jayway.restassured.response.Response;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import javax.json.Json;
+import javax.json.JsonObjectBuilder;
 import static javax.ws.rs.core.Response.Status.CREATED;
 import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
@@ -36,7 +39,6 @@ public class NetcdfIT {
 //                .statusCode(CREATED.getStatusCode());
 //
 //        String dataverseAlias = UtilIT.getAliasFromResponse(createDataverseResponse);
-
 //        Response createDataset = UtilIT.createRandomDatasetViaNativeApi(dataverseAlias, apiToken);
         Response createDataset = UtilIT.createRandomDatasetViaNativeApi("root", apiToken);
         createDataset.prettyPrint();
@@ -45,6 +47,78 @@ public class NetcdfIT {
 
         Integer datasetId = UtilIT.getDatasetIdFromResponse(createDataset);
         String datasetPid = UtilIT.getDatasetPersistentIdFromResponse(createDataset);
+
+//        String pathToJsonFile = "doc/sphinx-guides/source/_static/api/dataset-add-metadata.json";
+//        Response addSubjectViaNative = UtilIT.addDatasetMetadataViaNative(datasetPid, pathToJsonFile, apiToken);
+//        JsonObjectBuilder jsonUpdateObject = Json.createObjectBuilder().add("fields",
+//                Json.createArrayBuilder()
+//                        .add(Json.createObjectBuilder()
+//                                //                                .add("typeName", "subtitle")
+//                                //                                .add("value", "MySubtitle ")
+////                                .add("typeName", "author")
+////                                .add("value", Json.createArrayBuilder()
+////                                        .add(Json.createObjectBuilder()
+////                                                .add("authorName", Json.createObjectBuilder()
+////                                                        .add("typeName", "authorName")
+////                                                        .add("value", "Simpson, Homer")
+////                                                )
+////                                        )
+////                                )
+//                                .add("typeName", "geographicCoverage")
+//                                .add("value", Json.createArrayBuilder()
+//                                        .add(Json.createObjectBuilder()
+//                                                .add("city", Json.createObjectBuilder()
+//                                                        .add("typeName", "city")
+//                                                        .add("value", "Boston")
+//                                                )
+//                                        )
+//                                )
+//                        ));
+//        JsonObjectBuilder jsonUpdateObject
+//                = Json.createObjectBuilder()
+//                        .add("typeName", "geographicCoverage")
+//                        .add("value", Json.createArrayBuilder()
+//                                .add(Json.createObjectBuilder()
+//                                        .add("city", Json.createObjectBuilder()
+//                                                .add("typeName", "city")
+//                                                .add("value", "Boston")
+//                                        )
+//                                ));
+//        String jsonUpdateString = jsonUpdateObject.build().toString();
+//        System.out.println("json: " + jsonUpdateString);
+//        Path jsonUpdatePath = Paths.get(java.nio.file.Files.createTempDirectory(null) + File.separator + "update.json");
+//        java.nio.file.Files.write(jsonUpdatePath, jsonUpdateString.getBytes());
+//        Response addSubjectViaNative = UtilIT.addDatasetMetadataViaNative(datasetPid, jsonUpdatePath.toString(), apiToken);
+//        addSubjectViaNative.prettyPrint();
+//        addSubjectViaNative.then().assertThat().statusCode(OK.getStatusCode());
+//        Response getJson1 = UtilIT.nativeGet(datasetId, apiToken);
+//        getJson1.prettyPrint();
+//        getJson1.then().assertThat()
+//                .statusCode(OK.getStatusCode());
+//        if (true) {
+//            return;
+//        }
+//        JsonObjectBuilder jsonUpdateObject
+//                = Json.createObjectBuilder()
+//                        .add("typeName", "geographicCoverage")
+//                        .add("value", Json.createArrayBuilder()
+//                                .add(Json.createObjectBuilder()
+//                                        .add("otherGeographicCoverage", Json.createObjectBuilder()
+//                                                .add("typeName", "otherGeographicCoverage")
+//                                                .add("value", "New England")
+//                                        )
+//                                ));
+//        String jsonUpdateString = jsonUpdateObject.build().toString();
+//        System.out.println("json: " + jsonUpdateString);
+//        Path jsonUpdatePath = Paths.get(java.nio.file.Files.createTempDirectory(null) + File.separator + "update.json");
+//        java.nio.file.Files.write(jsonUpdatePath, jsonUpdateString.getBytes());
+//        Response addSubjectViaNative = UtilIT.addDatasetMetadataViaNative(datasetPid, jsonUpdatePath.toString(), apiToken);
+//        addSubjectViaNative.prettyPrint();
+//        addSubjectViaNative.then().assertThat().statusCode(OK.getStatusCode());
+//        Response getJson1 = UtilIT.nativeGet(datasetId, apiToken);
+//        getJson1.prettyPrint();
+//        getJson1.then().assertThat()
+//                .statusCode(OK.getStatusCode());
 
         String pathToFile = "src/test/resources/netcdf/madis-raob";
         // https://www.ncei.noaa.gov/data/international-comprehensive-ocean-atmosphere/v3/archive/nrt/ICOADS_R3.0.0_1662-10.nc
@@ -55,13 +129,16 @@ public class NetcdfIT {
         Response uploadFile = UtilIT.uploadFileViaNative(datasetId.toString(), pathToFile, apiToken);
         uploadFile.prettyPrint();
         uploadFile.then().assertThat().statusCode(OK.getStatusCode());
-        
+
         Response getJson = UtilIT.nativeGet(datasetId, apiToken);
         getJson.prettyPrint();
         getJson.then().assertThat()
                 .statusCode(OK.getStatusCode())
-                .body("data.latestVersion.metadataBlocks.geospatial.fields[0].value[0]", equalTo("Massachusetts"));
-        if (true) return;
+                .body("data.latestVersion.metadataBlocks.geospatial.fields[0].value[0]", equalTo("Boston"));
+        if (true) {
+            System.out.println("done...");
+            return;
+        }
 
         long fileId = JsonPath.from(uploadFile.body().asString()).getLong("data.files[0].dataFile.id");
         String tag = "NcML";

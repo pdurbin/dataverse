@@ -28,6 +28,11 @@ public class NetcdfFileMetadataExtractor extends FileMetadataExtractor {
     private static final String COUNTRY = DatasetFieldConstant.country;
     private static final String CITY = DatasetFieldConstant.city;
     private static final String GEOGRAPHIC_BOUNDING_BOX = DatasetFieldConstant.geographicBoundingBox;
+    private static final String WEST_LONGITUDE = DatasetFieldConstant.westLongitude;
+    private static final String EAST_LONGITUDE = DatasetFieldConstant.eastLongitude;
+    private static final String NORTH_LATITUDE = DatasetFieldConstant.northLatitude;
+    private static final String SOUTH_LATITUDE = DatasetFieldConstant.southLatitude;
+
     private static final String GEOGRAPHIC_UNIT = DatasetFieldConstant.geographicUnit;
 
     public NetcdfFileMetadataExtractor(FileMetadataExtractorSpi originatingProvider) {
@@ -46,17 +51,38 @@ public class NetcdfFileMetadataExtractor extends FileMetadataExtractor {
     public FileMetadataIngest ingestFile(File file) throws IOException {
         FileMetadataIngest fileMetadataIngest = new FileMetadataIngest();
         fileMetadataIngest.setMetadataBlockName(GEOSPATIAL_BLOCK_NAME);
-        parseGeospatial(getNetcdfFile(file));
+        System.out.println("got here 01");
+        Map<String, String> geoFields = parseGeospatial(getNetcdfFile(file));
+        System.out.println("got here 02");
+        System.out.println("geofields2: " + geoFields);
+        for (Map.Entry<String, String> entry : geoFields.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            System.out.println("key: " + key + " value: " + value);
+        }
+        System.out.println("WEST_LONGITUDE_KEY: " + WEST_LONGITUDE_KEY);
+        System.out.println("WEST_LONGITUDE: " + WEST_LONGITUDE);
+        System.out.println("geoFields.get(WEST_LONGITUDE_KEY): " + geoFields.get(WEST_LONGITUDE_KEY));
+        System.out.println("geoFields.get(WEST_LONGITUDE): " + geoFields.get(WEST_LONGITUDE));
         Map<String, Set<String>> metadataMap = new HashMap<>();
 //        metadataMap.put(ATTRIBUTE_TYPE, new HashSet<String>());
 //        metadataMap.put(GEOGRAPHIC_BOUNDING_BOX, new HashSet<String>());
-        metadataMap.put(COUNTRY, new HashSet<>());
-        metadataMap.get(COUNTRY).add("United States");
-        metadataMap.put(CITY, new HashSet<>());
-        metadataMap.get(CITY).add("Boston");
-        metadataMap.put(GEOGRAPHIC_UNIT, new HashSet<>());
-        metadataMap.get(GEOGRAPHIC_UNIT).add("Massachusetts");
+        metadataMap.put(WEST_LONGITUDE, new HashSet<String>());
+        metadataMap.get(WEST_LONGITUDE).add(geoFields.get(WEST_LONGITUDE));
+        metadataMap.put(EAST_LONGITUDE, new HashSet<String>());
+        metadataMap.get(EAST_LONGITUDE).add(geoFields.get(EAST_LONGITUDE));
+        metadataMap.put(NORTH_LATITUDE, new HashSet<String>());
+        metadataMap.get(NORTH_LATITUDE).add(geoFields.get(NORTH_LATITUDE));
+        metadataMap.put(SOUTH_LATITUDE, new HashSet<String>());
+        metadataMap.get(SOUTH_LATITUDE).add(geoFields.get(SOUTH_LATITUDE));
+//        metadataMap.put(COUNTRY, new HashSet<>());
+//        metadataMap.get(COUNTRY).add("United States");
+//        metadataMap.put(CITY, new HashSet<>());
+//        metadataMap.get(CITY).add("Boston");
+//        metadataMap.put(GEOGRAPHIC_UNIT, new HashSet<>());
+//        metadataMap.get(GEOGRAPHIC_UNIT).add("Massachusetts");
         fileMetadataIngest.setMetadataMap(metadataMap);
+        System.out.println("got here 03");
         Map<String, Set<String>> fileMetadataMap = fileMetadataIngest.getMetadataMap();
         for (Map.Entry<String, Set<String>> entry : fileMetadataMap.entrySet()) {
             String key = entry.getKey();
@@ -110,6 +136,7 @@ public class NetcdfFileMetadataExtractor extends FileMetadataExtractor {
                 + geoFields.get(DatasetFieldConstant.westLongitude)
         );
 
+        System.out.println("geofields: " + geoFields);
         return geoFields;
     }
 

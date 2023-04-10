@@ -36,11 +36,13 @@ import edu.harvard.iq.dataverse.DatasetFieldServiceBean;
 import edu.harvard.iq.dataverse.DatasetFieldType;
 import edu.harvard.iq.dataverse.DatasetFieldValue;
 import edu.harvard.iq.dataverse.DatasetFieldCompoundValue;
+import edu.harvard.iq.dataverse.DatasetFieldConstant;
 import edu.harvard.iq.dataverse.DatasetLock;
 import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.FileMetadata;
 import edu.harvard.iq.dataverse.MetadataBlock;
+import edu.harvard.iq.dataverse.MetadataBlockServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.dataaccess.DataAccess;
 import edu.harvard.iq.dataverse.dataaccess.DataAccessOption;
@@ -69,7 +71,11 @@ import edu.harvard.iq.dataverse.ingest.tabulardata.impl.plugins.sav.SAVFileReade
 import edu.harvard.iq.dataverse.ingest.tabulardata.impl.plugins.sav.SAVFileReaderSpi;
 import edu.harvard.iq.dataverse.ingest.tabulardata.impl.plugins.por.PORFileReader;
 import edu.harvard.iq.dataverse.ingest.tabulardata.impl.plugins.por.PORFileReaderSpi;
+import edu.harvard.iq.dataverse.license.LicenseServiceBean;
+import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import edu.harvard.iq.dataverse.util.*;
+import edu.harvard.iq.dataverse.util.json.JsonParseException;
+import edu.harvard.iq.dataverse.util.json.JsonParser;
 
 import org.apache.commons.io.IOUtils;
 //import edu.harvard.iq.dvn.unf.*;
@@ -105,6 +111,8 @@ import java.util.Comparator;
 import java.util.ListIterator;
 import java.util.logging.Logger;
 import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.logging.Level;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.inject.Named;
@@ -118,6 +126,9 @@ import javax.jms.QueueSender;
 import javax.jms.QueueSession;
 import javax.jms.Message;
 import javax.faces.application.FacesMessage;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.ws.rs.core.MediaType;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.NetcdfFiles;
@@ -145,6 +156,12 @@ public class IngestServiceBean {
     AuxiliaryFileServiceBean auxiliaryFileService;
     @EJB
     SystemConfig systemConfig;
+    @EJB
+    MetadataBlockServiceBean metadataBlockService;
+    @EJB
+    SettingsServiceBean settingsService;
+    @EJB
+    LicenseServiceBean licenseService;
 
     @Resource(lookup = "java:app/jms/queue/ingest")
     Queue queue;
@@ -1640,32 +1657,154 @@ public class IngestServiceBean {
                         // create a new compound field value and its child 
                         //
                         // compound field1: [DatasetFieldType name:geographicBoundingBox id:85
-                        for (DatasetFieldType cdsft : dsft.getChildDatasetFieldTypes()) {
-                            String dsfName = cdsft.getName();
-                            if (fileMetadataMap.get(dsfName) != null) {
-                                String value = (String) fileMetadataMap.get(dsfName).toArray()[0];
-                                // compound field is [DatasetFieldType name:geographicCoverage id:79] and value to insert is Boston
-                                logger.info("compound field is " + dsft + " and dsfName is " + dsfName + " and value to insert is " + value);
-                                DatasetField childField = new DatasetField();
-                                DatasetFieldType city = new DatasetFieldType();
-//                                city.setdatasetfieldtype(dsfName);
-                                childField.setDatasetFieldType(dsft); //city
-//                                childField.setDatasetFieldType(dsft); //change to city
-                                DatasetFieldValue childValue = new DatasetFieldValue(childField);
-                                childValue.setValue(value);
-                                childField.getDatasetFieldValues().add(childValue);
-                                DatasetFieldCompoundValue parentCompoundValue = new DatasetFieldCompoundValue();
-                                DatasetField parentDatasetField = new DatasetField();
-                                parentDatasetField.setDatasetFieldType(dsft);
-                                parentCompoundValue.setParentDatasetField(parentDatasetField);
-                                childField.setParentDatasetFieldCompoundValue(parentCompoundValue);
-                                parentCompoundValue.getChildDatasetFields().add(childField);
-                                logger.info("was it added? compound field  " + dsft + " and value to insert was " + value);
-                                
-//                                childField.setParentDatasetFieldType();
-//                                dsft.getChildDatasetFieldTypes().add(childField);
+//                        for (DatasetFieldType cdsft : dsft.getChildDatasetFieldTypes()) {
+//                        for (DatasetFieldType cdsft : dsft.getChildDatasetFieldTypes()) {
+// cdsft: [DatasetFieldType name:country id:80
+// cdsft: [DatasetFieldType name:state id:81
+// cdsft: [DatasetFieldType name:city id:82
+// cdsft: [DatasetFieldType name:otherGeographicCoverage id:83
+// cdsft: [DatasetFieldType name:westLongitude id:86
+// cdsft: [DatasetFieldType name:eastLongitude id:87
+// cdsft: [DatasetFieldType name:northLongitude id:88
+// cdsft: [DatasetFieldType name:southLongitude id:89
+//                            logger.info("cdsft: " + cdsft);
+//                        }
+//                            if (dsft.getName().equals("geographicCoverage")) {
+//                                JsonObject json
+//                                        = Json.createObjectBuilder()
+//                                                .add("typeName", "geographicCoverage")
+//                                                .add("value", Json.createArrayBuilder()
+//                                                        .add(Json.createObjectBuilder()
+//                                                                .add("city", Json.createObjectBuilder()
+//                                                                        .add("typeName", "city")
+//                                                                        .add("value", "Boston")
+//                                                                )
+//                                                        )).build();
+                        if (dsft.getName().equals(DatasetFieldConstant.geographicBoundingBox)) {
+                            for (DatasetFieldType cdsft : dsft.getChildDatasetFieldTypes()) {
+                                logger.info("cdsft: " + cdsft);
+                                if (cdsft.getName().equals(DatasetFieldConstant.westLongitude)) {
+                                    System.out.println("westLongitude, add the bounding box");
+                                    String westLongitude = (String) fileMetadataMap.get(DatasetFieldConstant.westLongitude).toArray()[0];
+                                    String eastLongitude = (String) fileMetadataMap.get(DatasetFieldConstant.eastLongitude).toArray()[0];
+                                    String northLatitude = (String) fileMetadataMap.get(DatasetFieldConstant.northLatitude).toArray()[0];
+                                    String southLatitude = (String) fileMetadataMap.get(DatasetFieldConstant.southLatitude).toArray()[0];
+                                    JsonObject json
+                                            = Json.createObjectBuilder()
+                                                    .add("typeName", DatasetFieldConstant.geographicBoundingBox)
+                                                    .add("value", Json.createArrayBuilder()
+                                                            .add(Json.createObjectBuilder()
+                                                                    .add(DatasetFieldConstant.westLongitude, Json.createObjectBuilder()
+                                                                            .add("typeName", DatasetFieldConstant.westLongitude)
+                                                                            .add("value", westLongitude)
+                                                                    )
+                                                                    .add(DatasetFieldConstant.eastLongitude, Json.createObjectBuilder()
+                                                                            .add("typeName", DatasetFieldConstant.eastLongitude)
+                                                                            .add("value", eastLongitude)
+                                                                    )
+                                                                    .add(DatasetFieldConstant.northLatitude, Json.createObjectBuilder()
+                                                                            .add("typeName", DatasetFieldConstant.northLatitude)
+                                                                            .add("value", northLatitude)
+                                                                    )
+                                                                    .add(DatasetFieldConstant.southLatitude, Json.createObjectBuilder()
+                                                                            .add("typeName", DatasetFieldConstant.southLatitude)
+                                                                            .add("value", southLatitude)
+                                                                    )
+                                                            )
+                                                            //                                                )
+                                                            //                                                .add("value", Json.createArrayBuilder()
+//                                                            .add(Json.createObjectBuilder()
+//                                                                    .add(DatasetFieldConstant.eastLongitude, Json.createObjectBuilder()
+//                                                                            .add("typeName", DatasetFieldConstant.eastLongitude)
+//                                                                            .add("value", eastLongitude)
+//                                                                    )
+//                                                            )
+//                                                            //                                                )
+//                                                            //                                                .add("value", Json.createArrayBuilder()
+//                                                            .add(Json.createObjectBuilder()
+//                                                                    .add(DatasetFieldConstant.northLatitude, Json.createObjectBuilder()
+//                                                                            .add("typeName", DatasetFieldConstant.northLatitude)
+//                                                                            .add("value", northLatitude)
+//                                                                    )
+//                                                            )
+//                                                            //                                                )
+//                                                            //                                                .add("value", Json.createArrayBuilder()
+//                                                            .add(Json.createObjectBuilder()
+//                                                                    .add(DatasetFieldConstant.southLatitude, Json.createObjectBuilder()
+//                                                                            .add("typeName", DatasetFieldConstant.southLatitude)
+//                                                                            .add("value", southLatitude)
+//                                                                    )
+//                                                            )
+                                                    )
+                                                    .build();
+
+//                            DatasetVersion dv = new JsonParser(fieldService, blockService, settingsService, licenseService);
+//                            JsonParser jsonParser = new JsonParser(fieldService, metadataBlockService, settingsService, licenseService, harvestingClient);
+                                    JsonParser jsonParser = new JsonParser(fieldService, metadataBlockService, settingsService, licenseService);
+//                            DatasetField fieldToAdd = jsonParser().parseField(json, Boolean.FALSE);
+                                    DatasetField fieldToAdd = null;
+                                    try {
+                                        logger.info("trying to add " + json);
+                                        fieldToAdd = jsonParser.parseField(json, Boolean.FALSE);
+                                    } catch (JsonParseException ex) {
+                                        logger.info("unable to add " + json + ". Exception: " + ex);
+                                    }
+                                    editVersion.getDatasetFields().add(fieldToAdd);
+                                } else {
+                                    logger.info("westLongitude was not cdsft.getName(): " + cdsft.getName());
+                                }
                             }
+                        } else {
+                            logger.info("geographicCoverage was not the type: " + dsft.getName());
                         }
+//                            DatasetField ret = new DatasetField();
+//                            DatasetFieldType type = fieldService.findByNameOpt(cdsft.getName());
+//                            ret.setDatasetFieldType(type);
+//                            if (type.isCompound()) {
+//                                List<DatasetFieldCompoundValue> vals = new LinkedList<>();
+//                                DatasetFieldCompoundValue cv = new DatasetFieldCompoundValue();
+//                                List<DatasetField> fields = new LinkedList<>();
+//
+//                                List<DatasetFieldValue> values = parsePrimitiveValue(type, json);
+//                                for (DatasetFieldValue val : values) {
+//                                    val.setDatasetField(ret);
+//                                }
+//                                ret.setDatasetFieldValues(values);
+//
+//
+////                                List<DatasetFieldCompoundValue> vals = parseCompoundValue(type, json, testType);
+//                                for (DatasetFieldCompoundValue dsfcv : vals) {
+//                                    dsfcv.setParentDatasetField(ret);
+//                                }
+//                                ret.setDatasetFieldCompoundValues(vals);
+//
+//                            }
+//
+//                            String dsfName = cdsft.getName();
+//                            if (fileMetadataMap.get(dsfName) != null) {
+//                                String value = (String) fileMetadataMap.get(dsfName).toArray()[0];
+//                                // compound field is [DatasetFieldType name:geographicCoverage id:79] and dsfName is city and child field is [DatasetFieldType name:city id:82] and value to insert is Boston|#]
+//                                logger.info("compound field is " + dsft + " and dsfName is " + dsfName + " and child field is " + cdsft + " and value to insert is " + value);
+//                                DatasetField childField = new DatasetField();
+////                                DatasetFieldType city = new DatasetFieldType();
+////                                city.setdatasetfieldtype(dsfName);
+//                                childField.setDatasetFieldType(cdsft); //city
+////                                childField.setDatasetFieldType(dsft); //change to city
+//                                DatasetFieldValue childValue = new DatasetFieldValue(childField);
+//                                childValue.setValue(value);
+//                                childField.getDatasetFieldValues().add(childValue);
+//                                DatasetFieldCompoundValue parentCompoundValue = new DatasetFieldCompoundValue();
+//                                DatasetField parentDatasetField = new DatasetField();
+//                                parentDatasetField.setDatasetFieldType(dsft);
+//                                parentCompoundValue.setParentDatasetField(parentDatasetField);
+//                                childField.setParentDatasetFieldCompoundValue(parentCompoundValue);
+//                                parentCompoundValue.getChildDatasetFields().add(childField);
+//                                logger.info("was it added? compound field  " + dsft + " and value to insert was " + value);
+//                                
+////                                childField.setParentDatasetFieldType();
+////                                dsft.getChildDatasetFieldTypes().add(childField);
+//                            } 
+//                        }
                     }
                 }
                 logger.info("dumping values...");

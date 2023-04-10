@@ -1022,15 +1022,20 @@ public class Datasets extends AbstractApiBean {
             //if exist add/replace values
             //if not add entire dsf
             for (DatasetField updateField : fields) {
+                logger.info("updateField: " + updateField);
                 boolean found = false;
                 for (DatasetField dsf : dsv.getDatasetFields()) {
+                    logger.info("dsf: " + dsf + " - " + dsf.getDatasetFieldType());
                     if (dsf.getDatasetFieldType().equals(updateField.getDatasetFieldType())) {
+                        logger.info("got here 01");
                         found = true;
                         if (dsf.isEmpty() || dsf.getDatasetFieldType().isAllowMultiples() || replaceData) {
+                            logger.info("got here 02");
                             List priorCVV = new ArrayList<>();
                             String cvvDisplay = "";
 
                             if (updateField.getDatasetFieldType().isControlledVocabulary()) {
+                                logger.info("got here 03");
                                 cvvDisplay = dsf.getDisplayValue();
                                 for (ControlledVocabularyValue cvvOld : dsf.getControlledVocabularyValues()) {
                                     priorCVV.add(cvvOld);
@@ -1038,44 +1043,58 @@ public class Datasets extends AbstractApiBean {
                             }
 
                             if (replaceData) {
+                                logger.info("got here 04");
                                 if (dsf.getDatasetFieldType().isAllowMultiples()) {
+                                    logger.info("got here 05");
                                     dsf.setDatasetFieldCompoundValues(new ArrayList<>());
                                     dsf.setDatasetFieldValues(new ArrayList<>());
                                     dsf.setControlledVocabularyValues(new ArrayList<>());
                                     priorCVV.clear();
                                     dsf.getControlledVocabularyValues().clear();
                                 } else {
+                                    logger.info("got here 06");
                                     dsf.setSingleValue("");
                                     dsf.setSingleControlledVocabularyValue(null);
                                 }
                               cvvDisplay="";
                             }
                             if (updateField.getDatasetFieldType().isControlledVocabulary()) {
+                                    logger.info("got here 07");
                                 if (dsf.getDatasetFieldType().isAllowMultiples()) {
+                                    logger.info("got here 08");
                                     for (ControlledVocabularyValue cvv : updateField.getControlledVocabularyValues()) {
                                         if (!cvvDisplay.contains(cvv.getStrValue())) {
+                                            logger.info("got here 09");
                                             priorCVV.add(cvv);
                                         }
                                     }
                                     dsf.setControlledVocabularyValues(priorCVV);
                                 } else {
+                                    logger.info("got here 10");
                                     dsf.setSingleControlledVocabularyValue(updateField.getSingleControlledVocabularyValue());
                                 }
                             } else {
+                                logger.info("got here 11");
                                 if (!updateField.getDatasetFieldType().isCompound()) {
+                                    logger.info("got here 12");
                                     if (dsf.getDatasetFieldType().isAllowMultiples()) {
+                                        logger.info("got here 13");
                                         for (DatasetFieldValue dfv : updateField.getDatasetFieldValues()) {
                                             if (!dsf.getDisplayValue().contains(dfv.getDisplayValue())) {
+                                                logger.info("got here 14");
                                                 dfv.setDatasetField(dsf);
                                                 dsf.getDatasetFieldValues().add(dfv);
                                             }
                                         }
                                     } else {
+                                        logger.info("got here 15");
                                         dsf.setSingleValue(updateField.getValue());
                                     }
                                 } else {
+                                    logger.info("got here 16");
                                     for (DatasetFieldCompoundValue dfcv : updateField.getDatasetFieldCompoundValues()) {
                                         if (!dsf.getCompoundDisplayValue().contains(updateField.getCompoundDisplayValue())) {
+                                            logger.info("got here 17");
                                             dfcv.setParentDatasetField(dsf);
                                             dsf.setDatasetVersion(dsv);
                                             dsf.getDatasetFieldCompoundValues().add(dfcv);
@@ -1084,7 +1103,9 @@ public class Datasets extends AbstractApiBean {
                                 }
                             }
                         } else {
+                            logger.info("got here 18");
                             if (!dsf.isEmpty() && !dsf.getDatasetFieldType().isAllowMultiples() || !replaceData) {
+                                logger.info("got here 19");
                                 return error(Response.Status.BAD_REQUEST, "You may not add data to a field that already has data and does not allow multiples. Use replace=true to replace existing data (" + dsf.getDatasetFieldType().getDisplayName() + ")");
                             }
                         }
@@ -1092,6 +1113,7 @@ public class Datasets extends AbstractApiBean {
                     }
                 }
                 if (!found) {
+                    logger.info("got here 20"); // Boston
                     updateField.setDatasetVersion(dsv);
                     dsv.getDatasetFields().add(updateField);
                 }
@@ -1100,8 +1122,10 @@ public class Datasets extends AbstractApiBean {
             DatasetVersion managedVersion;
 
             if (updateDraft) {
+                logger.info("got here 21");
                 managedVersion = execCommand(new UpdateDatasetVersionCommand(ds, req)).getOrCreateEditVersion();
             } else {
+                logger.info("got here 22");
                 managedVersion = execCommand(new CreateDatasetVersionCommand(req, ds, dsv));
             }
 
