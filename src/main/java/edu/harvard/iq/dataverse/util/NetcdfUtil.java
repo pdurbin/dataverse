@@ -38,6 +38,25 @@ public class NetcdfUtil {
         return NetcdfFiles.open(file.getAbsolutePath());
     }
 
+    public static double parseDmsToDecimal(String dms) {
+        // Converts Degrees-Minutes-Seconds coordinates to Decimal degrees
+        String[] parts = dms.split("[°'']");
+
+        // Extract the degrees, minutes, and seconds values
+        double degrees = Double.parseDouble(parts[0]);
+        double minutes = Double.parseDouble(parts[1]);
+        double seconds = Double.parseDouble(parts[2]);
+
+        // Calculate decimal degrees
+        double decimalDegrees = degrees + (minutes / 60) + (seconds / 3600);
+
+        // Check the direction (E, W, N, or S) and adjust the sign accordingly
+        if (dms.contains("W") || dms.contains("S")) {
+            decimalDegrees = -decimalDegrees;
+        }
+        return decimalDegrees;
+    }
+
     public static double convertLongitude(double lon) {
         // Converts a longitude from the range of 0-360 to -180-180
         lon = (lon + 180) % 360 - 180;
