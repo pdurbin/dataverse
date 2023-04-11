@@ -58,7 +58,17 @@ public class NetcdfUtil {
                 + geoFields.get(DatasetFieldConstant.westLongitude) + ","
                 + geoFields.get(DatasetFieldConstant.southLatitude) + ","
                 + geoFields.get(DatasetFieldConstant.eastLongitude) + ","
-                + geoFields.get(DatasetFieldConstant.westLongitude)
+                + geoFields.get(DatasetFieldConstant.northLatitude)
+        );
+
+        float eastMinus360 = Float.parseFloat(geoFields.get(DatasetFieldConstant.eastLongitude)) - 360;
+        float westMinus360 = Float.parseFloat(geoFields.get(DatasetFieldConstant.westLongitude)) - 360;
+
+        System.out.println("https://linestrings.com/bbox/#"
+                + westMinus360 + ","
+                + geoFields.get(DatasetFieldConstant.southLatitude) + ","
+                + eastMinus360 + ","
+                + geoFields.get(DatasetFieldConstant.northLatitude)
         );
 
         return geoFields;
