@@ -36,11 +36,13 @@ import edu.harvard.iq.dataverse.DatasetFieldServiceBean;
 import edu.harvard.iq.dataverse.DatasetFieldType;
 import edu.harvard.iq.dataverse.DatasetFieldValue;
 import edu.harvard.iq.dataverse.DatasetFieldCompoundValue;
+import edu.harvard.iq.dataverse.DatasetFieldConstant;
 import edu.harvard.iq.dataverse.DatasetLock;
 import edu.harvard.iq.dataverse.DatasetVersion;
 import edu.harvard.iq.dataverse.DvObject;
 import edu.harvard.iq.dataverse.FileMetadata;
 import edu.harvard.iq.dataverse.MetadataBlock;
+import edu.harvard.iq.dataverse.MetadataBlockServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.dataaccess.DataAccess;
 import edu.harvard.iq.dataverse.dataaccess.DataAccessOption;
@@ -53,6 +55,7 @@ import edu.harvard.iq.dataverse.datavariable.DataVariable;
 import edu.harvard.iq.dataverse.ingest.metadataextraction.FileMetadataExtractor;
 import edu.harvard.iq.dataverse.ingest.metadataextraction.FileMetadataIngest;
 import edu.harvard.iq.dataverse.ingest.metadataextraction.impl.plugins.fits.FITSFileMetadataExtractor;
+import edu.harvard.iq.dataverse.ingest.metadataextraction.impl.plugins.netcdf.NetcdfFileMetadataExtractor;
 import edu.harvard.iq.dataverse.ingest.tabulardata.TabularDataFileReader;
 import edu.harvard.iq.dataverse.ingest.tabulardata.TabularDataIngest;
 import edu.harvard.iq.dataverse.ingest.tabulardata.impl.plugins.dta.DTAFileReader;
@@ -68,7 +71,11 @@ import edu.harvard.iq.dataverse.ingest.tabulardata.impl.plugins.sav.SAVFileReade
 import edu.harvard.iq.dataverse.ingest.tabulardata.impl.plugins.sav.SAVFileReaderSpi;
 import edu.harvard.iq.dataverse.ingest.tabulardata.impl.plugins.por.PORFileReader;
 import edu.harvard.iq.dataverse.ingest.tabulardata.impl.plugins.por.PORFileReaderSpi;
+import edu.harvard.iq.dataverse.license.LicenseServiceBean;
+import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
 import edu.harvard.iq.dataverse.util.*;
+import edu.harvard.iq.dataverse.util.json.JsonParseException;
+import edu.harvard.iq.dataverse.util.json.JsonParser;
 
 import org.apache.commons.io.IOUtils;
 //import edu.harvard.iq.dvn.unf.*;
@@ -104,6 +111,8 @@ import java.util.Comparator;
 import java.util.ListIterator;
 import java.util.logging.Logger;
 import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.logging.Level;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.inject.Named;
@@ -117,6 +126,9 @@ import javax.jms.QueueSender;
 import javax.jms.QueueSession;
 import javax.jms.Message;
 import javax.faces.application.FacesMessage;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.ws.rs.core.MediaType;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.NetcdfFiles;
@@ -144,6 +156,12 @@ public class IngestServiceBean {
     AuxiliaryFileServiceBean auxiliaryFileService;
     @EJB
     SystemConfig systemConfig;
+    @EJB
+    MetadataBlockServiceBean metadataBlockService;
+    @EJB
+    SettingsServiceBean settingsService;
+    @EJB
+    LicenseServiceBean licenseService;
 
     @Resource(lookup = "java:app/jms/queue/ingest")
     Queue queue;
@@ -243,6 +261,7 @@ public class IngestServiceBean {
 
                                             // TODO: reformat this file to remove the many tabs added in cc08330
                                             extractMetadataNcml(dataFile, tempLocationPath);
+//                                            extractMetadataNcml(dataFile, tempLocationPath);
 
 					} catch (IOException ioex) {
                     logger.warning("Failed to save the file, storage id " + dataFile.getStorageIdentifier() + " (" + ioex.getMessage() + ")");
@@ -341,6 +360,7 @@ public class IngestServiceBean {
 					String fileName = fileMetadata.getLabel();
 
 					boolean metadataExtracted = false;
+					boolean metadataExtracted2 = false;
 					if (tabIngest && FileUtil.canIngestAsTabular(dataFile)) {
 						/*
 						 * Note that we don't try to ingest the file right away - instead we mark it as
@@ -350,6 +370,18 @@ public class IngestServiceBean {
 						 * until the ingest job is finished with the Ingest Service.
 						 */
 						dataFile.SetIngestScheduled();
+					} else if (fileMetadataExtractable2(dataFile, tempLocationPath)) {
+                                            try {
+                                                logger.info("trying to extract metadata from netcdf");
+                                                metadataExtracted2 = extractMetadata2(tempFileLocation, dataFile, version);
+                                            } catch (IOException ex) {
+                                                logger.info("could not extract metadata from netcdf: " + ex);
+                                            }
+                                            if (metadataExtracted2) {
+                                                logger.info("netcdf - Successfully extracted indexable metadata from file " + fileName);
+                                            } else {
+                                                logger.info("netcdf - Failed to extract indexable metadata from file " + fileName);
+                                            }
 					} else if (fileMetadataExtractable(dataFile)) {
 
 						try {
@@ -1166,7 +1198,105 @@ public class IngestServiceBean {
         }
         return false;
     }
-    
+
+    public boolean fileMetadataExtractable2(DataFile dataFile, Path tempLocationPath) {
+        logger.info("fileMetadataExtractable2...");
+        boolean extractable = false;
+        logger.fine("fileMetadataExtractable2: dataFileIn: " + dataFile + ". tempLocationPath: " + tempLocationPath);
+        InputStream inputStream = null;
+        String dataFileLocation = null;
+        if (tempLocationPath != null) {
+            // This file was just uploaded and hasn't been saved to S3 or local storage.
+            dataFileLocation = tempLocationPath.toString();
+        } else {
+            // This file is already on S3 or local storage.
+            File tempFile = null;
+            File localFile;
+            StorageIO<DataFile> storageIO;
+            try {
+                storageIO = dataFile.getStorageIO();
+                storageIO.open();
+                if (storageIO.isLocalFile()) {
+                    localFile = storageIO.getFileSystemPath().toFile();
+                    dataFileLocation = localFile.getAbsolutePath();
+                    logger.info("fileMetadataExtractable2: file is local. Path: " + dataFileLocation);
+                } else {
+                    // Need to create a temporary local file:
+                    tempFile = File.createTempFile("tempFileExtractMetadataNcml", ".tmp");
+                    try ( ReadableByteChannel targetFileChannel = (ReadableByteChannel) storageIO.getReadChannel();  FileChannel tempFileChannel = new FileOutputStream(tempFile).getChannel();) {
+                        tempFileChannel.transferFrom(targetFileChannel, 0, storageIO.getSize());
+                    }
+                    dataFileLocation = tempFile.getAbsolutePath();
+                    logger.info("fileMetadataExtractable2: file is on S3. Downloaded and saved to temp path: " + dataFileLocation);
+                }
+            } catch (IOException ex) {
+                logger.info("fileMetadataExtractable2, could not use storageIO for data file id " + dataFile.getId() + ". Exception: " + ex);
+            }
+        }
+        if (dataFileLocation != null) {
+            try ( NetcdfFile netcdfFile = NetcdfFiles.open(dataFileLocation)) {
+                logger.info("fileMetadataExtractable2: trying to open " + dataFileLocation);
+                if (netcdfFile != null) {
+                    logger.info("fileMetadataExtractable2: returning true");
+                    extractable = true;
+                } else {
+                    logger.info("NetcdfFiles.open() could not open file id " + dataFile.getId() + " (null returned).");
+                }
+            } catch (IOException ex) {
+                logger.info("NetcdfFiles.open() could not open file id " + dataFile.getId() + ". Exception caught: " + ex);
+            }
+        } else {
+            logger.info("dataFileLocation is null for file id " + dataFile.getId() + ". Can't extract NcML.");
+        }
+        return extractable;
+    }
+
+    public boolean extractMetadata2(String tempFileLocation, DataFile dataFile, DatasetVersion editVersion) throws IOException {
+        boolean ingestSuccessful = false;
+
+        InputStream tempFileInputStream = null;
+        if (tempFileLocation == null) {
+            StorageIO<DataFile> sio = dataFile.getStorageIO();
+            sio.open(DataAccessOption.READ_ACCESS);
+            tempFileInputStream = sio.getInputStream();
+        } else {
+            try {
+                tempFileInputStream = new FileInputStream(new File(tempFileLocation));
+            } catch (FileNotFoundException notfoundEx) {
+                throw new IOException("Could not open temp file " + tempFileLocation);
+            }
+        }
+
+        // Locate metadata extraction plugin for the file format by looking
+        // it up with the Ingest Service Provider Registry:
+        NetcdfFileMetadataExtractor extractorPlugin = new NetcdfFileMetadataExtractor();
+        logger.info("creating file from " + tempFileLocation);
+        // FIXME: this won't work with S3!
+        File file = new File(tempFileLocation);
+        FileMetadataIngest extractedMetadata = extractorPlugin.ingestFile(file);
+        Map<String, Set<String>> extractedMetadataMap = extractedMetadata.getMetadataMap();
+
+        // Store the fields and values we've gathered for safe-keeping:
+        // from 3.6:
+        // attempt to ingest the extracted metadata into the database; 
+        // TODO: this should throw an exception if anything goes wrong.
+//        FileMetadata fileMetadata = dataFile.getFileMetadata();
+        if (extractedMetadataMap != null) {
+            logger.info("netcdf - Ingest Service: Processing extracted metadata;");
+            logger.info("extractedMetadata.getMetadataBlockName(): " + extractedMetadata.getMetadataBlockName());
+            if (extractedMetadata.getMetadataBlockName() != null) {
+                logger.info("netcdf - Ingest Service: This metadata belongs to the " + extractedMetadata.getMetadataBlockName() + " metadata block.");
+                processDatasetMetadata(extractedMetadata, editVersion);
+            }
+
+//            processFileLevelMetadata(extractedMetadata, fileMetadata);
+        }
+
+        ingestSuccessful = true;
+
+        return ingestSuccessful;
+    }
+
     /* 
      * extractMetadata: 
      * framework for extracting metadata from uploaded files. The results will 
@@ -1322,15 +1452,18 @@ public class IngestServiceBean {
         for (MetadataBlock mdb : editVersion.getDataset().getOwner().getMetadataBlocks()) {  
             if (mdb.getName().equals(fileMetadataIngest.getMetadataBlockName())) {
                 logger.fine("Ingest Service: dataset version has "+mdb.getName()+" metadata block enabled.");
+                logger.info("Ingest Service: dataset version has "+mdb.getName()+" metadata block enabled.");
                 
                 editVersion.setDatasetFields(editVersion.initDatasetFields());
                 
                 Map<String, Set<String>> fileMetadataMap = fileMetadataIngest.getMetadataMap();
                 for (DatasetFieldType dsft : mdb.getDatasetFieldTypes()) {
                     if (dsft.isPrimitive()) {
+                        logger.info("primitive type: " + dsft);// [DatasetFieldType name:astroType id:116]
                         if (!dsft.isHasParent()) {
                             String dsfName = dsft.getName();
                             // See if the plugin has found anything for this field: 
+                            logger.info("iterating over dsft: " + dsft + "map: " + fileMetadataMap.get(dsfName));// [DatasetFieldType name:astroType id:116]map: [Image]
                             if (fileMetadataMap.get(dsfName) != null && !fileMetadataMap.get(dsfName).isEmpty()) {
 
                                 logger.fine("Ingest Service: found extracted metadata for field " + dsfName);
@@ -1445,6 +1578,7 @@ public class IngestServiceBean {
                                             // (the implementation below may be inefficient - ?)
 
                                             for (String fValue : mValues) {
+                                                logger.info("Non controlled vocab value " + fValue + " ... " + dsfName);// Non controlled vocab value Image ... astroType
                                                 if (!dsft.isControlledVocabulary()) {
                                                     Iterator<DatasetFieldValue> dsfvIt = dsf.getDatasetFieldValues().iterator();
 
@@ -1459,8 +1593,11 @@ public class IngestServiceBean {
                                                         }
                                                     }
 
+                                                    logger.info("value exists: " + valueExists);
                                                     if (!valueExists) {
-                                                        logger.fine("Creating a new value for field " + dsfName + ": " + fValue);
+                                                        // Creating a new value for field astroFacility: IRAS
+                                                        // Creating a new value for field geographicUnit: Massachusetts
+                                                        logger.info("Creating a new value for field " + dsfName + ": " + fValue);
                                                         DatasetFieldValue newDsfv = new DatasetFieldValue(dsf);
                                                         newDsfv.setValue(fValue);
                                                         dsf.getDatasetFieldValues().add(newDsfv);
@@ -1474,7 +1611,7 @@ public class IngestServiceBean {
                                                     if (definedVocabularyValues != null) {
                                                         for (ControlledVocabularyValue definedVocabValue : definedVocabularyValues) {
                                                             if (fValue.equals(definedVocabValue.getStrValue())) {
-                                                                logger.fine("Yes, " + fValue + " is a valid controlled vocabulary value for the field " + dsfName);
+                                                                logger.info("Yes, " + fValue + " is a valid controlled vocabulary value for the field " + dsfName);
                                                                 legitControlledVocabularyValue = definedVocabValue;
                                                                 break;
                                                             }
@@ -1492,7 +1629,7 @@ public class IngestServiceBean {
                                                                 ControlledVocabularyValue cvv = cvvIt.next();
                                                                 if (fValue.equals(cvv.getStrValue())) {
                                                                     // or should I use if (legitControlledVocabularyValue.equals(cvv)) ?
-                                                                    logger.fine("Controlled vocab. value " + fValue + " already exists for field " + dsfName);
+                                                                    logger.info("Controlled vocab. value " + fValue + " already exists for field " + dsfName);
                                                                     valueExists = true;
                                                                     break;
                                                                 }
@@ -1500,7 +1637,8 @@ public class IngestServiceBean {
                                                         }
 
                                                         if (!valueExists) {
-                                                            logger.fine("Adding controlled vocabulary value " + fValue + " to field " + dsfName);
+                                                            logger.info("Adding controlled vocabulary value " + fValue + " to field " + dsfName);
+                                                            // DatasetFieldValue
                                                             dsf.getControlledVocabularyValues().add(legitControlledVocabularyValue);
                                                         }
                                                     }
@@ -1517,83 +1655,175 @@ public class IngestServiceBean {
                         // make up this compound field; if we find at least one 
                         // of the child values in the map of extracted values, we'll 
                         // create a new compound field value and its child 
-                        // 
-                        DatasetFieldCompoundValue compoundDsfv = new DatasetFieldCompoundValue();
-                        int nonEmptyFields = 0; 
-                        for (DatasetFieldType cdsft : dsft.getChildDatasetFieldTypes()) {
-                            String dsfName = cdsft.getName();
-                            if (fileMetadataMap.get(dsfName) != null && !fileMetadataMap.get(dsfName).isEmpty()) {  
-                                logger.fine("Ingest Service: found extracted metadata for field " + dsfName + ", part of the compound field "+dsft.getName());
-                                
-                                if (cdsft.isPrimitive()) {
-                                    // probably an unnecessary check - child fields
-                                    // of compound fields are always primitive... 
-                                    // but maybe it'll change in the future. 
-                                    if (!cdsft.isControlledVocabulary()) {
-                                        // TODO: can we have controlled vocabulary
-                                        // sub-fields inside compound fields?
-                                        
-                                        DatasetField childDsf = new DatasetField();
-                                        childDsf.setDatasetFieldType(cdsft);
-                                        
-                                        DatasetFieldValue newDsfv = new DatasetFieldValue(childDsf);
-                                        newDsfv.setValue((String)fileMetadataMap.get(dsfName).toArray()[0]);
-                                        childDsf.getDatasetFieldValues().add(newDsfv);
-                                        
-                                        childDsf.setParentDatasetFieldCompoundValue(compoundDsfv);
-                                        compoundDsfv.getChildDatasetFields().add(childDsf);
-                                        
-                                        nonEmptyFields++;
-                                    }
-                                } 
-                            }
-                        }
-                        
-                        if (nonEmptyFields > 0) {
-                            // let's go through this dataset's fields and find the 
-                            // actual parent for this sub-field: 
-                            for (DatasetField dsf : editVersion.getFlatDatasetFields()) {
-                                if (dsf.getDatasetFieldType().equals(dsft)) {
-                                    
-                                    // Now let's check that the dataset version doesn't already have
-                                    // this compound value - we are only interested in aggregating 
-                                    // unique values. Note that we need to compare compound values 
-                                    // as sets! -- i.e. all the sub fields in 2 compound fields 
-                                    // must match in order for these 2 compounds to be recognized 
-                                    // as "the same":
-                                    
-                                    boolean alreadyExists = false; 
-                                    for (DatasetFieldCompoundValue dsfcv : dsf.getDatasetFieldCompoundValues()) {
-                                        int matches = 0; 
+                        //
+                        // compound field1: [DatasetFieldType name:geographicBoundingBox id:85
+//                        for (DatasetFieldType cdsft : dsft.getChildDatasetFieldTypes()) {
+//                        for (DatasetFieldType cdsft : dsft.getChildDatasetFieldTypes()) {
+// cdsft: [DatasetFieldType name:country id:80
+// cdsft: [DatasetFieldType name:state id:81
+// cdsft: [DatasetFieldType name:city id:82
+// cdsft: [DatasetFieldType name:otherGeographicCoverage id:83
+// cdsft: [DatasetFieldType name:westLongitude id:86
+// cdsft: [DatasetFieldType name:eastLongitude id:87
+// cdsft: [DatasetFieldType name:northLongitude id:88
+// cdsft: [DatasetFieldType name:southLongitude id:89
+//                            logger.info("cdsft: " + cdsft);
+//                        }
+//                            if (dsft.getName().equals("geographicCoverage")) {
+//                                JsonObject json
+//                                        = Json.createObjectBuilder()
+//                                                .add("typeName", "geographicCoverage")
+//                                                .add("value", Json.createArrayBuilder()
+//                                                        .add(Json.createObjectBuilder()
+//                                                                .add("city", Json.createObjectBuilder()
+//                                                                        .add("typeName", "city")
+//                                                                        .add("value", "Boston")
+//                                                                )
+//                                                        )).build();
+                        if (dsft.getName().equals(DatasetFieldConstant.geographicBoundingBox)) {
+                            for (DatasetFieldType cdsft : dsft.getChildDatasetFieldTypes()) {
+                                logger.info("cdsft: " + cdsft);
+                                if (cdsft.getName().equals(DatasetFieldConstant.westLongitude)) {
+                                    System.out.println("westLongitude, add the bounding box");
+                                    String westLongitude = (String) fileMetadataMap.get(DatasetFieldConstant.westLongitude).toArray()[0];
+                                    String eastLongitude = (String) fileMetadataMap.get(DatasetFieldConstant.eastLongitude).toArray()[0];
+                                    String northLatitude = (String) fileMetadataMap.get(DatasetFieldConstant.northLatitude).toArray()[0];
+                                    String southLatitude = (String) fileMetadataMap.get(DatasetFieldConstant.southLatitude).toArray()[0];
+                                    JsonObject json
+                                            = Json.createObjectBuilder()
+                                                    .add("typeName", DatasetFieldConstant.geographicBoundingBox)
+                                                    .add("value", Json.createArrayBuilder()
+                                                            .add(Json.createObjectBuilder()
+                                                                    .add(DatasetFieldConstant.westLongitude, Json.createObjectBuilder()
+                                                                            .add("typeName", DatasetFieldConstant.westLongitude)
+                                                                            .add("value", westLongitude)
+                                                                    )
+                                                                    .add(DatasetFieldConstant.eastLongitude, Json.createObjectBuilder()
+                                                                            .add("typeName", DatasetFieldConstant.eastLongitude)
+                                                                            .add("value", eastLongitude)
+                                                                    )
+                                                                    .add(DatasetFieldConstant.northLatitude, Json.createObjectBuilder()
+                                                                            .add("typeName", DatasetFieldConstant.northLatitude)
+                                                                            .add("value", northLatitude)
+                                                                    )
+                                                                    .add(DatasetFieldConstant.southLatitude, Json.createObjectBuilder()
+                                                                            .add("typeName", DatasetFieldConstant.southLatitude)
+                                                                            .add("value", southLatitude)
+                                                                    )
+                                                            )
+                                                            //                                                )
+                                                            //                                                .add("value", Json.createArrayBuilder()
+//                                                            .add(Json.createObjectBuilder()
+//                                                                    .add(DatasetFieldConstant.eastLongitude, Json.createObjectBuilder()
+//                                                                            .add("typeName", DatasetFieldConstant.eastLongitude)
+//                                                                            .add("value", eastLongitude)
+//                                                                    )
+//                                                            )
+//                                                            //                                                )
+//                                                            //                                                .add("value", Json.createArrayBuilder()
+//                                                            .add(Json.createObjectBuilder()
+//                                                                    .add(DatasetFieldConstant.northLatitude, Json.createObjectBuilder()
+//                                                                            .add("typeName", DatasetFieldConstant.northLatitude)
+//                                                                            .add("value", northLatitude)
+//                                                                    )
+//                                                            )
+//                                                            //                                                )
+//                                                            //                                                .add("value", Json.createArrayBuilder()
+//                                                            .add(Json.createObjectBuilder()
+//                                                                    .add(DatasetFieldConstant.southLatitude, Json.createObjectBuilder()
+//                                                                            .add("typeName", DatasetFieldConstant.southLatitude)
+//                                                                            .add("value", southLatitude)
+//                                                                    )
+//                                                            )
+                                                    )
+                                                    .build();
 
-                                        for (DatasetField cdsf : dsfcv.getChildDatasetFields()) {
-                                            String cdsfName = cdsf.getDatasetFieldType().getName();
-                                            String cdsfValue = cdsf.getDatasetFieldValues().get(0).getValue();
-                                            if (cdsfValue != null && !cdsfValue.equals("")) {
-                                                String extractedValue = (String)fileMetadataMap.get(cdsfName).toArray()[0];
-                                                logger.fine("values: existing: "+cdsfValue+", extracted: "+extractedValue);
-                                                if (cdsfValue.equals(extractedValue)) {
-                                                    matches++;
-                                                }
-                                            }
-                                        }
-                                        if (matches == nonEmptyFields) {
-                                            alreadyExists = true; 
-                                            break;
-                                        }
+//                            DatasetVersion dv = new JsonParser(fieldService, blockService, settingsService, licenseService);
+//                            JsonParser jsonParser = new JsonParser(fieldService, metadataBlockService, settingsService, licenseService, harvestingClient);
+                                    JsonParser jsonParser = new JsonParser(fieldService, metadataBlockService, settingsService, licenseService);
+//                            DatasetField fieldToAdd = jsonParser().parseField(json, Boolean.FALSE);
+                                    DatasetField fieldToAdd = null;
+                                    try {
+                                        logger.info("trying to add " + json);
+                                        fieldToAdd = jsonParser.parseField(json, Boolean.FALSE);
+                                    } catch (JsonParseException ex) {
+                                        logger.info("unable to add " + json + ". Exception: " + ex);
                                     }
-                                                                        
-                                    if (!alreadyExists) {
-                                        // save this compound value, by attaching it to the 
-                                        // version for proper cascading:
-                                        compoundDsfv.setParentDatasetField(dsf);
-                                        dsf.getDatasetFieldCompoundValues().add(compoundDsfv);
-                                    }
+                                    editVersion.getDatasetFields().add(fieldToAdd);
+                                } else {
+                                    logger.info("westLongitude was not cdsft.getName(): " + cdsft.getName());
                                 }
                             }
+                        } else {
+                            logger.info("geographicCoverage was not the type: " + dsft.getName());
                         }
+//                            DatasetField ret = new DatasetField();
+//                            DatasetFieldType type = fieldService.findByNameOpt(cdsft.getName());
+//                            ret.setDatasetFieldType(type);
+//                            if (type.isCompound()) {
+//                                List<DatasetFieldCompoundValue> vals = new LinkedList<>();
+//                                DatasetFieldCompoundValue cv = new DatasetFieldCompoundValue();
+//                                List<DatasetField> fields = new LinkedList<>();
+//
+//                                List<DatasetFieldValue> values = parsePrimitiveValue(type, json);
+//                                for (DatasetFieldValue val : values) {
+//                                    val.setDatasetField(ret);
+//                                }
+//                                ret.setDatasetFieldValues(values);
+//
+//
+////                                List<DatasetFieldCompoundValue> vals = parseCompoundValue(type, json, testType);
+//                                for (DatasetFieldCompoundValue dsfcv : vals) {
+//                                    dsfcv.setParentDatasetField(ret);
+//                                }
+//                                ret.setDatasetFieldCompoundValues(vals);
+//
+//                            }
+//
+//                            String dsfName = cdsft.getName();
+//                            if (fileMetadataMap.get(dsfName) != null) {
+//                                String value = (String) fileMetadataMap.get(dsfName).toArray()[0];
+//                                // compound field is [DatasetFieldType name:geographicCoverage id:79] and dsfName is city and child field is [DatasetFieldType name:city id:82] and value to insert is Boston|#]
+//                                logger.info("compound field is " + dsft + " and dsfName is " + dsfName + " and child field is " + cdsft + " and value to insert is " + value);
+//                                DatasetField childField = new DatasetField();
+////                                DatasetFieldType city = new DatasetFieldType();
+////                                city.setdatasetfieldtype(dsfName);
+//                                childField.setDatasetFieldType(cdsft); //city
+////                                childField.setDatasetFieldType(dsft); //change to city
+//                                DatasetFieldValue childValue = new DatasetFieldValue(childField);
+//                                childValue.setValue(value);
+//                                childField.getDatasetFieldValues().add(childValue);
+//                                DatasetFieldCompoundValue parentCompoundValue = new DatasetFieldCompoundValue();
+//                                DatasetField parentDatasetField = new DatasetField();
+//                                parentDatasetField.setDatasetFieldType(dsft);
+//                                parentCompoundValue.setParentDatasetField(parentDatasetField);
+//                                childField.setParentDatasetFieldCompoundValue(parentCompoundValue);
+//                                parentCompoundValue.getChildDatasetFields().add(childField);
+//                                logger.info("was it added? compound field  " + dsft + " and value to insert was " + value);
+//                                
+////                                childField.setParentDatasetFieldType();
+////                                dsft.getChildDatasetFieldTypes().add(childField);
+//                            } 
+//                        }
                     }
-                } 
+                }
+                logger.info("dumping values...");
+                /*
+                key: coverage.Spatial value: (54.0 32.5)
+                key: astroType value: Image
+                key: astroInstrument value: ISSA-FLD
+                key: astroFacility value: IRAS
+                ---
+                key: country value: United States
+                key: city value: Boston
+                */
+                for (Map.Entry<String, Set<String>> entry : fileMetadataMap.entrySet()) {
+                    String key = entry.getKey();
+                    Set<String> val = entry.getValue();
+                    for (String string : val) {
+                        logger.info("key: " + key + " value: " + string);
+                    }
+                }
             }
         }  
     }
