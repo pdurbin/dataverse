@@ -16,6 +16,7 @@ public class NetcdfUtil {
     public static final String EAST_LONGITUDE_KEY = "geospatial_lon_max";
     public static final String NORTH_LATITUDE_KEY = "geospatial_lat_max";
     public static final String SOUTH_LATITUDE_KEY = "geospatial_lat_min";
+    public static final String LONGITUDE_UNITS = "geospatial_lon_units";
 
     public static NetcdfFile getNetcdfFile(File file) throws IOException {
         /**
@@ -73,8 +74,10 @@ public class NetcdfUtil {
         Attribute eastLongitude = netcdfFile.findGlobalAttribute(EAST_LONGITUDE_KEY);
         Attribute northLatitude = netcdfFile.findGlobalAttribute(NORTH_LATITUDE_KEY);
         Attribute southLatitude = netcdfFile.findGlobalAttribute(SOUTH_LATITUDE_KEY);
+        Attribute unitLongitude = netcdfFile.findGlobalAttribute(LONGITUDE_UNITS);
 
-        if (getValue(eastLongitude) > 180 || getValue(westLongitude) > 180) {
+        if (getValue(unitLongitude).matches("(?i)(degree(s)?|decimal_degrees)[\s_-]?(e(ast)?)")) {
+            // According to CT convention "degree(s)_e(ast)" is typically in range 0-360
             double revisedEastLongitude = convertLongitude(getValue(eastLongitude));
             double revisedWestLongitude = convertLongitude(getValue(westLongitude));
         }
