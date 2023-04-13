@@ -16,6 +16,7 @@ public class NetcdfUtil {
     public static final String EAST_LONGITUDE_KEY = "geospatial_lon_max";
     public static final String NORTH_LATITUDE_KEY = "geospatial_lat_max";
     public static final String SOUTH_LATITUDE_KEY = "geospatial_lat_min";
+    public static final String LONGITUDE_UNITS = "geospatial_lon_units";
 
     public static NetcdfFile getNetcdfFile(File file) throws IOException {
         /**
@@ -38,6 +39,31 @@ public class NetcdfUtil {
         return NetcdfFiles.open(file.getAbsolutePath());
     }
 
+    public static double parseDmsToDecimal(String dms) {
+        // Converts Degrees-Minutes-Seconds coordinates to Decimal degrees
+        String[] parts = dms.split("[°'']");
+
+        // Extract the degrees, minutes, and seconds values
+        double degrees = Double.parseDouble(parts[0]);
+        double minutes = Double.parseDouble(parts[1]);
+        double seconds = Double.parseDouble(parts[2]);
+
+        // Calculate decimal degrees
+        double decimalDegrees = degrees + (minutes / 60) + (seconds / 3600);
+
+        // Check the direction (E, W, N, or S) and adjust the sign accordingly
+        if (dms.contains("W") || dms.contains("S")) {
+            decimalDegrees = -decimalDegrees;
+        }
+        return decimalDegrees;
+    }
+
+    public static double convertLongitude(double lon) {
+        // Converts a longitude from the range of 0-360 to -180-180
+        lon = (lon + 180) % 360 - 180;
+        return lon;
+    }
+
     public static Map<String, String> parseGeospatial(NetcdfFile netcdfFile) {
         Map<String, String> geoFields = new HashMap<>();
 
@@ -48,9 +74,20 @@ public class NetcdfUtil {
         Attribute eastLongitude = netcdfFile.findGlobalAttribute(EAST_LONGITUDE_KEY);
         Attribute northLatitude = netcdfFile.findGlobalAttribute(NORTH_LATITUDE_KEY);
         Attribute southLatitude = netcdfFile.findGlobalAttribute(SOUTH_LATITUDE_KEY);
+        Attribute unitLongitude = netcdfFile.findGlobalAttribute(LONGITUDE_UNITS);
 
-        geoFields.put(DatasetFieldConstant.westLongitude, getValue(westLongitude));
-        geoFields.put(DatasetFieldConstant.eastLongitude, getValue(eastLongitude));
+        if (getValue(unitLongitude).matches("(?i)(degree(s)?|decimal_degrees)[\s_-]?(e(ast)?)")) {
+            // According to CT convention "degree(s)_e(ast)" is typically in range 0-360
+            double revisedEastLongitude = convertLongitude(getValue(eastLongitude));
+            double revisedWestLongitude = convertLongitude(getValue(westLongitude));
+        }
+        else {
+            double revisedEastLongitude = getValue(eastLongitude);
+            double revisedWestLongitude = getValue(westLongitude);
+        }
+
+        geoFields.put(DatasetFieldConstant.westLongitude, revisedWestLongitude);
+        geoFields.put(DatasetFieldConstant.eastLongitude, revisedEastLongitude);
         geoFields.put(DatasetFieldConstant.northLatitude, getValue(northLatitude));
         geoFields.put(DatasetFieldConstant.southLatitude, getValue(southLatitude));
 
