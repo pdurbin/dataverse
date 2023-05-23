@@ -191,8 +191,12 @@ public class IngestServiceBean {
 				String[] storageInfo = DataAccess.getDriverIdAndStorageLocation(dataFile.getStorageIdentifier());
 				String driverType = DataAccess.getDriverType(storageInfo[0]);
 				String storageLocation = storageInfo[1];
+                                // upload-redirect=true:  driverType: s3 storageLocation: pdurbin:188454e47c1-e161a3b2dffe
+                                // upload-redirect=false: driverType: tmp storageLocation: 18845522f77-a0d9a2497b53
+                                logger.info("driverType: " + driverType + " storageLocation: " + storageLocation);
 				String tempFileLocation = null;
 				Path tempLocationPath = null;
+                                boolean ncmlExtracted = false;
 				if (driverType.equals("tmp")) {  //"tmp" is the default if no prefix or the "tmp://" driver
 					tempFileLocation = FileUtil.getFilesTempDirectory() + "/" + storageLocation;
 
@@ -205,9 +209,11 @@ public class IngestServiceBean {
 
 					try {
 						logger.fine("Attempting to create a new storageIO object for " + storageLocation);
+						logger.info("Attempting to create a new storageIO object for " + storageLocation);
 						dataAccess = DataAccess.createNewStorageIO(dataFile, storageLocation);
 
 						logger.fine("Successfully created a new storageIO object.");
+						logger.info("Successfully created a new storageIO object.");
 						/*
 						 * This commented-out code demonstrates how to copy bytes from a local
 						 * InputStream (or a readChannel) into the writable byte channel of a Dataverse
@@ -243,7 +249,7 @@ public class IngestServiceBean {
 						logger.fine("Success: permanently saved file " + dataFile.getFileMetadata().getLabel());
 
                                             // TODO: reformat this file to remove the many tabs added in cc08330
-                                            extractMetadataNcml(dataFile, tempLocationPath);
+                                            ncmlExtracted = extractMetadataNcml(dataFile, tempLocationPath);
 
 					} catch (IOException ioex) {
                     logger.warning("Failed to save the file, storage id " + dataFile.getStorageIdentifier() + " (" + ioex.getMessage() + ")");
@@ -332,6 +338,9 @@ public class IngestServiceBean {
 				} catch (IOException e) {
 					logger.warning("Error getting ingest limit for file: " + dataFile.getIdentifier() + " : " + e.getMessage());
 				} 
+//				if (unattached) {
+//					dataFile.setOwner(null);
+//				}
 				if (unattached) {
 					dataFile.setOwner(null);
 				}
@@ -369,7 +378,8 @@ public class IngestServiceBean {
 						} else {
 							logger.fine("Failed to extract indexable metadata from file " + fileName);
 						}
-                                        } else if (fileMetadataExtractableFromNetcdf(dataFile, tempLocationPath)) {
+//                                        } else if (fileMetadataExtractableFromNetcdf(dataFile, tempLocationPath)) {
+                                        } else if (ncmlExtracted) {
                                             try {
                                                 logger.fine("trying to extract metadata from netcdf");
                                                 metadataExtractedFromNetcdf = extractMetadataFromNetcdf(tempFileLocation, dataFile, version);
@@ -387,6 +397,9 @@ public class IngestServiceBean {
                         // "text/tsv" should be used instead: 
                         dataFile.setContentType(FileUtil.MIME_TYPE_TSV);
                     }
+//				if (unattached) {
+//					dataFile.setOwner(null);
+//				}
 				}
 				// ... and let's delete the main temp file if it exists:
 				if(tempLocationPath!=null) {
@@ -1182,56 +1195,62 @@ public class IngestServiceBean {
         return false;
     }
 
-    // Inspired by fileMetadataExtractable, above
-    public boolean fileMetadataExtractableFromNetcdf(DataFile dataFile, Path tempLocationPath) {
-        logger.fine("fileMetadataExtractableFromNetcdf dataFileIn: " + dataFile + ". tempLocationPath: " + tempLocationPath);
-        boolean extractable = false;
-        String dataFileLocation = null;
-        if (tempLocationPath != null) {
-            // This file was just uploaded and hasn't been saved to S3 or local storage.
-            dataFileLocation = tempLocationPath.toString();
-        } else {
-            // This file is already on S3 or local storage.
-            File tempFile = null;
-            File localFile;
-            StorageIO<DataFile> storageIO;
-            try {
-                storageIO = dataFile.getStorageIO();
-                storageIO.open();
-                if (storageIO.isLocalFile()) {
-                    localFile = storageIO.getFileSystemPath().toFile();
-                    dataFileLocation = localFile.getAbsolutePath();
-                    logger.info("fileMetadataExtractable2: file is local. Path: " + dataFileLocation);
-                } else {
-                    // Need to create a temporary local file:
-                    tempFile = File.createTempFile("tempFileExtractMetadataNcml", ".tmp");
-                    try ( ReadableByteChannel targetFileChannel = (ReadableByteChannel) storageIO.getReadChannel();  FileChannel tempFileChannel = new FileOutputStream(tempFile).getChannel();) {
-                        tempFileChannel.transferFrom(targetFileChannel, 0, storageIO.getSize());
-                    }
-                    dataFileLocation = tempFile.getAbsolutePath();
-                    logger.info("fileMetadataExtractable2: file is on S3. Downloaded and saved to temp path: " + dataFileLocation);
-                }
-            } catch (IOException ex) {
-                logger.info("fileMetadataExtractable2, could not use storageIO for data file id " + dataFile.getId() + ". Exception: " + ex);
-            }
-        }
-        if (dataFileLocation != null) {
-            try ( NetcdfFile netcdfFile = NetcdfFiles.open(dataFileLocation)) {
-                logger.info("fileMetadataExtractable2: trying to open " + dataFileLocation);
-                if (netcdfFile != null) {
-                    logger.info("fileMetadataExtractable2: returning true");
-                    extractable = true;
-                } else {
-                    logger.info("NetcdfFiles.open() could not open file id " + dataFile.getId() + " (null returned).");
-                }
-            } catch (IOException ex) {
-                logger.info("NetcdfFiles.open() could not open file id " + dataFile.getId() + ". Exception caught: " + ex);
-            }
-        } else {
-            logger.info("dataFileLocation is null for file id " + dataFile.getId() + ". Can't extract NcML.");
-        }
-        return extractable;
-    }
+//    // Inspired by fileMetadataExtractable, above
+//    public boolean fileMetadataExtractableFromNetcdf(DataFile dataFile, Path tempLocationPath) {
+//        logger.fine("fileMetadataExtractableFromNetcdf dataFileIn: " + dataFile + ". tempLocationPath: " + tempLocationPath);
+//        boolean extractable = false;
+//        String dataFileLocation = null;
+//        if (tempLocationPath != null) {
+//            // This file was just uploaded and hasn't been saved to S3 or local storage.
+//            dataFileLocation = tempLocationPath.toString();
+//        } else {
+//            // This file is already on S3 or local storage.
+//            File tempFile = null;
+//            File localFile;
+//            StorageIO<DataFile> storageIO;
+//            try {
+//                storageIO = dataFile.getStorageIO();
+////                storageIO.open(); // BOOM with S3 direct upload
+//                try {
+//                    storageIO.open();
+//                } catch (Exception ex) {
+//                    logger.info("fileMetadataExtractableFromNetcdf skipped because of exception calling dataFile.getStorageIO(): " + ex);
+//                    return false;
+//                }
+//                if (storageIO.isLocalFile()) {
+//                    localFile = storageIO.getFileSystemPath().toFile();
+//                    dataFileLocation = localFile.getAbsolutePath();
+//                    logger.info("fileMetadataExtractable2: file is local. Path: " + dataFileLocation);
+//                } else {
+//                    // Need to create a temporary local file:
+//                    tempFile = File.createTempFile("tempFileExtractMetadataNcml", ".tmp");
+//                    try ( ReadableByteChannel targetFileChannel = (ReadableByteChannel) storageIO.getReadChannel();  FileChannel tempFileChannel = new FileOutputStream(tempFile).getChannel();) {
+//                        tempFileChannel.transferFrom(targetFileChannel, 0, storageIO.getSize());
+//                    }
+//                    dataFileLocation = tempFile.getAbsolutePath();
+//                    logger.info("fileMetadataExtractable2: file is on S3. Downloaded and saved to temp path: " + dataFileLocation);
+//                }
+//            } catch (IOException ex) {
+//                logger.info("fileMetadataExtractable2, could not use storageIO for data file id " + dataFile.getId() + ". Exception: " + ex);
+//            }
+//        }
+//        if (dataFileLocation != null) {
+//            try ( NetcdfFile netcdfFile = NetcdfFiles.open(dataFileLocation)) {
+//                logger.info("fileMetadataExtractable2: trying to open " + dataFileLocation);
+//                if (netcdfFile != null) {
+//                    logger.info("fileMetadataExtractable2: returning true");
+//                    extractable = true;
+//                } else {
+//                    logger.info("NetcdfFiles.open() could not open file id " + dataFile.getId() + " (null returned).");
+//                }
+//            } catch (IOException ex) {
+//                logger.info("NetcdfFiles.open() could not open file id " + dataFile.getId() + ". Exception caught: " + ex);
+//            }
+//        } else {
+//            logger.info("dataFileLocation is null for file id " + dataFile.getId() + ". Can't extract NcML.");
+//        }
+//        return extractable;
+//    }
 
     /* 
      * extractMetadata: 
@@ -1300,7 +1319,7 @@ public class IngestServiceBean {
      * from S3 to a temporary file location on local disk so that it can
      * (ultimately) be opened by the NetcdfFiles.open() method, which only
      * operates on local files (not an input stream). What we have now is not a
-     * problem for S3 because the files are saved locally before the are
+     * problem for S3 because the files are saved locally before they are
      * uploaded to S3. It's during this time that the files are local that this
      * method is run.
      */
@@ -1324,6 +1343,7 @@ public class IngestServiceBean {
         // it up with the Ingest Service Provider Registry:
         NetcdfFileMetadataExtractor extractorPlugin = new NetcdfFileMetadataExtractor();
         logger.fine("creating file from " + tempFileLocation);
+        logger.info("creating file from " + tempFileLocation);
         File file = new File(tempFileLocation);
         FileMetadataIngest extractedMetadata = extractorPlugin.ingestFile(file);
         Map<String, Set<String>> extractedMetadataMap = extractedMetadata.getMetadataMap();
@@ -1351,9 +1371,11 @@ public class IngestServiceBean {
      * NcML file already exists.
      */
     public boolean extractMetadataNcml(DataFile dataFile, Path tempLocationPath) {
+        logger.info("extractMetadataNcml called with datafile " + dataFile + " and tempLocationPath " + tempLocationPath);
         String contentType = dataFile.getContentType();
         if (!("application/netcdf".equals(contentType) || "application/x-hdf5".equals(contentType))) {
             logger.fine("Returning early from extractMetadataNcml because content type is " + contentType + " rather than application/netcdf or application/x-hdf5");
+            logger.info("Returning early from extractMetadataNcml because content type is " + contentType + " rather than application/netcdf or application/x-hdf5");
             return false;
         }
         boolean ncmlFileCreated = false;
@@ -1361,14 +1383,17 @@ public class IngestServiceBean {
         InputStream inputStream = null;
         String dataFileLocation = null;
         if (tempLocationPath != null) {
+            logger.info("tempLocationPath != null");
             // This file was just uploaded and hasn't been saved to S3 or local storage.
             dataFileLocation = tempLocationPath.toString();
         } else {
+            logger.info("tempLocationPath == null");
             dataFileLocation = getExistingFile(dataFile, dataFileLocation);
         }
         if (dataFileLocation != null) {
             try ( NetcdfFile netcdfFile = NetcdfFiles.open(dataFileLocation)) {
                 logger.fine("trying to open " + dataFileLocation);
+                logger.info("trying to open " + dataFileLocation);
                 if (netcdfFile != null) {
                     ncmlFileCreated = isNcmlFileCreated(netcdfFile, tempLocationPath, dataFile, ncmlFileCreated);
                 } else {
@@ -1425,6 +1450,7 @@ public class IngestServiceBean {
     }
 
     private String getExistingFile(DataFile dataFile, String dataFileLocation) {
+        logger.info("called getExistingFile on dataFile " + dataFile + " and dataFileLocation " + dataFileLocation);
         // This file is already on S3 or local storage.
         File tempFile = null;
         File localFile;
@@ -1436,6 +1462,7 @@ public class IngestServiceBean {
                 localFile = storageIO.getFileSystemPath().toFile();
                 dataFileLocation = localFile.getAbsolutePath();
                 logger.fine("extractMetadataNcml: file is local. Path: " + dataFileLocation);
+                logger.info("extractMetadataNcml: file is local. Path: " + dataFileLocation);
             } else {
                 // Need to create a temporary local file:
                 tempFile = File.createTempFile("tempFileExtractMetadataNcml", ".tmp");
@@ -1444,6 +1471,7 @@ public class IngestServiceBean {
                 }
                 dataFileLocation = tempFile.getAbsolutePath();
                 logger.fine("extractMetadataNcml: file is on S3. Downloaded and saved to temp path: " + dataFileLocation);
+                logger.info("extractMetadataNcml: file is on S3. Downloaded and saved to temp path: " + dataFileLocation);
             }
         } catch (IOException ex) {
             logger.info("While attempting to extract NcML, could not use storageIO for data file id " + dataFile.getId() + ". Exception: " + ex);

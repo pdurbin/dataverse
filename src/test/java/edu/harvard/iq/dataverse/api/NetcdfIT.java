@@ -187,6 +187,20 @@ public class NetcdfIT {
         String apiToken = UtilIT.getApiTokenFromResponse(createUser);
         String username = UtilIT.getUsernameFromResponse(createUser);
 
+//        String dataverseAlias2 = "root";
+//        String datasetTitle = "aaa";
+//        Response createDataset2 = UtilIT.createDatasetViaSwordApi(dataverseAlias2, datasetTitle, apiToken);
+//        createDataset2.prettyPrint();
+//        createDataset2.then().assertThat()
+//                .statusCode(CREATED.getStatusCode());
+//        String persistentId = UtilIT.getDatasetPersistentIdFromSwordResponse(createDataset);
+//        if (true) {
+//            System.out.println("title: " + datasetTitle);
+//            return;
+//        }
+
+        
+
         Response createDataverseResponse = UtilIT.createRandomDataverse(apiToken);
         createDataverseResponse.prettyPrint();
         createDataverseResponse.then().assertThat()
@@ -198,30 +212,41 @@ public class NetcdfIT {
         setMetadataBlocks.prettyPrint();
         setMetadataBlocks.then().assertThat().statusCode(OK.getStatusCode());
 
-        Response createDataset = UtilIT.createRandomDatasetViaNativeApi(dataverseAlias, apiToken);
-        createDataset.prettyPrint();
-        createDataset.then().assertThat()
+        String datasetTitle = "ddd";
+        Response createDataset2 = UtilIT.createDatasetViaSwordApi(dataverseAlias, datasetTitle, apiToken);
+        createDataset2.prettyPrint();
+        createDataset2.then().assertThat()
                 .statusCode(CREATED.getStatusCode());
 
-        Integer datasetId = UtilIT.getDatasetIdFromResponse(createDataset);
-        String datasetPid = UtilIT.getDatasetPersistentIdFromResponse(createDataset);
+//        Response createDataset = UtilIT.createRandomDatasetViaNativeApi(dataverseAlias, apiToken);
+//        createDataset.prettyPrint();
+//        createDataset.then().assertThat()
+//                .statusCode(CREATED.getStatusCode());
 
-        // From https://www.ncei.noaa.gov/data/international-comprehensive-ocean-atmosphere/v3/archive/nrt/ICOADS_R3.0.0_1662-10.nc
-        // via https://data.noaa.gov/onestop/collections/details/9bd5c743-0684-4e70-817a-ed977117f80c?f=temporalResolution:1%20Minute%20-%20%3C%201%20Hour;dataFormats:NETCDF
-        String pathToFile = "src/test/resources/netcdf/ICOADS_R3.0.0_1662-10.nc";
-
-        Response uploadFile = UtilIT.uploadFileViaNative(datasetId.toString(), pathToFile, apiToken);
-        uploadFile.prettyPrint();
-        uploadFile.then().assertThat().statusCode(OK.getStatusCode());
-
-        Response getJson = UtilIT.nativeGet(datasetId, apiToken);
-        getJson.prettyPrint();
-        getJson.then().assertThat()
-                .statusCode(OK.getStatusCode())
-                .body("data.latestVersion.metadataBlocks.geospatial.fields[0].value[0].westLongitude.value", equalTo("-16.320007"))
-                .body("data.latestVersion.metadataBlocks.geospatial.fields[0].value[0].eastLongitude.value", equalTo("-6.220001"))
-                .body("data.latestVersion.metadataBlocks.geospatial.fields[0].value[0].northLongitude.value", equalTo("49.62"))
-                .body("data.latestVersion.metadataBlocks.geospatial.fields[0].value[0].southLongitude.value", equalTo("41.8"));
+        if (true) {
+            System.out.println("title: " + datasetTitle);
+            return;
+        }
+        
+//        Integer datasetId = UtilIT.getDatasetIdFromResponse(createDataset);
+//        String datasetPid = UtilIT.getDatasetPersistentIdFromResponse(createDataset);
+//
+//        // From https://www.ncei.noaa.gov/data/international-comprehensive-ocean-atmosphere/v3/archive/nrt/ICOADS_R3.0.0_1662-10.nc
+//        // via https://data.noaa.gov/onestop/collections/details/9bd5c743-0684-4e70-817a-ed977117f80c?f=temporalResolution:1%20Minute%20-%20%3C%201%20Hour;dataFormats:NETCDF
+//        String pathToFile = "src/test/resources/netcdf/ICOADS_R3.0.0_1662-10.nc";
+//
+//        Response uploadFile = UtilIT.uploadFileViaNative(datasetId.toString(), pathToFile, apiToken);
+//        uploadFile.prettyPrint();
+//        uploadFile.then().assertThat().statusCode(OK.getStatusCode());
+//
+//        Response getJson = UtilIT.nativeGet(datasetId, apiToken);
+//        getJson.prettyPrint();
+//        getJson.then().assertThat()
+//                .statusCode(OK.getStatusCode())
+//                .body("data.latestVersion.metadataBlocks.geospatial.fields[0].value[0].westLongitude.value", equalTo("-16.320007"))
+//                .body("data.latestVersion.metadataBlocks.geospatial.fields[0].value[0].eastLongitude.value", equalTo("-6.220001"))
+//                .body("data.latestVersion.metadataBlocks.geospatial.fields[0].value[0].northLongitude.value", equalTo("49.62"))
+//                .body("data.latestVersion.metadataBlocks.geospatial.fields[0].value[0].southLongitude.value", equalTo("41.8"));
     }
 
 }

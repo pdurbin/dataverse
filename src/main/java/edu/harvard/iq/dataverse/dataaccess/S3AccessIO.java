@@ -815,7 +815,7 @@ public class S3AccessIO<T extends DvObject> extends StorageIO<T> {
         if (key == null) {
             DataFile df = this.getDataFile();
             // TODO: (?) - should we worry here about the datafile having null for the owner here? 
-            key = getMainFileKey(df.getOwner(), df.getStorageIdentifier(), driverId);
+            key = getMainFileKey(df.getOwner(), df.getStorageIdentifier(), driverId); //df.getOwner() is null during S3 direct upload
         }
         return key;
     }
