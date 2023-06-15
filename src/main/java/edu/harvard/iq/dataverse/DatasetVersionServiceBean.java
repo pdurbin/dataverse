@@ -2,6 +2,7 @@ package edu.harvard.iq.dataverse;
 
 import edu.harvard.iq.dataverse.DatasetVersion.VersionState;
 import edu.harvard.iq.dataverse.ingest.IngestUtil;
+import edu.harvard.iq.dataverse.pidproviders.PidUtil;
 import edu.harvard.iq.dataverse.search.IndexServiceBean;
 import edu.harvard.iq.dataverse.authorization.AuthenticationServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
@@ -559,7 +560,7 @@ public class DatasetVersionServiceBean implements java.io.Serializable {
         */
         GlobalId parsedId;
         try{
-            parsedId = new GlobalId(persistentId);   // [ protocol, authority, identifier]
+            parsedId = PidUtil.parseAsGlobalID(persistentId);   // [ protocol, authority, identifier]
         } catch (IllegalArgumentException e){
             logger.log(Level.WARNING, "Failed to parse persistentID: {0}", persistentId);
             return null;
@@ -892,7 +893,7 @@ public class DatasetVersionServiceBean implements java.io.Serializable {
         if (searchResult.length == 5) {
             Dataset datasetEntity = new Dataset();
             String globalIdentifier = solrSearchResult.getIdentifier();
-            GlobalId globalId = new GlobalId(globalIdentifier);
+            GlobalId globalId = PidUtil.parseAsGlobalID(globalIdentifier);
 
             datasetEntity.setProtocol(globalId.getProtocol());
             datasetEntity.setAuthority(globalId.getAuthority());
@@ -1117,13 +1118,7 @@ w
 
         // reindexing the dataset, to make sure the new UNF is in SOLR:
         boolean doNormalSolrDocCleanUp = true;
-        try {
-            Future<String> indexingResult = indexService.indexDataset(datasetVersion.getDataset(), doNormalSolrDocCleanUp);
-        } catch (IOException | SolrServerException e) {    
-            String failureLogText = "Post UNF update indexing failed. You can kickoff a re-index of this dataset with: \r\n curl http://localhost:8080/api/admin/index/datasets/" + datasetVersion.getDataset().getId().toString();
-            failureLogText += "\r\n" + e.getLocalizedMessage();
-            LoggingUtil.writeOnSuccessFailureLog(null, failureLogText,  datasetVersion.getDataset());
-        }
+        indexService.asyncIndexDataset(datasetVersion.getDataset(), doNormalSolrDocCleanUp);
         return info;
     }
     
