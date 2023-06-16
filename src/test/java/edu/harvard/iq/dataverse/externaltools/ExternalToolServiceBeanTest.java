@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.json.Json;
 import javax.json.JsonObjectBuilder;
+import javax.ws.rs.HttpMethod;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -549,6 +550,38 @@ public class ExternalToolServiceBeanTest {
         return ExternalToolServiceBean.parseAddExternalToolManifest(tool);
     }
 
+    protected static ExternalTool getAllowedApiCallsTool(String httpMethod) {
+        JsonObjectBuilder job = Json.createObjectBuilder();
+        job.add("displayName", "AwesomeTool");
+        job.add("toolName", "explorer");
+        job.add("description", "This tool is awesome.");
+        job.add("types", Json.createArrayBuilder().add("explore"));
+        job.add("scope", "dataset");
+        job.add("toolUrl", "http://awesometool.com");
+        job.add("hasPreviewMode", "true");
+
+        job.add("toolParameters", Json.createObjectBuilder()
+                .add("httpMethod", "GET")
+                .add("queryParameters",
+                        Json.createArrayBuilder()
+                    .add(Json.createObjectBuilder()
+                        .add("datasetId", "{datasetId}")
+                    )
+                )
+            ).add("allowedApiCalls", Json.createArrayBuilder()
+                .add(Json.createObjectBuilder()
+                .add("name", "getDataset")
+                .add("httpMethod", httpMethod)
+                .add("urlTemplate", "/api/v1/datasets/{datasetId}")
+                .add("timeOut", 10))
+            );
+        String tool = job.build().toString();
+        System.out.println("tool: " + tool);
+
+        return ExternalToolServiceBean.parseAddExternalToolManifest(tool);
+    }
+
+    
     @Test
     public void testParseAddFileToolRequireAuxFile() {
         JsonObjectBuilder job = Json.createObjectBuilder();
