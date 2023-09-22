@@ -458,6 +458,7 @@
                                                             <!-- Configure tool links -->
                                                             <ui:repeat var="tool" value="#{DatasetPage.datasetConfigureTools}">
                                                                 <li>
+                                                                    <!--here-->
                                                                     <h:commandLink styleClass="btn-explore" action="#{DatasetPage.explore(tool)}">
                                                                         <h:outputText value="#{tool.getDisplayNameLang()}"/>
                                                                     </h:commandLink>
