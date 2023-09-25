@@ -458,9 +458,12 @@
                                                             <!-- Configure tool links -->
                                                             <ui:repeat var="tool" value="#{DatasetPage.datasetConfigureTools}">
                                                                 <li>
-                                                                    <h:commandLink styleClass="btn-explore" action="#{DatasetPage.explore(tool)}">
+                                                                    <!--hereherehere-->
+                                                                    <!-- https://stackoverflow.com/questions/8839224/pass-parameter-to-dialog-in-the-same-page -->
+                                                                    <!-- https://stackoverflow.com/questions/8634156/how-to-find-out-client-id-of-component-for-ajax-update-render-cannot-find-compo -->
+                                                                    <p:commandLink styleClass="btn-explore" actionListener="#{DatasetPage.setDatasetConfigureTool(tool)}" update=":configureToolDialog" oncomplete="PF('configureToolDialog').show();">
                                                                         <h:outputText value="#{tool.getDisplayNameLang()}"/>
-                                                                    </h:commandLink>
+                                                                    </p:commandLink>
                                                                 </li>
                                                             </ui:repeat>
                                                         </ui:fragment>
@@ -1000,6 +1003,24 @@
                                 #{bundle.close}
                             </button>
                         </div>
+                    </p:dialog>
+                    <p:dialog id="configureToolDialog" styleClass="smallPopUp" header="#{DatasetPage.datasetConfigureTool.displayNameLang}" widgetVar="configureToolDialog" modal="true">
+                        <!--fixme: empty! why?-->
+                        <div>
+                            <!--jakarta.el.ELException: /dataset.xhtml: The class 'edu.harvard.iq.dataverse.DatasetPage' does not have the property 'getDatasetConfigureTool'.-->
+                            <!-- https://stackoverflow.com/questions/12061568/javax-el-propertynotfoundexception-the-class-doesnt-have-property -->
+                            <!-- https://stackoverflow.com/questions/7950628/javax-el-elexception-could-not-find-property-actionmethod-in-class-com-example -->
+                            thedesc no get: 
+                            #{DatasetPage.datasetConfigureTool}
+                            #{DatasetPage.datasetConfigureTool.description}
+                            thedesc get: 
+                            <!--# {DatasetPage.getDatasetConfigureTool}-->
+                            <!--# {DatasetPage.getDatasetConfigureTool.getDescription}-->
+                        </div>
+                        <p class="help-block">
+                            <h:outputFormat value="#{DatasetPage.datasetConfigureTool.description}" escape="false"/>
+                            <p:commandLink styleClass="btn-explore" action="#{DatasetPage.explore(DatasetPage.datasetConfigureTool)}" oncomplete="PF('configureToolDialog').show();"/>
+                        </p>
                     </p:dialog>
                     <p:dialog id="citationsDialog" styleClass="smallPopUp" header="#{bundle['metrics.citations.dialog.header']}" widgetVar="citationsDialog" modal="true">
                         <p class="help-block">
