@@ -947,38 +947,12 @@ public class Files extends AbstractApiBean {
     @GET
     @AuthRequired
     @Path("{id}/versions/{dsVersionString}/citation")
-    public Response getFileCitationByVersion(@Context ContainerRequestContext crc, @PathParam("id") String fileIdOrPersistentId, @PathParam("dsVersionString") String dsVersionString) {
+    public Response getFileCitationByVersion(@Context ContainerRequestContext crc, @PathParam("id") String fileIdOrPersistentId, @PathParam("dsVersionString") String dsVersionString, UriInfo uriInfo, HttpHeaders headers) {
         try {
             DataverseRequest req = createDataverseRequest(getRequestUser(crc));
             final DataFile df = execCommand(new GetDataFileCommand(req, findDataFileOrDie(fileIdOrPersistentId)));
             Dataset ds = df.getOwner();
-            // Adapted from getDatasetVersionOrDie
-            DatasetVersion dsv = execCommand(handleVersion(dsVersionString, new Datasets.DsVersionHandler<Command<DatasetVersion>>() {
-
-                boolean includeDeaccessioned = true;
-                boolean checkPermsWhenDeaccessioned = true;
-
-                @Override
-                public Command<DatasetVersion> handleLatest() {
-                    return new GetLatestAccessibleDatasetVersionCommand(req, ds);
-                }
-
-                @Override
-                public Command<DatasetVersion> handleDraft() {
-                    return new GetDraftDatasetVersionCommand(req, ds);
-                }
-
-                @Override
-                public Command<DatasetVersion> handleSpecific(long major, long minor) {
-                    return new GetSpecificPublishedDatasetVersionCommand(req, ds, major, minor, includeDeaccessioned, checkPermsWhenDeaccessioned);
-                }
-
-                @Override
-                public Command<DatasetVersion> handleLatestPublished() {
-                    return new GetLatestPublishedDatasetVersionCommand(req, ds);
-                }
-            }));
-
+            DatasetVersion dsv = findDatasetVersionOrDie(req, dsVersionString, ds, uriInfo, headers, true, true);
             if (dsv == null) {
                 return unauthorized("Dataset version cannot be found or unauthorized.");
             }
