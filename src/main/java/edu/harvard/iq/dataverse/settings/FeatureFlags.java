@@ -37,8 +37,8 @@ public enum FeatureFlags {
      */
     API_BEARER_AUTH("api-bearer-auth"),
     /**
-     * Enables For Guest users, don't use a join when searching Solr. Disables
-     * IP Groups feature from a search perspective. Requires a reindex.
+     * For Guest users, don't use a join when searching Solr. Disables the IP
+     * Groups feature from a search perspective. Requires a reindex.
      *
      * @apiNote Raise flag by setting
      * "dataverse.feature.avoid-expensive-solr-join"

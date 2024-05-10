@@ -1008,6 +1008,11 @@ public class SearchServiceBean {
         // ----------------------------------------------------
         if (user instanceof GuestUser) {
             if (FeatureFlags.AVOID_EXPENSIVE_SOLR_JOIN.enabled()) {
+                /**
+                 * Instead of doing an expensive join, narrow down to only
+                 * public objects. This field is indexed on the content document
+                 * itself, rather than a permission document.
+                 */
                 return SearchFields.PUBLIC_OBJECT + ":" + true;
             }
             String groupsFromProviders = "";
