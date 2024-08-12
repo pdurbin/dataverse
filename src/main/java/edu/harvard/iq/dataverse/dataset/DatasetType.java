@@ -28,6 +28,7 @@ import java.io.Serializable;
 public class DatasetType implements Serializable {
 
     public static final String DEFAULT_DATASET_TYPE = "dataset";
+    public static final String DATASET_TYPE_SOFTWARE = "software";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

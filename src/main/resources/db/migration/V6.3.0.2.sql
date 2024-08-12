@@ -2,8 +2,8 @@
 --
 -- Insert some types (dataset is the default).
 INSERT INTO datasettype (name) VALUES ('dataset');
-INSERT INTO datasettype (name) VALUES ('software');
-INSERT INTO datasettype (name) VALUES ('workflow');
+--INSERT INTO datasettype (name) VALUES ('software');
+--INSERT INTO datasettype (name) VALUES ('workflow');
 --
 -- Add the new column (if it doesn't exist).
 ALTER TABLE dataset ADD COLUMN IF NOT EXISTS datasettype_id bigint;
