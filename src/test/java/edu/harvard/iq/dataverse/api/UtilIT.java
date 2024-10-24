@@ -715,11 +715,18 @@ public class UtilIT {
     }
 
     static Response listMetadataBlocks(String dataverseAlias, boolean onlyDisplayedOnCreate, boolean returnDatasetFieldTypes, String apiToken) {
-        return given()
+        return listMetadataBlocks(dataverseAlias, onlyDisplayedOnCreate, returnDatasetFieldTypes, null, apiToken);
+    }
+
+    static Response listMetadataBlocks(String dataverseAlias, boolean onlyDisplayedOnCreate, boolean returnDatasetFieldTypes, String datasetType, String apiToken) {
+        RequestSpecification requestSpecification = given()
                 .header(API_TOKEN_HTTP_HEADER, apiToken)
                 .queryParam("onlyDisplayedOnCreate", onlyDisplayedOnCreate)
-                .queryParam("returnDatasetFieldTypes", returnDatasetFieldTypes)
-                .get("/api/dataverses/" + dataverseAlias + "/metadatablocks");
+                .queryParam("returnDatasetFieldTypes", returnDatasetFieldTypes);
+        if (datasetType != null) {
+            requestSpecification.queryParam("datasetType", datasetType);
+        }
+        return requestSpecification.get("/api/dataverses/" + dataverseAlias + "/metadatablocks");
     }
 
     static Response listMetadataBlocks(boolean onlyDisplayedOnCreate, boolean returnDatasetFieldTypes) {
@@ -4215,11 +4222,11 @@ public class UtilIT {
                 .delete("/api/datasets/datasetTypes/" + doomed);
     }
 
-//    static Response listDatasetTypeMetadataBlockAssociations(String apiToken) {
-//        return given()
-//                .header(API_TOKEN_HTTP_HEADER, apiToken)
-//                .post("/api/datasets/datasetTypes/mdb");
-//    }
+    static Response listDatasetTypeMetadataBlockAssociations(String apiToken) {
+        return given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken)
+                .post("/api/datasets/datasetTypes/mdb");
+    }
 //
 //    static Response addDatasetTypeMetadataBlockAssociation(String jsonIn, String apiToken) {
 //        return given()

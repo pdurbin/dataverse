@@ -3,6 +3,7 @@ package edu.harvard.iq.dataverse.engine.command.impl;
 import edu.harvard.iq.dataverse.Dataverse;
 import edu.harvard.iq.dataverse.MetadataBlock;
 import edu.harvard.iq.dataverse.authorization.Permission;
+import edu.harvard.iq.dataverse.dataset.DatasetType;
 import edu.harvard.iq.dataverse.engine.command.AbstractCommand;
 import edu.harvard.iq.dataverse.engine.command.CommandContext;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
@@ -12,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Lists the metadata blocks of a {@link Dataverse}.
@@ -23,11 +25,13 @@ public class ListMetadataBlocksCommand extends AbstractCommand<List<MetadataBloc
 
     private final Dataverse dataverse;
     private final boolean onlyDisplayedOnCreate;
+    private final DatasetType datasetType;
 
-    public ListMetadataBlocksCommand(DataverseRequest request, Dataverse dataverse, boolean onlyDisplayedOnCreate) {
+    public ListMetadataBlocksCommand(DataverseRequest request, Dataverse dataverse, boolean onlyDisplayedOnCreate, DatasetType datasetType) {
         super(request, dataverse);
         this.dataverse = dataverse;
         this.onlyDisplayedOnCreate = onlyDisplayedOnCreate;
+        this.datasetType = datasetType;
     }
 
     @Override
@@ -42,7 +46,22 @@ public class ListMetadataBlocksCommand extends AbstractCommand<List<MetadataBloc
         if (dataverse.isMetadataBlockRoot() || dataverse.getOwner() == null) {
             return ctxt.metadataBlocks().listMetadataBlocksDisplayedOnCreate(dataverse);
         }
-        return listMetadataBlocksDisplayedOnCreate(ctxt, dataverse.getOwner());
+//        return listMetadataBlocksDisplayedOnCreate(ctxt, dataverse.getOwner());
+        List<MetadataBlock> metadataBlocks = listMetadataBlocksDisplayedOnCreate(ctxt, dataverse.getOwner());
+        if (datasetType == null) {
+            System.out.println("no dataset type, returning normal list");
+            return metadataBlocks;
+        } else {
+            // Add the metadata blocks based on the dataset type
+            System.out.println("yes dataset type, returning extra");
+            List<MetadataBlock> extra = datasetType.getMetadataBlocks();
+            System.out.println("size of extra: " + extra.size());
+            for (MetadataBlock metadataBlock : extra) {
+                System.out.println("name: " + metadataBlock.getDisplayName());
+            }
+            return Stream.concat(metadataBlocks.stream(), extra.stream()).toList();
+        }
+        
     }
 
     @Override

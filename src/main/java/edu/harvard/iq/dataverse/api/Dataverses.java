@@ -18,6 +18,7 @@ import edu.harvard.iq.dataverse.authorization.groups.impl.explicit.ExplicitGroup
 import edu.harvard.iq.dataverse.authorization.groups.impl.explicit.ExplicitGroupServiceBean;
 import edu.harvard.iq.dataverse.authorization.users.AuthenticatedUser;
 import edu.harvard.iq.dataverse.authorization.users.User;
+import edu.harvard.iq.dataverse.dataset.DatasetType;
 import edu.harvard.iq.dataverse.dataverse.DataverseUtil;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.engine.command.impl.*;
@@ -761,14 +762,18 @@ public class Dataverses extends AbstractApiBean {
     public Response listMetadataBlocks(@Context ContainerRequestContext crc,
                                        @PathParam("identifier") String dvIdtf,
                                        @QueryParam("onlyDisplayedOnCreate") boolean onlyDisplayedOnCreate,
-                                       @QueryParam("returnDatasetFieldTypes") boolean returnDatasetFieldTypes) {
+                                       @QueryParam("returnDatasetFieldTypes") boolean returnDatasetFieldTypes,
+                                       @QueryParam("datasetType") String datasetTypeIn) {
+        logger.info("dataset type passed in : " + datasetTypeIn);
+        DatasetType datasetType = datasetTypeSvc.getByName(datasetTypeIn);
         try {
             Dataverse dataverse = findDataverseOrDie(dvIdtf);
             final List<MetadataBlock> metadataBlocks = execCommand(
                     new ListMetadataBlocksCommand(
                             createDataverseRequest(getRequestUser(crc)),
                             dataverse,
-                            onlyDisplayedOnCreate
+                            onlyDisplayedOnCreate,
+                            datasetType
                     )
             );
             return ok(json(metadataBlocks, returnDatasetFieldTypes, onlyDisplayedOnCreate, dataverse));

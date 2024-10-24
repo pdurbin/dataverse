@@ -34,7 +34,8 @@ import jakarta.persistence.Transient;
 		, @Index(columnList="owner_id")})
 @NamedQueries({
     @NamedQuery( name="MetadataBlock.listAll", query = "SELECT mdb FROM MetadataBlock mdb"),
-    @NamedQuery( name="MetadataBlock.findByName", query = "SELECT mdb FROM MetadataBlock mdb WHERE mdb.name=:name")
+    @NamedQuery( name="MetadataBlock.findByName", query = "SELECT mdb FROM MetadataBlock mdb WHERE mdb.name=:name"),
+    @NamedQuery( name="MetadataBlock.findByDatasetType", query = "SELECT mdb FROM MetadataBlock mdb WHERE mdb.name=:name")
 })
 @Entity
 public class MetadataBlock implements Serializable, Comparable {

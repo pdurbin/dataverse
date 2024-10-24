@@ -1,5 +1,6 @@
 package edu.harvard.iq.dataverse;
 
+import edu.harvard.iq.dataverse.dataset.DatasetType;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
@@ -35,6 +36,14 @@ public class MetadataBlockServiceBean {
         return em.createNamedQuery("MetadataBlock.listAll", MetadataBlock.class).getResultList();
     }
 
+    public List<MetadataBlock> listMetadataBlocksAssociatedWithDatasetTypes() {
+        return em.createNamedQuery("MetadataBlock.listAll", MetadataBlock.class).getResultList();
+    }
+
+    public List<MetadataBlock> listMetadataBlocksAssociatedWithDatasetType(DatasetType datasetType) {
+        return em.createNamedQuery("MetadataBlock.listAll", MetadataBlock.class).getResultList();
+    }
+
     public MetadataBlock findById(Long id) {
         return em.find(MetadataBlock.class, id);
     }
@@ -50,6 +59,7 @@ public class MetadataBlockServiceBean {
     }
 
     public List<MetadataBlock> listMetadataBlocksDisplayedOnCreate(Dataverse ownerDataverse) {
+        // TODO return based on dataset type
         CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
         CriteriaQuery<MetadataBlock> criteriaQuery = criteriaBuilder.createQuery(MetadataBlock.class);
         Root<MetadataBlock> metadataBlockRoot = criteriaQuery.from(MetadataBlock.class);

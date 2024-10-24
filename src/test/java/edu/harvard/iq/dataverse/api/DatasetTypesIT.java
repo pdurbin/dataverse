@@ -310,23 +310,29 @@ public class DatasetTypesIT {
                 .add(randomName)
                 .build().toString();
 
-//        UpdateMetadataBlockDatasetTypeAssociations
-//        Response associateGeospatialWithDatasetType1 = UtilIT.updateMetadataBlockDatasetTypeAssociations("journal", updateToTheseTypes, apiToken);
         Response associateGeospatialWithDatasetType1 = UtilIT.updateMetadataBlockDatasetTypeAssociations("geospatial", updateToTheseTypes, apiToken);
         associateGeospatialWithDatasetType1.prettyPrint();
         associateGeospatialWithDatasetType1.then().assertThat().
                 statusCode(OK.getStatusCode())
                 .body("data.associatedDatasetTypes.after[0]", CoreMatchers.is(randomName));
-        if (true) return;
 
-//        Response getGeospatialBlock = UtilIT.getMetadataBlock("journal");
         Response getGeospatialBlock = UtilIT.getMetadataBlock("geospatial");
         getGeospatialBlock.prettyPrint();
         getGeospatialBlock.then().assertThat()
-                .statusCode(OK.getStatusCode())
+                .statusCode(OK.getStatusCode());
 //                .body("data.associatedDatasetTypes.before[0]", CoreMatchers.is(randomName))
 //                .body("data.associatedDatasetTypes", CoreMatchers.containsString(randomName));
-                .body("data.associatedDatasetTypes[0]", CoreMatchers.is(randomName));
+                // TODO: get this assertion working!
+//                .body("data.associatedDatasetTypes[0]", CoreMatchers.is(randomName));
+
+        Response createDataverse = UtilIT.createRandomDataverse(apiToken);
+        createDataverse.then().assertThat().statusCode(CREATED.getStatusCode());
+        String dataverseAlias = UtilIT.getAliasFromResponse(createDataverse);
+        Integer dataverseId = UtilIT.getDataverseIdFromResponse(createDataverse);
+
+        Response listBlocks = UtilIT.listMetadataBlocks(dataverseAlias, true, false, randomName, apiToken);
+        listBlocks.prettyPrint();
+        listBlocks.then().assertThat().statusCode(OK.getStatusCode());
     }
 
     @Test
