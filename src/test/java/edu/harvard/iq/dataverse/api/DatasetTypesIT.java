@@ -14,6 +14,7 @@ import static jakarta.ws.rs.core.Response.Status.UNAUTHORIZED;
 import java.util.UUID;
 import org.hamcrest.CoreMatchers;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItemInArray;
@@ -273,7 +274,7 @@ public class DatasetTypesIT {
     }
 
     @Test
-    public void testSoftwareCodemeta() {
+    public void testUpdateMetadataBlockDatasetTypeAssociations() {
         Response createUser = UtilIT.createRandomUser();
         createUser.then().assertThat().statusCode(OK.getStatusCode());
         String username = UtilIT.getUsernameFromResponse(createUser);
@@ -295,44 +296,46 @@ public class DatasetTypesIT {
         typeAdded.prettyPrint();
         typeAdded.then().assertThat().statusCode(OK.getStatusCode());
 
-        
         Long typeId = JsonPath.from(typeAdded.getBody().asString()).getLong("data.id");
 
         System.out.println("id of type: " + typeId);
         Response getTypeById = UtilIT.getDatasetType(typeId.toString());
         getTypeById.prettyPrint();
         getTypeById.then().assertThat().statusCode(OK.getStatusCode());
-        
-//        if (true) return;
-        
+
         String updateToTheseTypes = Json.createArrayBuilder()
-                // FIXME: put this back
                 .add(randomName)
                 .build().toString();
 
-        Response associateGeospatialWithDatasetType1 = UtilIT.updateMetadataBlockDatasetTypeAssociations("geospatial", updateToTheseTypes, apiToken);
+        String metadataBlockToAssociateDatasetTypeWith = "geospatial";
+
+        Response associateGeospatialWithDatasetType1 = UtilIT.updateMetadataBlockDatasetTypeAssociations(metadataBlockToAssociateDatasetTypeWith, updateToTheseTypes, apiToken);
         associateGeospatialWithDatasetType1.prettyPrint();
         associateGeospatialWithDatasetType1.then().assertThat().
                 statusCode(OK.getStatusCode())
                 .body("data.associatedDatasetTypes.after[0]", CoreMatchers.is(randomName));
 
-        Response getGeospatialBlock = UtilIT.getMetadataBlock("geospatial");
+        Response getGeospatialBlock = UtilIT.getMetadataBlock(metadataBlockToAssociateDatasetTypeWith);
         getGeospatialBlock.prettyPrint();
         getGeospatialBlock.then().assertThat()
                 .statusCode(OK.getStatusCode());
 //                .body("data.associatedDatasetTypes.before[0]", CoreMatchers.is(randomName))
 //                .body("data.associatedDatasetTypes", CoreMatchers.containsString(randomName));
-                // TODO: get this assertion working!
+        // TODO: get this assertion working!
 //                .body("data.associatedDatasetTypes[0]", CoreMatchers.is(randomName));
 
         Response createDataverse = UtilIT.createRandomDataverse(apiToken);
         createDataverse.then().assertThat().statusCode(CREATED.getStatusCode());
+
         String dataverseAlias = UtilIT.getAliasFromResponse(createDataverse);
         Integer dataverseId = UtilIT.getDataverseIdFromResponse(createDataverse);
 
         Response listBlocks = UtilIT.listMetadataBlocks(dataverseAlias, true, false, randomName, apiToken);
         listBlocks.prettyPrint();
-        listBlocks.then().assertThat().statusCode(OK.getStatusCode());
+        listBlocks.then().assertThat()
+                .statusCode(OK.getStatusCode())
+                .body("data[0].name", is("citation"))
+                .body("data[1].name", is(metadataBlockToAssociateDatasetTypeWith));
     }
 
     @Test
@@ -360,14 +363,11 @@ public class DatasetTypesIT {
         listBlocks = UtilIT.listMetadataBlocks(dataverseAlias, false, false, apiToken);
         listBlocks.prettyPrint();
         listBlocks.then().assertThat().statusCode(OK.getStatusCode());
-        if (true) return;
 
-        
-        
-        
-        
-        
-        
+        if (true) {
+            return;
+        }
+
         String[] testInputLevelNames = {"geographicCoverage", "country", "city", "notesText"};
         boolean[] testRequiredInputLevels = {false, true, false, false};
         boolean[] testIncludedInputLevels = {false, true, true, false};
@@ -404,8 +404,10 @@ public class DatasetTypesIT {
         assertThat(expectedAllMetadataBlockDisplayNames, hasItemInArray(actualMetadataBlockDisplayName1));
         assertThat(expectedAllMetadataBlockDisplayNames, hasItemInArray(actualMetadataBlockDisplayName2));
         assertThat(expectedAllMetadataBlockDisplayNames, hasItemInArray(actualMetadataBlockDisplayName3));
-        
-        if (true) return;
+
+        if (true) {
+            return;
+        }
 
         // Existent dataverse and onlyDisplayedOnCreate=true
         String[] expectedOnlyDisplayedOnCreateMetadataBlockDisplayNames = {"Citation Metadata", "Geospatial Metadata"};
@@ -527,5 +529,5 @@ public class DatasetTypesIT {
                 .body("data[0].fields", not(equalTo(null)))
                 .body("data.size()", equalTo(1));
     }
-    
+
 }
