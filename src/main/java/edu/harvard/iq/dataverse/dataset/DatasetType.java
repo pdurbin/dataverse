@@ -2,6 +2,7 @@ package edu.harvard.iq.dataverse.dataset;
 
 import edu.harvard.iq.dataverse.MetadataBlock;
 import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -81,9 +82,14 @@ public class DatasetType implements Serializable {
     }
 
     public JsonObjectBuilder toJson() {
+        JsonArrayBuilder linkedMetadataBlocks = Json.createArrayBuilder();
+        for (MetadataBlock metadataBlock : this.getMetadataBlocks()) {
+            linkedMetadataBlocks.add(metadataBlock.getName());
+        }
         return Json.createObjectBuilder()
                 .add("id", getId())
-                .add("name", getName());
+                .add("name", getName())
+                .add("linkedMetadataBlocks", linkedMetadataBlocks);
     }
 
 }

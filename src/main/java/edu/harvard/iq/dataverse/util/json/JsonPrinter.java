@@ -657,12 +657,6 @@ public class JsonPrinter {
         }
 
         jsonObjectBuilder.add("fields", fieldsBuilder);
-        JsonArrayBuilder jab = Json.createArrayBuilder();
-//        for (DatasetType datasetType : metadataBlock.getDatasetTypes()) {
-//            System.out.println("in jsonPrinter, for block " + metadataBlock.getName() + " adding " + datasetType.getName());
-//            jab.add(datasetType.getName());
-//        }
-        jsonObjectBuilder.add("associatedDatasetTypes", jab);
         return jsonObjectBuilder;
     }
 

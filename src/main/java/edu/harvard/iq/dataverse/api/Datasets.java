@@ -5108,21 +5108,11 @@ public class Datasets extends AbstractApiBean {
     @GET
     @Path("datasetTypes")
     public Response getDatasetTypes() {
-        System.out.println("got here");
         JsonArrayBuilder jab = Json.createArrayBuilder();
-        List<DatasetType> datasetTypes = datasetTypeSvc.listAll();
-        for (DatasetType datasetType : datasetTypes) {
-            JsonObjectBuilder job = Json.createObjectBuilder();
-            job.add("id", datasetType.getId());
-            job.add("name", datasetType.getName());
-            JsonArrayBuilder linkedMetadataBlocks = Json.createArrayBuilder();
-            for (MetadataBlock metadataBlock : datasetType.getMetadataBlocks()) {
-                linkedMetadataBlocks.add(metadataBlock.getName());
-            }
-            job.add("linkedMetadataBlocks", linkedMetadataBlocks);
-            jab.add(job);
+        for (DatasetType datasetType : datasetTypeSvc.listAll()) {
+            jab.add(datasetType.toJson());
         }
-        return ok(jab.build());
+        return ok(jab);
     }
 
     @GET
@@ -5237,6 +5227,7 @@ public class Datasets extends AbstractApiBean {
         }
     }
 
+    // TODO: PUT is better than POST, right?
     @AuthRequired
     @PUT
     @Path("datasetTypes/{idOrName}")

@@ -741,20 +741,6 @@ public class UtilIT {
                 .get("/api/metadatablocks/" + block);
     }
 
-    static Response getMetadataBlockDatasetTypeAssociations(String block) {
-        return given()
-                .get("/api/metadatablocks/" + block + "/datasetTypes");
-    }
-
-    static Response updateMetadataBlockDatasetTypeAssociations(String block, String json, String apiToken) {
-        RequestSpecification requestSpecification = given()
-                .header(API_TOKEN_HTTP_HEADER, apiToken);
-        if (json != null) {
-            requestSpecification.body(json.getBytes(StandardCharsets.UTF_8));
-        }
-        return requestSpecification.put("/api/metadatablocks/" + block + "/datasetTypes");
-    }
-
     static private String getDatasetXml(String title, String author, String description) {
         String nullLicense = null;
         String nullRights = null;
@@ -4224,26 +4210,13 @@ public class UtilIT {
                 .delete("/api/datasets/datasetTypes/" + doomed);
     }
 
-    static Response listDatasetTypeMetadataBlockAssociations(String apiToken) {
+    static Response updateDatasetTypeLinksWithMetadataBlocks(String idOrName, String jsonArrayOfMetadataBlocks, String apiToken) {
         return given()
                 .header(API_TOKEN_HTTP_HEADER, apiToken)
-                .post("/api/datasets/datasetTypes/mdb");
+                .body(jsonArrayOfMetadataBlocks)
+                // DO we need to send content type = json?
+                .contentType(ContentType.JSON)
+                .put("/api/datasets/datasetTypes/" + idOrName);
     }
-//
-//    static Response addDatasetTypeMetadataBlockAssociation(String jsonIn, String apiToken) {
-//        return given()
-//                .header(API_TOKEN_HTTP_HEADER, apiToken)
-//                .body(jsonIn)
-//                .contentType(ContentType.JSON)
-//                .post("/api/datasets/datasetTypes/mdb");
-//    }
-//
-//    static Response removeDatasetTypeMetadataBlockAssociation(String jsonIn, String apiToken) {
-//        return given()
-//                .header(API_TOKEN_HTTP_HEADER, apiToken)
-//                .body(jsonIn)
-//                .contentType(ContentType.JSON)
-//                .delete("/api/datasets/datasetTypes/mdb");
-//    }
 
 }

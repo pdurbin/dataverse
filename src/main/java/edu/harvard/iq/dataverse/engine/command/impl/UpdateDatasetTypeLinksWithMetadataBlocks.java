@@ -13,6 +13,7 @@ import java.util.List;
 // inspired by UpdateDataverseMetadataBlocksCommand
 @RequiredPermissions({})
 public class UpdateDatasetTypeLinksWithMetadataBlocks extends AbstractVoidCommand {
+    // rename to "to"? UpdateDatasetTypeLinksToMetadataBlocks
 
     final DatasetType datasetType;
     List<MetadataBlock> metadataBlocks;
