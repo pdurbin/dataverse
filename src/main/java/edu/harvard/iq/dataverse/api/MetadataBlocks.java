@@ -64,28 +64,30 @@ public class MetadataBlocks extends AbstractApiBean {
         if (metadataBlock == null) {
             return notFound("Can't find metadata block '" + idtf + "'");
         }
-        List<DatasetType> datasetTypesExisting = metadataBlock.getDatasetTypes();
+//        List<DatasetType> datasetTypesExisting = metadataBlock.getDatasetTypes();
         JsonArrayBuilder datasetTypesBefore = Json.createArrayBuilder();
-        for (DatasetType datasetType : datasetTypesExisting) {
-            datasetTypesBefore.add(datasetType.getName());
-        }
+//        for (DatasetType datasetType : datasetTypesExisting) {
+//            datasetTypesBefore.add(datasetType.getName());
+//        }
         List<DatasetType> datasetTypesToSave = new ArrayList<>();
-        JsonArray json = JsonUtil.getJsonArray(jsonBody);
-        for (JsonString jsonValue : json.getValuesAs(JsonString.class)) {
-            String typeName = jsonValue.getString();
-            System.out.println("typename: " + typeName);
-            DatasetType datasetType = datasetTypeSvc.getByName(typeName);
-            datasetTypesToSave.add(datasetType);
+        if (jsonBody != null && !jsonBody.isEmpty()) {
+            JsonArray json = JsonUtil.getJsonArray(jsonBody);
+            for (JsonString jsonValue : json.getValuesAs(JsonString.class)) {
+                String typeName = jsonValue.getString();
+                System.out.println("typename: " + typeName);
+                DatasetType datasetType = datasetTypeSvc.getByName(typeName);
+                datasetTypesToSave.add(datasetType);
+            }
         }
         try {
             MetadataBlock saved = execCommand(new UpdateMetadataBlockDatasetTypeAssociations(createDataverseRequest(getRequestUser(crc)), metadataBlock, datasetTypesToSave));
             // Move this to command
-            List<DatasetType> savedMdb = saved.getDatasetTypes();
+//            List<DatasetType> savedMdb = saved.getDatasetTypes();
             JsonArrayBuilder datasetTypesAfter = Json.createArrayBuilder();
-            for (DatasetType savedDatasetType : savedMdb) {
-                System.out.println("found one: " + savedDatasetType.getName());
-                datasetTypesAfter.add(savedDatasetType.getName());
-            }
+//            for (DatasetType savedDatasetType : savedMdb) {
+//                System.out.println("found one: " + savedDatasetType.getName());
+//                datasetTypesAfter.add(savedDatasetType.getName());
+//            }
             return ok(Json.createObjectBuilder()
                     .add("associatedDatasetTypes", Json.createObjectBuilder()
                             .add("before", datasetTypesBefore)

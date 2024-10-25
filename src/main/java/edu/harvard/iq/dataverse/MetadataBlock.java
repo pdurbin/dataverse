@@ -25,6 +25,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import java.util.ArrayList;
 
 /**
  *
@@ -57,8 +58,9 @@ public class MetadataBlock implements Serializable, Comparable {
     /**
      * The dataset types this metadata block is associated with.
      */
-    @ManyToMany(mappedBy = "metadataBlocks")
-    private List<DatasetType> datasetTypes;
+//    @ManyToMany(mappedBy = "metadataBlocks", cascade = {CascadeType.MERGE})
+//    @ManyToMany(cascade = {CascadeType.MERGE})
+//    private List<DatasetType> datasetTypes = new ArrayList<>();
 
     public Long getId() {
         return id;
@@ -74,13 +76,14 @@ public class MetadataBlock implements Serializable, Comparable {
         this.name = name;
     }
 
-    public List<DatasetType> getDatasetTypes() {
-        return datasetTypes;
-    }
-
-    public void setDatasetTypes(List<DatasetType> datasetTypes) {
-        this.datasetTypes = datasetTypes;
-    }
+//    public List<DatasetType> getDatasetTypes() {
+//        return datasetTypes;
+//    }
+//
+//    public void setDatasetTypes(List<DatasetType> datasetTypes) {
+//        // should this be ArrayList? this.metadataBlocks = new ArrayList<>(metadataBlocks);
+//        this.datasetTypes = datasetTypes;
+//    }
 
     public String getNamespaceUri() {
         return namespaceUri;

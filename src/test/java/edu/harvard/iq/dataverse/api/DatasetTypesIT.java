@@ -288,7 +288,7 @@ public class DatasetTypesIT {
                 .body("data.associatedDatasetTypes[0]", CoreMatchers.nullValue());
 
         //Avoid all-numeric names (which are not allowed)
-        String randomName = "A" + UUID.randomUUID().toString().substring(0, 8);
+        String randomName = "zzz" + UUID.randomUUID().toString().substring(0, 8);
         String jsonIn = Json.createObjectBuilder().add("name", randomName).build().toString();
 
         System.out.println("adding type with name " + randomName);
@@ -319,10 +319,11 @@ public class DatasetTypesIT {
         getGeospatialBlock.prettyPrint();
         getGeospatialBlock.then().assertThat()
                 .statusCode(OK.getStatusCode());
+        //TODO renable tests below
+//                .statusCode(OK.getStatusCode())
 //                .body("data.associatedDatasetTypes.before[0]", CoreMatchers.is(randomName))
 //                .body("data.associatedDatasetTypes", CoreMatchers.containsString(randomName));
-        // TODO: get this assertion working!
-//                .body("data.associatedDatasetTypes[0]", CoreMatchers.is(randomName));
+//                .body("data.associatedDatasetTypes[0]", CoreMatchers.is(randomName)); //this one
 
         Response createDataverse = UtilIT.createRandomDataverse(apiToken);
         createDataverse.then().assertThat().statusCode(CREATED.getStatusCode());
@@ -336,6 +337,13 @@ public class DatasetTypesIT {
                 .statusCode(OK.getStatusCode())
                 .body("data[0].name", is("citation"))
                 .body("data[1].name", is(metadataBlockToAssociateDatasetTypeWith));
+        
+        Response removeDatasetTypeAssociationsFromGeospatial = UtilIT.updateMetadataBlockDatasetTypeAssociations(metadataBlockToAssociateDatasetTypeWith, null, apiToken);
+        removeDatasetTypeAssociationsFromGeospatial.prettyPrint();
+
+        System.out.println("has geospatial been removed?");
+        listBlocks = UtilIT.listMetadataBlocks(dataverseAlias, true, false, randomName, apiToken);
+        listBlocks.prettyPrint();
     }
 
     @Test

@@ -3,6 +3,7 @@ package edu.harvard.iq.dataverse.dataset;
 import edu.harvard.iq.dataverse.MetadataBlock;
 import jakarta.json.Json;
 import jakarta.json.JsonObjectBuilder;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -14,6 +15,7 @@ import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @NamedQueries({
@@ -48,8 +50,8 @@ public class DatasetType implements Serializable {
     /**
      * The metadata blocks this dataset type is associated with.
      */
-    @ManyToMany()
-    private List<MetadataBlock> metadataBlocks;
+    @ManyToMany(cascade = {CascadeType.MERGE})
+    private List<MetadataBlock> metadataBlocks = new ArrayList<>();
 
     public DatasetType() {
     }

@@ -36,6 +36,7 @@ public class ListMetadataBlocksCommand extends AbstractCommand<List<MetadataBloc
 
     @Override
     public List<MetadataBlock> execute(CommandContext ctxt) throws CommandException {
+        System.out.println("got to execute...");
         if (onlyDisplayedOnCreate) {
             return listMetadataBlocksDisplayedOnCreate(ctxt, dataverse);
         }
@@ -43,11 +44,13 @@ public class ListMetadataBlocksCommand extends AbstractCommand<List<MetadataBloc
     }
 
     private List<MetadataBlock> listMetadataBlocksDisplayedOnCreate(CommandContext ctxt, Dataverse dataverse) {
-        if (dataverse.isMetadataBlockRoot() || dataverse.getOwner() == null) {
-            return ctxt.metadataBlocks().listMetadataBlocksDisplayedOnCreate(dataverse);
-        }
+        System.out.println("got to listMetadataBlocksDisplayedOnCreate...");
+        // TODO keep all this isMetadataBlockRoot and is root collection business?
+//        if (dataverse.isMetadataBlockRoot() || dataverse.getOwner() == null) {
+//            return ctxt.metadataBlocks().listMetadataBlocksDisplayedOnCreate(dataverse);
+//        }
 //        return listMetadataBlocksDisplayedOnCreate(ctxt, dataverse.getOwner());
-        List<MetadataBlock> metadataBlocks = listMetadataBlocksDisplayedOnCreate(ctxt, dataverse.getOwner());
+        List<MetadataBlock> metadataBlocks = ctxt.metadataBlocks().listMetadataBlocksDisplayedOnCreate(dataverse);
         if (datasetType == null) {
             System.out.println("no dataset type, returning normal list");
             return metadataBlocks;

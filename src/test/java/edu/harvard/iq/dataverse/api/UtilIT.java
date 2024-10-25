@@ -747,10 +747,12 @@ public class UtilIT {
     }
 
     static Response updateMetadataBlockDatasetTypeAssociations(String block, String json, String apiToken) {
-        return given()
-                .header(API_TOKEN_HTTP_HEADER, apiToken)
-                .body(json.getBytes(StandardCharsets.UTF_8))
-                .put("/api/metadatablocks/" + block + "/datasetTypes");
+        RequestSpecification requestSpecification = given()
+                .header(API_TOKEN_HTTP_HEADER, apiToken);
+        if (json != null) {
+            requestSpecification.body(json.getBytes(StandardCharsets.UTF_8));
+        }
+        return requestSpecification.put("/api/metadatablocks/" + block + "/datasetTypes");
     }
 
     static private String getDatasetXml(String title, String author, String description) {
