@@ -11,7 +11,7 @@ import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
 import java.util.List;
 
 // inspired by UpdateDataverseMetadataBlocksCommand
-@RequiredPermissions({})
+@RequiredPermissions({}) //TODO add auth!
 public class UpdateDatasetTypeLinksWithMetadataBlocks extends AbstractVoidCommand {
     // rename to "to"? UpdateDatasetTypeLinksToMetadataBlocks
 

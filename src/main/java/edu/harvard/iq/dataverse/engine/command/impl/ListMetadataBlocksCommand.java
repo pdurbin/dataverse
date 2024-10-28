@@ -8,11 +8,13 @@ import edu.harvard.iq.dataverse.engine.command.AbstractCommand;
 import edu.harvard.iq.dataverse.engine.command.CommandContext;
 import edu.harvard.iq.dataverse.engine.command.DataverseRequest;
 import edu.harvard.iq.dataverse.engine.command.exception.CommandException;
+import java.util.ArrayList;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
@@ -22,6 +24,8 @@ import java.util.stream.Stream;
  */
 // no annotations here, since permissions are dynamically decided
 public class ListMetadataBlocksCommand extends AbstractCommand<List<MetadataBlock>> {
+
+    private static final Logger logger = Logger.getLogger(ListMetadataBlocksCommand.class.getCanonicalName());
 
     private final Dataverse dataverse;
     private final boolean onlyDisplayedOnCreate;
@@ -36,35 +40,27 @@ public class ListMetadataBlocksCommand extends AbstractCommand<List<MetadataBloc
 
     @Override
     public List<MetadataBlock> execute(CommandContext ctxt) throws CommandException {
-        System.out.println("got to execute...");
         if (onlyDisplayedOnCreate) {
             return listMetadataBlocksDisplayedOnCreate(ctxt, dataverse);
         }
-        return dataverse.getMetadataBlocks();
+        List<MetadataBlock> orig = dataverse.getMetadataBlocks();
+        List<MetadataBlock> extraFromDatasetTypes = new ArrayList<>();
+        if (datasetType != null) {
+            extraFromDatasetTypes = datasetType.getMetadataBlocks();
+        }
+        return Stream.concat(orig.stream(), extraFromDatasetTypes.stream()).toList();
     }
 
     private List<MetadataBlock> listMetadataBlocksDisplayedOnCreate(CommandContext ctxt, Dataverse dataverse) {
-        System.out.println("got to listMetadataBlocksDisplayedOnCreate...");
-        // TODO keep all this isMetadataBlockRoot and is root collection business?
-//        if (dataverse.isMetadataBlockRoot() || dataverse.getOwner() == null) {
-//            return ctxt.metadataBlocks().listMetadataBlocksDisplayedOnCreate(dataverse);
-//        }
-//        return listMetadataBlocksDisplayedOnCreate(ctxt, dataverse.getOwner());
-        List<MetadataBlock> metadataBlocks = ctxt.metadataBlocks().listMetadataBlocksDisplayedOnCreate(dataverse);
-        if (datasetType == null) {
-            System.out.println("no dataset type, returning normal list");
-            return metadataBlocks;
-        } else {
-            // Add the metadata blocks based on the dataset type
-            System.out.println("yes dataset type, returning extra");
-            List<MetadataBlock> extra = datasetType.getMetadataBlocks();
-            System.out.println("size of extra: " + extra.size());
-            for (MetadataBlock metadataBlock : extra) {
-                System.out.println("name: " + metadataBlock.getDisplayName());
+        if (dataverse.isMetadataBlockRoot() || dataverse.getOwner() == null) {
+            List<MetadataBlock> orig = ctxt.metadataBlocks().listMetadataBlocksDisplayedOnCreate(dataverse);
+            List<MetadataBlock> extraFromDatasetTypes = new ArrayList<>();
+            if (datasetType != null) {
+                extraFromDatasetTypes = datasetType.getMetadataBlocks();
             }
-            return Stream.concat(metadataBlocks.stream(), extra.stream()).toList();
+            return Stream.concat(orig.stream(), extraFromDatasetTypes.stream()).toList();
         }
-        
+        return listMetadataBlocksDisplayedOnCreate(ctxt, dataverse.getOwner());
     }
 
     @Override
