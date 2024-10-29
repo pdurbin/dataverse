@@ -8,22 +8,15 @@ import jakarta.json.Json;
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 import static jakarta.ws.rs.core.Response.Status.CREATED;
 import static jakarta.ws.rs.core.Response.Status.FORBIDDEN;
-import static jakarta.ws.rs.core.Response.Status.NOT_FOUND;
 import static jakarta.ws.rs.core.Response.Status.OK;
-import static jakarta.ws.rs.core.Response.Status.UNAUTHORIZED;
 import java.util.UUID;
 import org.hamcrest.CoreMatchers;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItemInArray;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class DatasetTypesIT {
@@ -360,7 +353,7 @@ public class DatasetTypesIT {
 
         UtilIT.publishDataverseViaNativeApi(dataverseAlias, apiToken).then().assertThat().statusCode(OK.getStatusCode());
 
-        System.out.println("listing " + dataverseAlias + "collection blocks with display on create using dataset type " + randomName);
+        System.out.println("listing " + dataverseAlias + " collection blocks with display on create using dataset type " + randomName);
         listBlocks = UtilIT.listMetadataBlocks(dataverseAlias, true, false, randomName, apiToken);
         listBlocks.prettyPrint();
         listBlocks.then().assertThat()
@@ -369,7 +362,7 @@ public class DatasetTypesIT {
                 .body("data[1].name", is("geospatial"))
                 .body("data[2].name", nullValue());
 
-        System.out.println("listing " + dataverseAlias + "collection blocks without display on create using dataset type " + randomName);
+        System.out.println("listing " + dataverseAlias + " collection blocks without display on create using dataset type " + randomName);
         listBlocks = UtilIT.listMetadataBlocks(dataverseAlias, false, false, randomName, apiToken);
         listBlocks.prettyPrint();
         listBlocks.then().assertThat()
@@ -390,6 +383,97 @@ public class DatasetTypesIT {
         listBlocks.prettyPrint();
         listBlocks.then().assertThat()
                 .body("data[0].name", is("citation"));
+    }
+
+    /**
+     * This test is disabled because it relies on the experimental "codeMeta20"
+     * metadata block to be loaded.
+     */
+    @Disabled
+    @Test
+    public void testLinkSoftwareToCodemeta() {
+        Response listBlocksAvailable = UtilIT.listMetadataBlocks(false, true);
+//        if (true) {return;}
+
+        Response createUser = UtilIT.createRandomUser();
+        createUser.then().assertThat().statusCode(OK.getStatusCode());
+        String username = UtilIT.getUsernameFromResponse(createUser);
+        String apiToken = UtilIT.getApiTokenFromResponse(createUser);
+        UtilIT.setSuperuserStatus(username, true).then().assertThat().statusCode(OK.getStatusCode());
+
+        String metadataBlockToAssociateDatasetTypeWith = """
+            ["codeMeta20"]
+""";
+
+        String datasetType = "software";
+        Response associateGeospatialWithDatasetType1 = UtilIT.updateDatasetTypeLinksWithMetadataBlocks(datasetType, metadataBlockToAssociateDatasetTypeWith, apiToken);
+        associateGeospatialWithDatasetType1.prettyPrint();
+        associateGeospatialWithDatasetType1.then().assertThat().
+                statusCode(OK.getStatusCode())
+                .body("data.linkedMetadataBlocks.after[0]", CoreMatchers.is("codeMeta20"));
+
+        Response createDataverse = UtilIT.createRandomDataverse(apiToken);
+        createDataverse.then().assertThat().statusCode(CREATED.getStatusCode());
+
+        String dataverseAlias = UtilIT.getAliasFromResponse(createDataverse);
+        Integer dataverseId = UtilIT.getDataverseIdFromResponse(createDataverse);
+
+        UtilIT.publishDataverseViaNativeApi(dataverseAlias, apiToken).then().assertThat().statusCode(OK.getStatusCode());
+
+        Response listBlocks = null;
+        System.out.println("listing root collection blocks with display on create using dataset type " + datasetType);
+        listBlocks = UtilIT.listMetadataBlocks(":root", true, true, datasetType, apiToken);
+        listBlocks.prettyPrint();
+        listBlocks.then().assertThat()
+                .statusCode(OK.getStatusCode())
+                .body("data[0].name", is("citation"))
+                .body("data[1].name", is("codeMeta20"))
+                .body("data[2].name", nullValue())
+                .body("data[0].fields.title.displayOnCreate", equalTo(true));
+        // TODO: why not shown?
+//                .body("data[1].fields.codeVersion.displayOnCreate", equalTo(true));
+
+        System.out.println("listing root collection blocks with all fields (not display on create) using dataset type " + datasetType);
+        listBlocks = UtilIT.listMetadataBlocks(":root", false, true, datasetType, apiToken);
+        listBlocks.prettyPrint();
+        listBlocks.then().assertThat()
+                .statusCode(OK.getStatusCode())
+                // TODO: why is "fields" empty?
+                .body("data[0].name", is("citation"))
+                .body("data[1].name", is("codeMeta20"))
+                .body("data[2].name", nullValue())
+                .body("data[0].fields.title.displayOnCreate", equalTo(true))
+                .body("data[0].fields.subtitle.displayOnCreate", equalTo(false));
+                // why not shown?
+//                .body("data[1].fields.codeVersion.displayOnCreate", equalTo(true))
+//                .body("data[1].fields.issueTracker.displayOnCreate", equalTo(false));
+
+        System.out.println("listing " + dataverseAlias + " collection blocks with display on create using dataset type " + datasetType);
+        listBlocks = UtilIT.listMetadataBlocks(dataverseAlias, true, true, datasetType, apiToken);
+        listBlocks.prettyPrint();
+        listBlocks.then().assertThat()
+                .statusCode(OK.getStatusCode())
+                .body("data[0].name", is("citation"))
+                .body("data[1].name", is("codeMeta20"))
+                .body("data[2].name", nullValue())
+                // why not shown?
+                .body("data[0].fields.title.displayOnCreate", equalTo(true))
+                .body("data[1].fields.codeVersion.displayOnCreate", equalTo(true));
+
+        System.out.println("listing " + dataverseAlias + " collection blocks with all fields (not display on create) using dataset type " + datasetType);
+        listBlocks = UtilIT.listMetadataBlocks(dataverseAlias, false, true, datasetType, apiToken);
+        listBlocks.prettyPrint();
+        listBlocks.then().assertThat()
+                .statusCode(OK.getStatusCode())
+                // TODO: why is "fields" empty?
+                .body("data[0].name", is("citation"))
+                .body("data[1].name", is("codeMeta20"))
+                .body("data[2].name", nullValue())
+                .body("data[0].fields.title.displayOnCreate", equalTo(true))
+                .body("data[0].fields.subtitle.displayOnCreate", equalTo(false))
+                .body("data[1].fields.codeVersion.displayOnCreate", equalTo(true))
+                .body("data[1].fields.issueTracker.displayOnCreate", equalTo(false));
+
     }
 
 }
