@@ -465,38 +465,42 @@ public class DatasetTypesIT {
 //                .body("data[1].fields.issueTracker.displayOnCreate", equalTo(false));
 
         System.out.println("listing " + dataverseAlias + " collection blocks with display on create using dataset type " + datasetType);
+
+        /**
+         * Should setting the metadataBlock of the collection to "citation" be
+         * necessary? Shouldn't it inherit "citation" from the parent collection
+         * (root in this case)?
+         *
+         * We set it here as a workaround since inheritance doesn't seem to be
+         * working. See also this issue:
+         * https://github.com/IQSS/dataverse/issues/10984
+         */
+        Response setMetadataBlocksResponse = UtilIT.setMetadataBlocks(dataverseAlias, Json.createArrayBuilder().add("citation"), apiToken);
+        setMetadataBlocksResponse.then().assertThat().statusCode(OK.getStatusCode());
+
         listBlocks = UtilIT.listMetadataBlocks(dataverseAlias, true, true, datasetType, apiToken);
         listBlocks.prettyPrint();
         listBlocks.then().assertThat()
                 .statusCode(OK.getStatusCode())
                 .body("data[0].name", is("citation"))
-                //                .body("data[1].name", is("codeMeta20"))
+                .body("data[1].name", is("codeMeta20"))
                 .body("data[2].name", nullValue())
-                // why not shown?
-                .body("data[0].fields.title.displayOnCreate", equalTo(true)); //failing, why? not present
-//                .body("data[1].fields.codeVersion.displayOnCreate", equalTo(true));
-
-        System.out.println("ending early");
-        if (true) {
-            return;
-        }
+                .body("data[0].fields.title.displayOnCreate", equalTo(true))
+                .body("data[1].fields.codeVersion.displayOnCreate", equalTo(true));
 
         System.out.println("listing " + dataverseAlias + " collection blocks with all fields (not display on create) using dataset type " + datasetType);
         listBlocks = UtilIT.listMetadataBlocks(dataverseAlias, false, true, datasetType, apiToken);
         listBlocks.prettyPrint();
         listBlocks.then().assertThat()
                 .statusCode(OK.getStatusCode())
-                // TODO: why is "fields" empty?
                 .body("data[0].name", is("citation"))
                 .body("data[1].name", is("codeMeta20"))
                 .body("data[2].name", nullValue())
-                // why not shown?
-                //                .body("data[0].fields.title.displayOnCreate", equalTo(true))
-                //                .body("data[0].fields.subtitle.displayOnCreate", equalTo(false))
+                .body("data[0].fields.title.displayOnCreate", equalTo(true))
+                .body("data[0].fields.subtitle.displayOnCreate", equalTo(false))
                 .body("data[1].fields.codeVersion.displayOnCreate", equalTo(true))
                 .body("data[1].fields.issueTracker.displayOnCreate", equalTo(false));
 
-        System.out.println("last line");
     }
 
 }
