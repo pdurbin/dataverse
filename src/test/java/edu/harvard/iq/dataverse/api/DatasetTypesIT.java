@@ -9,6 +9,8 @@ import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 import static jakarta.ws.rs.core.Response.Status.CREATED;
 import static jakarta.ws.rs.core.Response.Status.FORBIDDEN;
 import static jakarta.ws.rs.core.Response.Status.OK;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.UUID;
 import org.hamcrest.CoreMatchers;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -392,9 +394,21 @@ public class DatasetTypesIT {
 //    @Disabled
     @Test
     public void testLinkSoftwareToCodemeta() {
-//    public void testLinkSoftwareToCompWork() {
-        Response listBlocksAvailable = UtilIT.listMetadataBlocks(false, true);
-//        if (true) {return;}
+        Response listBlocksAvailable = UtilIT.listMetadataBlocks(false, false);
+        listBlocksAvailable.then().assertThat().statusCode(OK.getStatusCode());
+        String blocksAsString = JsonPath.from(listBlocksAvailable.getBody().asString()).getString("data");
+        System.out.println("blocks: " + blocksAsString);
+        if (!blocksAsString.contains("codeMeta20")) {
+            System.out.println("CodeMeta hasn't been added. Adding it...");
+            byte[] codemetaTsv = null;
+            try {
+                codemetaTsv = java.nio.file.Files.readAllBytes(Paths.get("scripts/api/data/metadatablocks/codemeta.tsv"));
+            } catch (IOException e) {
+            }
+            UtilIT.loadMetadataBlock("", codemetaTsv);
+        } else {
+            System.out.println("CodeMeta has already been added.");
+        }
 
         Response createUser = UtilIT.createRandomUser();
         createUser.then().assertThat().statusCode(OK.getStatusCode());
@@ -456,7 +470,7 @@ public class DatasetTypesIT {
         listBlocks.then().assertThat()
                 .statusCode(OK.getStatusCode())
                 .body("data[0].name", is("citation"))
-//                .body("data[1].name", is("codeMeta20"))
+                //                .body("data[1].name", is("codeMeta20"))
                 .body("data[2].name", nullValue())
                 // why not shown?
                 .body("data[0].fields.title.displayOnCreate", equalTo(true)); //failing, why? not present
