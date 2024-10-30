@@ -768,6 +768,7 @@ public class Dataverses extends AbstractApiBean {
                                        @QueryParam("includeDatasetTypes") boolean includeDatasetTypes,
                                        @QueryParam("datasetType") String datasetTypeIn) {
         logger.info("dataset type passed in : " + datasetTypeIn);
+        // TODO includeDatasetTypes is an idea but is currently unused. Consider deleting.
         DatasetType datasetType = datasetTypeSvc.getByName(datasetTypeIn);
         try {
             Dataverse dataverse = findDataverseOrDie(dvIdtf);
@@ -775,8 +776,8 @@ public class Dataverses extends AbstractApiBean {
                     new ListMetadataBlocksCommand(
                             createDataverseRequest(getRequestUser(crc)),
                             dataverse,
-                            onlyDisplayedOnCreate
-//                            datasetType
+                            onlyDisplayedOnCreate,
+                            datasetType
                     )
             );
             for (MetadataBlock metadataBlock : metadataBlocks) {

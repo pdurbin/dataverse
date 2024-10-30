@@ -440,29 +440,29 @@ public class DatasetTypesIT {
         UtilIT.publishDataverseViaNativeApi(dataverseAlias, apiToken).then().assertThat().statusCode(OK.getStatusCode());
 
         Response listBlocks = null;
-//        System.out.println("listing root collection blocks with display on create using dataset type " + datasetType);
-//        listBlocks = UtilIT.listMetadataBlocks(":root", true, true, datasetType, apiToken);
-//        listBlocks.prettyPrint();
-//        listBlocks.then().assertThat()
-//                .statusCode(OK.getStatusCode())
-//                .body("data[0].name", is("citation"))
-//                .body("data[1].name", is("codeMeta20"))
-//                .body("data[2].name", nullValue())
-//                .body("data[0].fields.title.displayOnCreate", equalTo(true));
-////                .body("data[1].fields.codeVersion.displayOnCreate", equalTo(true));
-//
-//        System.out.println("listing root collection blocks with all fields (not display on create) using dataset type " + datasetType);
-//        listBlocks = UtilIT.listMetadataBlocks(":root", false, true, datasetType, apiToken);
-//        listBlocks.prettyPrint();
-//        listBlocks.then().assertThat()
-//                .statusCode(OK.getStatusCode())
-//                .body("data[0].name", is("citation"))
-//                .body("data[1].name", is("codeMeta20"))
-//                .body("data[2].name", nullValue())
-//                .body("data[0].fields.title.displayOnCreate", equalTo(true))
-//                .body("data[0].fields.subtitle.displayOnCreate", equalTo(false));
-////                .body("data[1].fields.codeVersion.displayOnCreate", equalTo(true))
-////                .body("data[1].fields.issueTracker.displayOnCreate", equalTo(false));
+        System.out.println("listing root collection blocks with display on create using dataset type " + datasetType);
+        listBlocks = UtilIT.listMetadataBlocks(":root", true, true, datasetType, apiToken);
+        listBlocks.prettyPrint();
+        listBlocks.then().assertThat()
+                .statusCode(OK.getStatusCode())
+                .body("data[0].name", is("citation"))
+                .body("data[1].name", is("codeMeta20"))
+                .body("data[2].name", nullValue())
+                .body("data[0].fields.title.displayOnCreate", equalTo(true));
+//                .body("data[1].fields.codeVersion.displayOnCreate", equalTo(true));
+
+        System.out.println("listing root collection blocks with all fields (not display on create) using dataset type " + datasetType);
+        listBlocks = UtilIT.listMetadataBlocks(":root", false, true, datasetType, apiToken);
+        listBlocks.prettyPrint();
+        listBlocks.then().assertThat()
+                .statusCode(OK.getStatusCode())
+                .body("data[0].name", is("citation"))
+                .body("data[1].name", is("codeMeta20"))
+                .body("data[2].name", nullValue())
+                .body("data[0].fields.title.displayOnCreate", equalTo(true))
+                .body("data[0].fields.subtitle.displayOnCreate", equalTo(false));
+//                .body("data[1].fields.codeVersion.displayOnCreate", equalTo(true))
+//                .body("data[1].fields.issueTracker.displayOnCreate", equalTo(false));
 
         System.out.println("listing " + dataverseAlias + " collection blocks with display on create using dataset type " + datasetType);
         listBlocks = UtilIT.listMetadataBlocks(dataverseAlias, true, true, datasetType, apiToken);

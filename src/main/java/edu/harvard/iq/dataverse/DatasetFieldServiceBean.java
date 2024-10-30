@@ -962,17 +962,18 @@ public class DatasetFieldServiceBean implements java.io.Serializable {
 
         criteriaQuery.select(datasetFieldTypeRoot).distinct(true);
 
-        if (true) {
-            System.out.println("returning early if true!!");
-            return em.createQuery(criteriaQuery).getResultList();
-        }
+//        if (true) {
+//            System.out.println("returning early if true!!");
+//            // This was the old, original return
+//            return em.createQuery(criteriaQuery).getResultList();
+//        }
         
-        System.out.println("got here 2 - non-root: " + dataverse.getAlias());
+        System.out.println("got here 2 - non-root collection: " + dataverse.getAlias());
         List<DatasetFieldType> orig = em.createQuery(criteriaQuery).getResultList();
         logger.info("orig size: " + orig.size());
-        for (DatasetFieldType datasetFieldType : orig) {
-            logger.info("from orig: " + datasetFieldType.getName());
-        }
+//        for (DatasetFieldType datasetFieldType : orig) {
+//            logger.info("from orig: " + datasetFieldType.getName());
+//        }
 
         List<DatasetFieldType> extraFromDatasetTypes = new ArrayList<>();
         DatasetType datasetType = datasetTypeService.getByName("software");
