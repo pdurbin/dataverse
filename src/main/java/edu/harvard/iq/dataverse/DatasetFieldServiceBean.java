@@ -1,5 +1,7 @@
 package edu.harvard.iq.dataverse;
 
+import edu.harvard.iq.dataverse.dataset.DatasetType;
+import edu.harvard.iq.dataverse.dataset.DatasetTypeServiceBean;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
@@ -52,6 +54,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import edu.harvard.iq.dataverse.settings.SettingsServiceBean;
+import java.util.stream.Stream;
 
 /**
  *
@@ -68,6 +71,9 @@ public class DatasetFieldServiceBean implements java.io.Serializable {
 
     @EJB
     SettingsServiceBean settingsService;
+
+    @EJB
+    DatasetTypeServiceBean datasetTypeService;
 
     private static final String NAME_QUERY = "SELECT dsfType from DatasetFieldType dsfType where dsfType.name= :fieldName";
     
@@ -864,7 +870,8 @@ public class DatasetFieldServiceBean implements java.io.Serializable {
         return null;
     }
 
-    public List<DatasetFieldType> findAllDisplayedOnCreateInMetadataBlock(MetadataBlock metadataBlock) {
+//    public List<DatasetFieldType> findAllDisplayedOnCreateInMetadataBlock(MetadataBlock metadataBlock) {
+    public List<DatasetFieldType> findAllDisplayedOnCreateInMetadataBlock(MetadataBlock metadataBlock, String datasetTypeIn) {
         CriteriaBuilder criteriaBuilder = em.getCriteriaBuilder();
         CriteriaQuery<DatasetFieldType> criteriaQuery = criteriaBuilder.createQuery(DatasetFieldType.class);
 
@@ -955,7 +962,32 @@ public class DatasetFieldServiceBean implements java.io.Serializable {
 
         criteriaQuery.select(datasetFieldTypeRoot).distinct(true);
 
-        return em.createQuery(criteriaQuery).getResultList();
+        if (true) {
+            System.out.println("returning early if true!!");
+            return em.createQuery(criteriaQuery).getResultList();
+        }
+        
+        System.out.println("got here 2 - non-root: " + dataverse.getAlias());
+        List<DatasetFieldType> orig = em.createQuery(criteriaQuery).getResultList();
+        logger.info("orig size: " + orig.size());
+        for (DatasetFieldType datasetFieldType : orig) {
+            logger.info("from orig: " + datasetFieldType.getName());
+        }
+
+        List<DatasetFieldType> extraFromDatasetTypes = new ArrayList<>();
+        DatasetType datasetType = datasetTypeService.getByName("software");
+        System.out.println("found software, adding");
+        for (MetadataBlock mdb : datasetType.getMetadataBlocks()) {
+            System.out.println("software, found mdb: " + mdb.getName());
+            if (mdb.equals(metadataBlock)) {
+                for (DatasetFieldType datasetFieldType : metadataBlock.getDatasetFieldTypes()) {
+                    extraFromDatasetTypes.add(datasetFieldType);
+                }
+            }
+        }
+        System.out.println("done adding software fields");
+        
+        return Stream.concat(orig.stream(), extraFromDatasetTypes.stream()).toList();
     }
 
     private Predicate buildRequiredInDataversePredicate(CriteriaBuilder criteriaBuilder, Root<DatasetFieldType> datasetFieldTypeRoot) {

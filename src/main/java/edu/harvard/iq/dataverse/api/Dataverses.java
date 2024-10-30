@@ -756,6 +756,8 @@ public class Dataverses extends AbstractApiBean {
         }, getRequestUser(crc));
     }
 
+    
+    // everything is persisted
     @GET
     @AuthRequired
     @Path("{identifier}/metadatablocks")
@@ -763,6 +765,7 @@ public class Dataverses extends AbstractApiBean {
                                        @PathParam("identifier") String dvIdtf,
                                        @QueryParam("onlyDisplayedOnCreate") boolean onlyDisplayedOnCreate,
                                        @QueryParam("returnDatasetFieldTypes") boolean returnDatasetFieldTypes,
+                                       @QueryParam("includeDatasetTypes") boolean includeDatasetTypes,
                                        @QueryParam("datasetType") String datasetTypeIn) {
         logger.info("dataset type passed in : " + datasetTypeIn);
         DatasetType datasetType = datasetTypeSvc.getByName(datasetTypeIn);
@@ -772,11 +775,14 @@ public class Dataverses extends AbstractApiBean {
                     new ListMetadataBlocksCommand(
                             createDataverseRequest(getRequestUser(crc)),
                             dataverse,
-                            onlyDisplayedOnCreate,
-                            datasetType
+                            onlyDisplayedOnCreate
+//                            datasetType
                     )
             );
-            return ok(json(metadataBlocks, returnDatasetFieldTypes, onlyDisplayedOnCreate, dataverse));
+            for (MetadataBlock metadataBlock : metadataBlocks) {
+                logger.info("found metadata block: " + metadataBlock.getName());
+            }
+            return ok(json(metadataBlocks, returnDatasetFieldTypes, onlyDisplayedOnCreate, dataverse, datasetType.getName()));
         } catch (WrappedResponse we) {
             return we.getResponse();
         }

@@ -24,6 +24,7 @@ public class BriefJsonPrinter {
 	}
     
     public JsonObjectBuilder json( MetadataBlock blk ) {
+        System.out.println("calling brief");
 		return ( blk==null ) 
 				? null
 				: jsonObjectBuilder().add("id", blk.getId())

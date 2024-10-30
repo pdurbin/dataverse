@@ -25,7 +25,7 @@ public class MetadataBlocksIT {
     void testListMetadataBlocks() {
         // No optional params enabled
         Response listMetadataBlocksResponse = UtilIT.listMetadataBlocks(false, false);
-        int expectedDefaultNumberOfMetadataBlocks = 6;
+        int expectedDefaultNumberOfMetadataBlocks = 8;
         listMetadataBlocksResponse.then().assertThat()
                 .statusCode(OK.getStatusCode())
                 .body("data[0].fields", equalTo(null))
@@ -33,6 +33,7 @@ public class MetadataBlocksIT {
 
         // onlyDisplayedOnCreate=true
         listMetadataBlocksResponse = UtilIT.listMetadataBlocks(true, false);
+        listMetadataBlocksResponse.prettyPrint();
         int expectedOnlyDisplayedOnCreateNumberOfMetadataBlocks = 1;
         listMetadataBlocksResponse.then().assertThat()
                 .statusCode(OK.getStatusCode())

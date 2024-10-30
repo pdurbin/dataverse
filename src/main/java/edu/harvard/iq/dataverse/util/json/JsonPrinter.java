@@ -596,13 +596,17 @@ public class JsonPrinter {
     }
 
     public static JsonArrayBuilder json(List<MetadataBlock> metadataBlocks, boolean returnDatasetFieldTypes, boolean printOnlyDisplayedOnCreateDatasetFieldTypes) {
-        return json(metadataBlocks, returnDatasetFieldTypes, printOnlyDisplayedOnCreateDatasetFieldTypes, null);
+//        return json(metadataBlocks, returnDatasetFieldTypes, printOnlyDisplayedOnCreateDatasetFieldTypes, null);
+        return json(metadataBlocks, returnDatasetFieldTypes, printOnlyDisplayedOnCreateDatasetFieldTypes, null, null);
     }
 
-    public static JsonArrayBuilder json(List<MetadataBlock> metadataBlocks, boolean returnDatasetFieldTypes, boolean printOnlyDisplayedOnCreateDatasetFieldTypes, Dataverse ownerDataverse) {
+//    public static JsonArrayBuilder json(List<MetadataBlock> metadataBlocks, boolean returnDatasetFieldTypes, boolean printOnlyDisplayedOnCreateDatasetFieldTypes, Dataverse ownerDataverse) {
+    public static JsonArrayBuilder json(List<MetadataBlock> metadataBlocks, boolean returnDatasetFieldTypes, boolean printOnlyDisplayedOnCreateDatasetFieldTypes, Dataverse ownerDataverse, String datasetTypeIn) {
+        logger.info("returnDatasetFieldTypes: " + returnDatasetFieldTypes + " dataset type: " +datasetTypeIn);
         JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
         for (MetadataBlock metadataBlock : metadataBlocks) {
-            arrayBuilder.add(returnDatasetFieldTypes ? json(metadataBlock, printOnlyDisplayedOnCreateDatasetFieldTypes, ownerDataverse) : brief.json(metadataBlock));
+//            arrayBuilder.add(returnDatasetFieldTypes ? json(metadataBlock, printOnlyDisplayedOnCreateDatasetFieldTypes, ownerDataverse) : brief.json(metadataBlock));
+            arrayBuilder.add(returnDatasetFieldTypes ? json(metadataBlock, printOnlyDisplayedOnCreateDatasetFieldTypes, ownerDataverse, datasetTypeIn) : brief.json(metadataBlock));
         }
         return arrayBuilder;
     }
@@ -630,10 +634,14 @@ public class JsonPrinter {
     }
 
     public static JsonObjectBuilder json(MetadataBlock metadataBlock) {
-        return json(metadataBlock, false, null);
+//        return json(metadataBlock, false, null);
+        return json(metadataBlock, false, null, null);
     }
 
-    public static JsonObjectBuilder json(MetadataBlock metadataBlock, boolean printOnlyDisplayedOnCreateDatasetFieldTypes, Dataverse ownerDataverse) {
+//    public static JsonObjectBuilder json(MetadataBlock metadataBlock, boolean printOnlyDisplayedOnCreateDatasetFieldTypes, Dataverse ownerDataverse) {
+    // rename ownerDataverse
+    public static JsonObjectBuilder json(MetadataBlock metadataBlock, boolean printOnlyDisplayedOnCreateDatasetFieldTypes, Dataverse ownerDataverse, String datasetTypeIn) {
+        logger.info("calling full, printOnlyDisplayedOnCreateDatasetFieldTypes=" +printOnlyDisplayedOnCreateDatasetFieldTypes + " datasettype : " + datasetTypeIn + " block=" +metadataBlock.getName());
         JsonObjectBuilder jsonObjectBuilder = jsonObjectBuilder()
                 .add("id", metadataBlock.getId())
                 .add("name", metadataBlock.getName())
@@ -643,16 +651,21 @@ public class JsonPrinter {
         Set<DatasetFieldType> datasetFieldTypes;
 
         if (ownerDataverse != null) {
+            // use case: creating a dataset
             datasetFieldTypes = new TreeSet<>(datasetFieldService.findAllInMetadataBlockAndDataverse(
                     metadataBlock, ownerDataverse, printOnlyDisplayedOnCreateDatasetFieldTypes));
         } else {
+            // use case: retrieving info about metadata blocks
             datasetFieldTypes = printOnlyDisplayedOnCreateDatasetFieldTypes
-                    ? new TreeSet<>(datasetFieldService.findAllDisplayedOnCreateInMetadataBlock(metadataBlock))
+//                    ? new TreeSet<>(datasetFieldService.findAllDisplayedOnCreateInMetadataBlock(metadataBlock))
+                    ? new TreeSet<>(datasetFieldService.findAllDisplayedOnCreateInMetadataBlock(metadataBlock, datasetTypeIn))
                     : new TreeSet<>(metadataBlock.getDatasetFieldTypes());
         }
 
         JsonObjectBuilder fieldsBuilder = Json.createObjectBuilder();
+        logger.info(metadataBlock.getName() + " num datasetFieldTypes: " + datasetFieldTypes.size());
         for (DatasetFieldType datasetFieldType : datasetFieldTypes) {
+//            logger.info("datasetFieldType.getName(): " + datasetFieldType.getName());
             fieldsBuilder.add(datasetFieldType.getName(), json(datasetFieldType, ownerDataverse));
         }
 
