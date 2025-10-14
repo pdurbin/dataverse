@@ -277,6 +277,61 @@ services:
     restart: "no"
     platform: linux/amd64
 
+  pgadmin:
+    container_name: pgadmin
+    hostname: pgadmin
+    image: dpage/pgadmin4
+    networks:
+      - dataverse
+    ports:
+      - 8082:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=postgres@example.com
+      - PGADMIN_DEFAULT_PASSWORD=postgres
+      - PGADMIN_CONFIG_SERVER_MODE=False
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+    # entrypoint: /bin/sh -c "chmod 600 /pgpass; /entrypoint.sh;"
+    # entrypoint:
+      # - /bin/sh -c "chmod 600 /pgpass; /entrypoint.sh;"
+    user: root
+    # logs are spammy so don't attach
+    attach: false
+    # logging:
+      # driver: none
+    configs:
+      - source: servers.json
+        target: /pgadmin4/servers.json
+      - source: pgpass
+        target: /pgpass
+
+configs:
+  pgpass:
+    content: db:5432:*:postgres:secret
+  servers.json:
+    content: |
+      {"Servers": {"1": {
+        "Group": "Servers",
+        "Name": "Dataverse",
+        "Host": "postgres",
+        "Port": 5432,
+        "MaintenanceDB": "dataverse",
+        "Username": "dataverse",
+        "PassFile": "/pgpass",
+        "SSLMode": "prefer"
+      }}}
+  # servers.json:
+  #   content: |
+  #     {"Servers": {"1": {
+  #       "Group": "Servers",
+  #       "Name": "My Local Postgres",
+  #       "Host": "db",
+  #       "Port": 5432,
+  #       "MaintenanceDB": "postgres",
+  #       "Username": "postgres",
+  #       "PassFile": "/pgpass",
+  #       "SSLMode": "prefer"
+  #     }}}
+
 networks:
   dataverse:
     driver: bridge
