@@ -2,6 +2,7 @@ package edu.harvard.iq.dataverse.dataset;
 
 import edu.harvard.iq.dataverse.MetadataBlock;
 import edu.harvard.iq.dataverse.license.License;
+import edu.harvard.iq.dataverse.util.BundleUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObjectBuilder;
@@ -19,6 +20,7 @@ import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @NamedQueries({
     @NamedQuery(name = "DatasetType.findAll",
@@ -59,6 +61,43 @@ public class DatasetType implements Serializable {
     @Column(nullable = false, columnDefinition = "VARCHAR(255) DEFAULT ''")
     private String displayName;
 
+
+    /**
+      * Human readable names to show in the UI, with translations.
+     */
+    // @OneToMany(cascade = CascadeType.ALL, mappedBy = "datasetType", orphanRemoval = true)
+    // private List<DatasetTypeTranslation> displayNames = new ArrayList<>();
+
+    /**
+      * Convenience method to get display name in default locale.
+     */
+    // @Transient
+    // public String getDisplayName() {
+    //     return displayNames.stream()
+    //             .filter(d -> d.getLocale().equals("en"))
+    //             .findFirst()
+    //             .map(DatasetTypeTranslation::getDisplayName)
+    //             .orElse(name);
+    // }
+
+    /**
+      * Convenience method to set display name in default locale.
+     */
+    // public void setDisplayName(String displayName) {
+    //     DatasetTypeTranslation defaultName = displayNames.stream()
+    //             .filter(d -> d.getLocale().equals("en"))
+    //             .findFirst()
+    //             .orElseGet(() -> {
+    //                 DatasetTypeTranslation d = new DatasetTypeTranslation();
+    //                 d.setDatasetType(this);
+    //                 d.setLocale("en");
+    //                 displayNames.add(d);
+    //                 return d;
+    //             });
+    //     defaultName.setDisplayName(displayName);
+    // }    
+
+
     /**
      * The metadata blocks this dataset type is linked to.
      */
@@ -98,6 +137,10 @@ public class DatasetType implements Serializable {
         this.displayName = displayName;
     }
 
+    public String getDisplayName(Locale locale) {
+        return BundleUtil.getStringFromPropertyFile(name + ".displayName", "datasetTypes");
+    }
+
     public List<MetadataBlock> getMetadataBlocks() {
         return metadataBlocks;
     }
@@ -115,6 +158,10 @@ public class DatasetType implements Serializable {
     }
 
     public JsonObjectBuilder toJson() {
+        return toJson(null);
+    }
+
+    public JsonObjectBuilder toJson(Locale locale) {
         JsonArrayBuilder linkedMetadataBlocks = Json.createArrayBuilder();
         for (MetadataBlock metadataBlock : this.getMetadataBlocks()) {
             linkedMetadataBlocks.add(metadataBlock.getName());
@@ -126,7 +173,7 @@ public class DatasetType implements Serializable {
         return Json.createObjectBuilder()
                 .add("id", getId())
                 .add("name", getName())
-                .add("displayName", getDisplayName())
+                .add("displayName", locale == null ? getDisplayName() : getDisplayName(locale))
                 .add("linkedMetadataBlocks", linkedMetadataBlocks)
                 .add("availableLicenses", availableLicenses);
     }

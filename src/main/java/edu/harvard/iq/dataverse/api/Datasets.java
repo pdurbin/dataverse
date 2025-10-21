@@ -99,8 +99,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import static edu.harvard.iq.dataverse.api.ApiConstants.*;
 
-import edu.harvard.iq.dataverse.dataset.DatasetType;
-import edu.harvard.iq.dataverse.dataset.DatasetTypeServiceBean;
 import edu.harvard.iq.dataverse.license.License;
 
 import static edu.harvard.iq.dataverse.util.json.JsonPrinter.*;
@@ -5749,7 +5747,8 @@ public Response getDatasetExternalToolUrl(@Context ContainerRequestContext crc, 
 
     @GET
     @Path("datasetTypes/{idOrName}")
-    public Response getDatasetTypes(@PathParam("idOrName") String idOrName) {
+    public Response getDatasetTypes(@PathParam("idOrName") String idOrName, @QueryParam("locale") Locale locale) {
+        System.out.println("Getting dataset type for: " + idOrName + " and locale: " + locale);
         DatasetType datasetType = null;
         if (StringUtils.isNumeric(idOrName)) {
             try {
@@ -5762,7 +5761,12 @@ public Response getDatasetExternalToolUrl(@Context ContainerRequestContext crc, 
             datasetType = datasetTypeSvc.getByName(idOrName);
         }
         if (datasetType != null) {
-            return ok(datasetType.toJson());
+            // if (locale != null && !locale.isEmpty()) {
+            if (locale != null) {
+                return ok(datasetType.toJson(locale));
+            } else {
+                return ok(datasetType.toJson());
+            }
         } else {
             return error(NOT_FOUND, "Could not find a dataset type with name " + idOrName);
         }
