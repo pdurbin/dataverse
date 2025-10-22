@@ -2,6 +2,7 @@ package edu.harvard.iq.dataverse.dataset;
 
 import edu.harvard.iq.dataverse.MetadataBlock;
 import edu.harvard.iq.dataverse.license.License;
+import edu.harvard.iq.dataverse.util.BundleUtil;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObjectBuilder;
@@ -19,6 +20,9 @@ import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.logging.Logger;
 
 @NamedQueries({
     @NamedQuery(name = "DatasetType.findAll",
@@ -35,6 +39,8 @@ import java.util.List;
 )
 
 public class DatasetType implements Serializable {
+
+    private static final Logger logger = Logger.getLogger(DatasetType.class.getCanonicalName());
 
     public static final String DATASET_TYPE_DATASET = "dataset";
     public static final String DATASET_TYPE_SOFTWARE = "software";
@@ -98,6 +104,10 @@ public class DatasetType implements Serializable {
     }
 
     public JsonObjectBuilder toJson() {
+        return toJson(null);
+    }
+
+    public JsonObjectBuilder toJson(Locale locale) {
         JsonArrayBuilder linkedMetadataBlocks = Json.createArrayBuilder();
         for (MetadataBlock metadataBlock : this.getMetadataBlocks()) {
             linkedMetadataBlocks.add(metadataBlock.getName());
@@ -109,8 +119,20 @@ public class DatasetType implements Serializable {
         return Json.createObjectBuilder()
                 .add("id", getId())
                 .add("name", getName())
+                .add("displayName", getDisplayName(locale))
                 .add("linkedMetadataBlocks", linkedMetadataBlocks)
                 .add("availableLicenses", availableLicenses);
+    }
+
+    public String getDisplayName(Locale locale) {
+        try {
+            return BundleUtil.getStringFromPropertyFile(name + ".displayName", "datasetTypes", locale);
+        } catch (MissingResourceException e) {
+            logger.warning(name + ".displayName missing from datasetTypes_" + locale.toLanguageTag() + ".properties");
+            //getName or empty string?
+            // return getName();
+            return "";
+        }
     }
 
 }

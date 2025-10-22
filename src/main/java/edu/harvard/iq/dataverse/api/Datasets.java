@@ -5749,7 +5749,8 @@ public Response getDatasetExternalToolUrl(@Context ContainerRequestContext crc, 
 
     @GET
     @Path("datasetTypes/{idOrName}")
-    public Response getDatasetTypes(@PathParam("idOrName") String idOrName) {
+    public Response getDatasetTypes(@PathParam("idOrName") String idOrName, @HeaderParam("Accept-Language") Locale locale) {
+        System.out.println("Getting dataset type for: " + idOrName + " and locale: " + locale);
         DatasetType datasetType = null;
         if (StringUtils.isNumeric(idOrName)) {
             try {
@@ -5762,7 +5763,12 @@ public Response getDatasetExternalToolUrl(@Context ContainerRequestContext crc, 
             datasetType = datasetTypeSvc.getByName(idOrName);
         }
         if (datasetType != null) {
-            return ok(datasetType.toJson());
+            // if (locale != null && !locale.isEmpty()) {
+            if (locale != null) {
+                return ok(datasetType.toJson(locale));
+            } else {
+                return ok(datasetType.toJson());
+            }
         } else {
             return error(NOT_FOUND, "Could not find a dataset type with name " + idOrName);
         }

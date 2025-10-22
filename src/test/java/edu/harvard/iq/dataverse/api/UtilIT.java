@@ -4609,8 +4609,18 @@ public class UtilIT {
     }
 
     static Response getDatasetType(String idOrName) {
-        return given()
-                .get("/api/datasets/datasetTypes/" + idOrName);
+        return getDatasetType(idOrName, null);
+    }
+
+    static Response getDatasetType(String idOrName, Locale locale) {
+        System.out.println("Getting dataset type " +  idOrName + " with locale " + locale);
+        // String optionalLocale = "";
+        RequestSpecification requestSpecification = given();
+        if (locale != null) {
+            requestSpecification.header("Accept-Language", locale.toLanguageTag());
+            // optionalLocale = "?locale=" + locale.toLanguageTag();
+        }
+        return requestSpecification.get("/api/datasets/datasetTypes/" + idOrName);
     }
 
     static Response addDatasetType(String jsonIn, String apiToken) {

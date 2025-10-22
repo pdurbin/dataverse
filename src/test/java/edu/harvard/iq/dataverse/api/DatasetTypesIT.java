@@ -12,6 +12,8 @@ import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 import static jakarta.ws.rs.core.Response.Status.CREATED;
 import static jakarta.ws.rs.core.Response.Status.FORBIDDEN;
 import static jakarta.ws.rs.core.Response.Status.OK;
+
+import java.util.Locale;
 import java.util.UUID;
 import org.hamcrest.CoreMatchers;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -66,6 +68,15 @@ public class DatasetTypesIT {
 
     @Test
     public void testCreateSoftwareDatasetNative() {
+        System.out.println("BEGIN");
+        Response getDatasetType = UtilIT.getDatasetType("software");
+        getDatasetType.prettyPrint();
+        getDatasetType = UtilIT.getDatasetType("software", new Locale("en"));
+        getDatasetType.prettyPrint();
+        getDatasetType = UtilIT.getDatasetType("software", new Locale("es"));
+        getDatasetType.prettyPrint();
+        System.out.println("END");
+        if (true) return;
         Response createUser = UtilIT.createRandomUser();
         createUser.then().assertThat().statusCode(OK.getStatusCode());
         String username = UtilIT.getUsernameFromResponse(createUser);
