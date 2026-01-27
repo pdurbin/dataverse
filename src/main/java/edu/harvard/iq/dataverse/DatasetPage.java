@@ -42,6 +42,7 @@ import edu.harvard.iq.dataverse.engine.command.impl.PublishDataverseCommand;
 import edu.harvard.iq.dataverse.engine.command.impl.UpdateDatasetVersionCommand;
 import edu.harvard.iq.dataverse.export.ExportService;
 import edu.harvard.iq.dataverse.util.cache.CacheFactoryBean;
+import edu.harvard.iq.dataverse.util.json.InsideOutCroissantPrinter;
 import io.gdcc.spi.export.ExportException;
 import io.gdcc.spi.export.Exporter;
 import edu.harvard.iq.dataverse.ingest.IngestRequest;
@@ -6036,7 +6037,14 @@ public class DatasetPage implements java.io.Serializable {
         }
         return null;
     }
-    
+
+    public String getInsideOutCroissant() {
+        if (true) {
+            return InsideOutCroissantPrinter.get(dataset);
+        }
+        return null;
+    }
+
     public List<License> getAvailableLicenses(){
         if(!workingVersion.getDataset().getDatasetType().getLicenses().isEmpty()){
             return workingVersion.getDataset().getDatasetType().getLicenses();

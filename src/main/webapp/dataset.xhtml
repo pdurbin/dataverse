@@ -49,6 +49,7 @@
             <ui:param name="thumbnailString" value="#{DatasetPage.thumbnailString}"/>
             <ui:param name="jsonLd" value="#{DatasetPage.jsonLd}"/>
             <ui:param name="croissant" value="#{DatasetPage.croissant}"/>
+            <ui:param name="insideOutCroissant" value="#{DatasetPage.insideOutCroissant}"/>
             <ui:param name="latestVersionInReview" value="#{DatasetPage.dataset.latestVersion.inReview}"/>
             <ui:param name="showSubmitForReviewLink" value="#{DatasetPage.editMode != 'CREATE' and version == DatasetPage.dataset.latestVersion
                                                               and !DatasetPage.datasetLockedInWorkflow
@@ -95,12 +96,20 @@
             <ui:define name="jsonld_header">
                 <ui:fragment rendered="#{!anonymizedAccess}">
                     <script type="application/ld+json">
-                        <ui:fragment rendered="#{croissant == null}">
-                            <h:outputText value="#{jsonLd}"/>
+                        <ui:fragment rendered="#{false}">
+                            <ui:fragment rendered="#{croissant == null}">
+                                <h:outputText value="#{jsonLd}"/>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{croissant != null}">
+                                <h:outputText value="#{croissant}"/>
+                            </ui:fragment>
                         </ui:fragment>
-                        <ui:fragment rendered="#{croissant != null}">
-                            <h:outputText value="#{croissant}"/>
+                        <ui:fragment rendered="#{true}">
+                            <ui:fragment rendered="#{insideOutCroissant != null}">
+                                <h:outputText value="#{insideOutCroissant}"/>
+                            </ui:fragment>
                         </ui:fragment>
+
                     </script>
                 </ui:fragment>
             </ui:define>
