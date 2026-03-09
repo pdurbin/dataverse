@@ -120,7 +120,7 @@ public abstract class AbstractDatasetCommand<T> extends AbstractCommand<T> {
                 // explode with a helpful message
                 String validationMessage = constraintViolations.stream()
                     .map(cv -> cv.getMessage() + " (Invalid value:" + cv.getInvalidValue() + ")")
-                    .collect(joining(", ", "Validation Failed: ", "."));
+                    .collect(joining(", ", "Validation Failed: ", "."));//HERE?
                 
                 validationMessage  += constraintViolations.stream()
                     .filter(cv -> cv.getRootBean() instanceof TermsOfUseAndAccess)

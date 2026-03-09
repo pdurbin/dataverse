@@ -1736,7 +1736,7 @@ public class DatasetVersion implements Serializable {
        // }
     }
 
-    public List<ConstraintViolation<DatasetField>> validateRequired() {
+    public List<ConstraintViolation<DatasetField>> validateRequired() {//HERE?
         List<ConstraintViolation<DatasetField>> returnListreturnList = new ArrayList<>();
         for (DatasetField dsf : this.getFlatDatasetFields()) {
             dsf.setValidationMessage(null); // clear out any existing validation message
@@ -1784,7 +1784,7 @@ public class DatasetVersion implements Serializable {
         }
     }
 
-    public Set<ConstraintViolation> validate() {
+    public Set<ConstraintViolation> validate() {//HERE?
         Set<ConstraintViolation> returnSet = new HashSet<>();
 
 

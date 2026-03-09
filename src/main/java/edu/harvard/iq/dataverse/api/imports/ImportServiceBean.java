@@ -472,7 +472,7 @@ public class ImportServiceBean {
             ds.getLatestVersion().setDatasetFields(ds.getLatestVersion().initDatasetFields());
 
             // Check data against required constraints
-            List<ConstraintViolation<DatasetField>> violations = ds.getVersions().get(0).validateRequired();
+            List<ConstraintViolation<DatasetField>> violations = ds.getVersions().get(0).validateRequired();//Hmm
             if (!violations.isEmpty()) {
                 if ( importType.equals(ImportType.HARVEST) ) {
                     // For migration and harvest, add NA for missing required values

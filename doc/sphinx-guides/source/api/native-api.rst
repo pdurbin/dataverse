@@ -4314,6 +4314,8 @@ Linking a dataset type with one or more metadata blocks results in additional fi
 
 For example, a superuser could create a type called "software" and link it to the "CodeMeta" metadata block (this example is below). Then, once the new frontend allows it, the user can specify that they want to create a dataset of type software and see the additional metadata fields from the CodeMeta block when creating or editing their dataset.
 
+Linking a dataset type with one or more metadata blocks also results in enforcement of required fields in linked metadata blocks. For example, as of this writing, the "review" metadata block has a required field called "itemReviewedUrl". If you link the "review" metadata block to a dataset type and then try to create a dataset of that type without "itemReviewedUrl" field, you will get an error about how that field is required.
+
 This API endpoint is for superusers only.
 
 .. code-block:: bash

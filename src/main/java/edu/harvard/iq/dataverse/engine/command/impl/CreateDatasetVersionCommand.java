@@ -97,7 +97,7 @@ public class CreateDatasetVersionCommand extends AbstractDatasetCommand<DatasetV
         //throwing constraint violations because they
         //had been stripped from the dataset fields prior to validation 
         if (this.validate) {
-            validateOrDie(newVersion, false);
+            validateOrDie(newVersion, false);//HERE?
         }
         DatasetFieldUtil.tidyUpFields(newVersion.getDatasetFields(), true);
         
