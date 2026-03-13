@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.text.StringEscapeUtils;
 
+import edu.harvard.iq.dataverse.util.json.JsonUtil;
+
 public class CroissantExportUtil {
 
     public static void exportDataset(
@@ -87,11 +89,19 @@ public class CroissantExportUtil {
             job.add("conformsTo", "http://mlcommons.org/croissant/1.1");
 
             JsonObject datasetJson = dataProvider.getDatasetJson();
+            String datasetType = datasetJson.getString("datasetType", null);
+            // String datsetType = datasetJson.getJsonString("datasetType", null);
+            JsonUtil.prettyPrint(datasetJson);
 
             JsonObject datasetORE = dataProvider.getDatasetORE();
             JsonObject describes = datasetORE.getJsonObject("ore:describes");
             job.add("name", StringEscapeUtils.escapeHtml4(describes.getString("title")));
-            job.add("url", describes.getJsonString("@id"));
+            // job.add("url", describes.getJsonString("@id"));
+            if (datasetType != null && "review".equals(datasetType)) {
+                job.add("url", "foobar");
+            } else {
+                job.add("url", describes.getJsonString("@id"));
+            }
             JsonObject datasetSchemaDotOrg = dataProvider.getDatasetSchemaDotOrg();
             // We don't escape DatasetSchemaDotOrg fields like creator, description, etc. because
             // they are already escaped.

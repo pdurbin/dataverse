@@ -55,7 +55,7 @@ public class ReviewsIT {
         }
 
         // See warnings above. If you enable this, don't forget to update Solr.
-        boolean loadReviewTsv = false;
+        boolean loadReviewTsv = true;
         if (loadReviewTsv) {
             Response response = UtilIT.loadMetadataBlock(apiTokenSuperuser, reviewTsv);
             response.prettyPrint();
@@ -230,6 +230,10 @@ public class ReviewsIT {
         createReview.then().assertThat().statusCode(CREATED.getStatusCode());
         Integer reviewId = UtilIT.getDatasetIdFromResponse(createReview);
         String reviewPid = JsonPath.from(createReview.getBody().asString()).getString("data.persistentId");
+
+        UtilIT.publishDataverseViaNativeApi(dataverseAlias, apiToken).then().statusCode(OK.getStatusCode());
+        UtilIT.publishDatasetViaNativeApi(reviewPid, "major", apiToken).then().statusCode(OK.getStatusCode());
+        
 
     }
 
