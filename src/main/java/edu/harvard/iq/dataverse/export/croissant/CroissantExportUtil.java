@@ -562,4 +562,21 @@ public class CroissantExportUtil {
             default -> "sc:Text";
         };
     }
+
+    public static JsonObjectBuilder getReviews(JsonObjectBuilder reviewsIn) {
+        JsonObjectBuilder reviewsOut = Json.createObjectBuilder();
+        JsonArrayBuilder jab = Json.createArrayBuilder();
+        JsonArray reviews = reviewsIn.build().getJsonArray("reviews");
+        for (JsonValue jsonValue : reviews) {
+            JsonObject jsonObject = (JsonObject) jsonValue;
+            jab.add(
+                    Json.createObjectBuilder()
+                            .add("@context", "https://schema.org/")
+                            .add("@type", "CriticReview")
+                            .add("foo", "bar")
+                            .add("id", jsonObject.getJsonNumber("id")));
+        }
+        reviewsOut.add("reviews", jab);
+        return reviewsOut;
+    }
 }
