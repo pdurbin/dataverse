@@ -1,6 +1,8 @@
 package edu.harvard.iq.dataverse.export;
 
 import com.google.auto.service.AutoService;
+
+import edu.harvard.iq.dataverse.engine.command.impl.GetDatasetReviewsCommand;
 import edu.harvard.iq.dataverse.export.croissant.CroissantExportUtil;
 import io.gdcc.spi.export.ExportDataProvider;
 import io.gdcc.spi.export.ExportException;
@@ -64,7 +66,13 @@ public class CroissantExporter implements Exporter {
      */
     @Override
     public void exportDataset(ExportDataProvider dataProvider, OutputStream outputStream)
+    // public void exportDataset(InternalExportDataProvider dataProvider, OutputStream outputStream)
             throws ExportException {
-        CroissantExportUtil.exportDataset(dataProvider, outputStream, false);
+// call InternalExportDataProvider.getRelated()
+        // InternalExportDataProvider internalProvider = (InternalExportDataProvider) dataProvider;
+        // internalProvider.getRelated();
+        // CroissantExportUtil.exportDataset(internalProvider, outputStream, false);
+        CroissantExportUtil.exportDataset((InternalExportDataProvider) dataProvider, outputStream, false);
+        // CroissantExportUtil.exportDataset(dataProvider, outputStream, false);
     }
 }

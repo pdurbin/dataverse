@@ -89,4 +89,13 @@ public class InternalExportDataProvider implements ExportDataProvider {
     public void setPrerequisiteInputStream(InputStream prereqStream) {
         this.is=prereqStream;
     }
+
+    public JsonArrayBuilder getRelated() {
+        return Json.createArrayBuilder()
+            .add(Json.createObjectBuilder()
+                .add("@type", "CriticReview")
+            );
+        // System.out.println("get related called");
+        // GetDatasetReviewsCommand
+    }
 }

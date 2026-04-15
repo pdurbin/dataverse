@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.text.StringEscapeUtils;
 
+import edu.harvard.iq.dataverse.export.InternalExportDataProvider;
+
 public class CroissantExportUtil {
 
     public static void exportDataset(
@@ -475,6 +477,19 @@ public class CroissantExportUtil {
 
             // TODO: Do we need DataCite XML?
             String dataCiteXml = dataProvider.getDataCiteXml();
+
+            boolean hasReviews = true;
+            // datasetJson.getJsonArray("reviews"); // native, JsonPrinter
+            if (hasReviews) {
+                // job.add(
+                //         "reviews",
+                //         Json.createArrayBuilder()
+                //                 .add(Json.createObjectBuilder().add("@type", "CriticReview")));
+                dataProvider = (InternalExportDataProvider) dataProvider;
+                // set of related objects Set<JsonObject>
+                JsonArrayBuilder related = ((InternalExportDataProvider) dataProvider).getRelated();
+                job.add("reviews", related);
+            }
 
             // Write the output format to the output stream.
             outputStream.write(job.build().toString().getBytes("UTF8"));

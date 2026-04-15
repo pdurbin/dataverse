@@ -294,6 +294,7 @@ public class ExportService {
                 String formatName = e.getFormatName();
                 if(e.getPrerequisiteFormatName().isPresent()) {
                     String prereqFormatName = e.getPrerequisiteFormatName().get();
+                    dataProvider.getRelated();
                     try (InputStream preReqStream = getExport(dataset.getReleasedVersion(), prereqFormatName)) {
                         dataProvider.setPrerequisiteInputStream(preReqStream);
                         cacheExport(dataset, dataProvider, formatName, e);
