@@ -243,6 +243,17 @@ jobs:
           retention-days: 14
 
       # ---------------------------
+      # 2. PUBLISH TEST DASHBOARD IN GITHUB PR (Optional but highly recommended)
+      # ---------------------------
+      - name: Publish Test Results Dashboard
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            target/failsafe-reports/TEST-*.xml
+            target/surefire-reports/TEST-*.xml
+
+      # ---------------------------
       # FAIL WORKFLOW IF TESTS FAILED
       # ---------------------------
       - name: Check for Test Failures
