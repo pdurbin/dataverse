@@ -33,6 +33,10 @@ jobs:
     defaults:
       run:
         shell: bash
+    
+    permissions:
+        checks: write
+        pull-requests: write
 
     steps:
       # ---------------------------
@@ -184,7 +188,7 @@ jobs:
           sed -i 's/dvnapp/dataverse/g' doc/sphinx-guides/source/_static/util/createsequence.sql
           psql -h localhost -U dataverse dataverse -f doc/sphinx-guides/source/_static/util/createsequence.sql
 
-# ---------------------------
+      # ---------------------------
       # RUN MAVEN TESTS
       # ---------------------------
       - name: Run Maven Integration Tests
