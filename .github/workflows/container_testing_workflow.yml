@@ -199,8 +199,8 @@ jobs:
           
           echo "Running suite: $TEST_SUITE"
           
-          # Notice we removed the reporting goals from this line so it strictly runs tests
-          mvn verify \
+          # Added jacoco:prepare-agent and removed the redundant 'package'
+          mvn jacoco:prepare-agent verify \
             -Dtest="$TEST_SUITE" \
             -Ddataverse.test.baseurl=http://localhost:8080 \
             -DcompilerArgument=-Xlint:unchecked \
@@ -208,7 +208,7 @@ jobs:
             -DreuseForks=true \
             -DthreadCount=1 \
             -Dparallel=none \
-            -P all-unit-tests package
+            -P all-unit-tests
 
       # ---------------------------
       # GENERATE REPORTS & DEPOSIT TO COVERALLS
@@ -217,17 +217,14 @@ jobs:
         if: always()
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        # We use continue-on-error here so a Coveralls API hiccup doesn't mark your build as a failure
         continue-on-error: true 
         run: |
           set -euo pipefail
           
           echo "Generating JaCoCo XML and pushing to Coveralls..."
           
-          # 1. We combine jacoco:report and coveralls:report into ONE command.
-          # 2. We include the -P all-unit-tests profile so Coveralls inherits the POM configs.
-          # 3. We explicitly feed the path to the XML file via -DjacocoReports.
-          mvn jacoco:report coveralls:report \
+          # Added jacoco:report-integration just in case Failsafe is used
+          mvn jacoco:report jacoco:report-integration coveralls:report \
             -P all-unit-tests \
             -DrepoToken=$COVERALLS_REPO_TOKEN \
             -DjacocoReports=target/site/jacoco/jacoco.xml
