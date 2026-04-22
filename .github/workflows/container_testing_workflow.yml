@@ -184,7 +184,7 @@ jobs:
           sed -i 's/dvnapp/dataverse/g' doc/sphinx-guides/source/_static/util/createsequence.sql
           psql -h localhost -U dataverse dataverse -f doc/sphinx-guides/source/_static/util/createsequence.sql
 
-      # ---------------------------
+# ---------------------------
       # RUN MAVEN TESTS
       # ---------------------------
       - name: Run Maven Integration Tests
@@ -194,14 +194,15 @@ jobs:
           DV_API_KEY: "burrito"
         run: |
           set -euo pipefail
-          # Read the file content into a variable
           TEST_SUITE=$(cat tests/integration-tests.txt)
           
           echo "Running suite: $TEST_SUITE"
           
-          # Added jacoco:prepare-agent and removed the redundant 'package'
+          # -Dmaven.test.failure.ignore=true forces the JVM to shut down cleanly
+          # and write the jacoco.exec file, even when tests fail.
           mvn jacoco:prepare-agent verify \
             -Dtest="$TEST_SUITE" \
+            -Dmaven.test.failure.ignore=true \
             -Ddataverse.test.baseurl=http://localhost:8080 \
             -DcompilerArgument=-Xlint:unchecked \
             -DforkCount=1 \
@@ -220,26 +221,40 @@ jobs:
         continue-on-error: true 
         run: |
           set -euo pipefail
-          
           echo "Generating JaCoCo XML and pushing to Coveralls..."
           
-          # Added jacoco:report-integration just in case Failsafe is used
           mvn jacoco:report jacoco:report-integration coveralls:report \
             -P all-unit-tests \
             -DrepoToken=$COVERALLS_REPO_TOKEN \
             -DjacocoReports=target/site/jacoco/jacoco.xml
 
       # ---------------------------
-      # UPLOAD RAW HTML ARTIFACT
+      # UPLOAD SUREFIRE/FAILSAFE REPORTS
       # ---------------------------
-      - name: Upload JaCoCo HTML Report
+      - name: Upload Test Failure Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: jacoco-coverage-report
-          # This is the standard Maven output path for JaCoCo. Adjust if your POM changes this!
-          path: target/site/jacoco/
+          name: maven-test-reports
+          path: |
+            target/surefire-reports/
+            target/failsafe-reports/
+            target/site/jacoco/
           retention-days: 14
+
+      # ---------------------------
+      # FAIL WORKFLOW IF TESTS FAILED
+      # ---------------------------
+      - name: Check for Test Failures
+        if: always()
+        run: |
+          echo "Checking Surefire/Failsafe reports for failures..."
+          if grep -q "<failure" target/surefire-reports/*.xml target/failsafe-reports/*.xml 2>/dev/null || \
+             grep -q "<error" target/surefire-reports/*.xml target/failsafe-reports/*.xml 2>/dev/null; then
+            echo "Tests failed! Failing the workflow."
+            exit 1
+          fi
+          echo "All tests passed."
 
       # ---------------------------
       # DUMP LOGS ON FAILURE
@@ -256,6 +271,7 @@ jobs:
         run: |
           set -euo pipefail
           mvn -Pct docker:stop || true
+          
       - name: Final Docker cleanup
         if: always()
         run: |
