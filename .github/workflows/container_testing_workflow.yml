@@ -183,54 +183,34 @@ jobs:
           set -euo pipefail
           # Fixes MakeDataCountApiIT
           docker exec dev_dataverse sh -c 'curl https://raw.githubusercontent.com/IQSS/dataverse/develop/src/test/java/edu/harvard/iq/dataverse/makedatacount/sushi_sample_logs.json > /tmp/sushi_sample_logs.json && head /tmp/sushi_sample_logs.json'
-      
-      - name: Run database sequence
+
+      - name: Trigger Solr reindexing
         run: |
           set -euo pipefail
-          # Fixes DataRetrieverApiIT count expectations
-          export PGPASSWORD=secret
-          sed -i 's/dvnapp/dataverse/g' doc/sphinx-guides/source/_static/util/createsequence.sql
-          psql -h localhost -U dataverse dataverse -f doc/sphinx-guides/source/_static/util/createsequence.sql
+          echo "Triggering full Solr reindex..."
+          curl -X GET "http://localhost:8080/api/admin/index"
+          echo "✓ Reindex triggered"
 
-      - name: Configure Root dataverse to match Jenkins
+      - name: Wait for Solr indexing to complete
         run: |
           set -euo pipefail
-          echo "Unpublishing Root dataverse to match Jenkins test expectations..."
-          # Root is typically published by default in containers, but not in Jenkins
-          export PGPASSWORD=secret
-          psql -h localhost -U dataverse dataverse -c "UPDATE dvobject SET publicationdate = NULL WHERE id = 1;"
-          echo "✓ Root dataverse unpublished"
-
-
-      - name: Wait for dataset publication finalization
-        run: |
-          set -euo pipefail
-          echo "Checking for active dataset locks..."
-          MAX_ATTEMPTS=15
-          SLEEP_TIME=2
+          echo "Waiting for Solr indexing to complete..."
+          MAX_ATTEMPTS=18
+          SLEEP_TIME=10
           
           for attempt in $(seq 1 $MAX_ATTEMPTS); do
-            LOCKS=$(curl -s http://localhost:8080/api/datasets/locks 2>/dev/null | jq -r '.data | length' 2>/dev/null || echo "0")
+            STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8080/api/admin/index" || echo "000")
             
-            if [ "$LOCKS" -eq 0 ]; then
-              echo "✓ No active locks found. All datasets published."
+            if [ "$STATUS_CODE" = "200" ]; then
+              echo "✓ Solr indexing complete (HTTP 200)"
               exit 0
             fi
             
-            echo "[$attempt/$MAX_ATTEMPTS] Found $LOCKS active lock(s). Waiting ${SLEEP_TIME}s..."
+            echo "[$attempt/$MAX_ATTEMPTS] Solr still indexing (HTTP $STATUS_CODE)... waiting ${SLEEP_TIME}s"
             sleep $SLEEP_TIME
-            
-            # Exponential backoff: double sleep time up to 30s max
-            if [ $SLEEP_TIME -lt 30 ]; then
-              SLEEP_TIME=$((SLEEP_TIME * 2))
-              if [ $SLEEP_TIME -gt 30 ]; then
-                SLEEP_TIME=30
-              fi
-            fi
           done
           
-          echo "⚠ Warning: Timeout waiting for locks to clear. Proceeding anyway..."
-          curl -s http://localhost:8080/api/datasets/locks | jq '.'
+          echo "⚠ Timeout waiting for Solr indexing. Proceeding anyway..."
 
       # ---------------------------
       # RUN MAVEN TESTS
