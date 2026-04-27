@@ -76,7 +76,7 @@ jobs:
           set -euo pipefail
           rm -rf docker-dev-volumes || true
           
-# ---------------------------
+      # ---------------------------
       # BUILD IMAGES (Dataverse-native)
       # ---------------------------
       - name: Build Dataverse containers via Maven
@@ -87,9 +87,6 @@ jobs:
             -DskipUnitTests=false \
             -Djacoco.skip=false \
             -Dmaven.test.failure.ignore=true
-          
-          # Backup the unit test coverage file so the integration tests don't overwrite it
-          cp target/jacoco.exec target/jacoco-unit.exec
           
       # ---------------------------
       # START CONTAINERS (BACKGROUND)
@@ -139,7 +136,7 @@ jobs:
           done
           echo "Dataverse failed to become ready."
           docker ps
-          CONTAINERS="$(docker ps -q)"
+          CONTAINERS="$(docker ps -aq)"
           if [ -n "$CONTAINERS" ]; then
             for cid in $CONTAINERS; do
               echo "===== Logs for container $cid ====="
@@ -211,7 +208,7 @@ jobs:
           
           # -Dmaven.test.failure.ignore=true forces the JVM to shut down cleanly
           # and write the jacoco.exec file, even when tests fail.
-          mvn jacoco:prepare-agent verify \
+          mvn verify \
             -Dtest="$TEST_SUITE" \
             -Dmaven.test.failure.ignore=true \
             -Ddataverse.test.baseurl=http://localhost:8080 \
@@ -219,47 +216,24 @@ jobs:
             -DforkCount=1 \
             -DreuseForks=true \
             -DthreadCount=1 \
-            -Dparallel=none \
-            -P all-unit-tests
-
-      # ---------------------------
-      # MERGE JACOCO REPORTS
-      # ---------------------------
-      - name: Merge JaCoCo Reports
-        if: always()
-        run: |
-          set -euo pipefail
-          echo "Downloading JaCoCo CLI..."
-          # Using 0.8.11 to match the version in your Maven logs
-          wget https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.11/org.jacoco.cli-0.8.11-nodeps.jar -O jacococli.jar
-          
-          echo "Merging unit and integration exec files..."
-          # target/jacoco.exec is the integration test coverage
-          # target/jacoco-unit.exec is the unit test coverage we backed up earlier
-          java -jar jacococli.jar merge target/jacoco-unit.exec target/jacoco.exec --destfile target/jacoco_merged.exec
-          
-          echo "Generating combined XML report..."
-          java -jar jacococli.jar report target/jacoco_merged.exec \
-            --classfiles target/classes \
-            --sourcefiles src/main/java \
-            --xml target/site/jacoco/jacoco.xml
+            -Dparallel=none
 
       # ---------------------------
       # GENERATE REPORTS & DEPOSIT TO COVERALLS
       # ---------------------------
-      - name: Generate Reports and Deposit to Coveralls
+      - name: Deposit to Coveralls
         if: always()
         env:
           COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
         continue-on-error: true 
         run: |
           set -euo pipefail
-          echo "Generating JaCoCo XML and pushing to Coveralls..."
           
+          # The pom.xml automatically merged the files and put them here:
           mvn coveralls:report \
             -P all-unit-tests \
             -DrepoToken=$COVERALLS_REPO_TOKEN \
-            -DjacocoReports=target/site/jacoco/jacoco.xml
+            -DjacocoReports=target/site/jacoco-merged-test-coverage-report/jacoco.xml
 
       # ---------------------------
       # UPLOAD SUREFIRE/FAILSAFE REPORTS
@@ -301,11 +275,59 @@ jobs:
           echo "All tests passed."
 
       # ---------------------------
-      # DUMP LOGS ON FAILURE
+      # COLLECT DOCKER LOGS (ALWAYS, WITH MAPPING)
       # ---------------------------
-      - name: Dump Dataverse Logs on Failure
-        if: failure()
-        run: docker logs dev_dataverse
+      - name: Collect Docker logs (mapped)
+        if: always()
+        run: |
+          mkdir -p docker-logs
+
+          echo "Gathering container metadata..."
+          docker ps -a --format '{{.Names}}|{{.Image}}|{{.Status}}' > docker-logs/container-summary.txt
+
+          while IFS='|' read -r name image status; do
+            # Create a readable label
+            label="$name"
+
+            case "$name" in
+              *dataverse*)
+                label="dataverse-app"
+                ;;
+              *postgres*)
+                label="postgres-db"
+                ;;
+              *solr*)
+                label="solr-index"
+                ;;
+              *localstack*)
+                label="localstack-s3"
+                ;;
+            esac
+
+            echo "Collecting logs for $name ($label)"
+
+            {
+              echo "===== CONTAINER: $name ====="
+              echo "Label: $label"
+              echo "Image: $image"
+              echo "Status: $status"
+              echo ""
+              echo "===== LOGS ====="
+              docker logs --timestamps "$name" 2>&1 || true
+            } > "docker-logs/${label}__${name}.log"
+
+          done < docker-logs/container-summary.txt
+
+      # ---------------------------
+      # UPLOAD DOCKER LOGS (ALWAYS)
+      # ---------------------------
+      - name: Upload Docker logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-logs
+          path: docker-logs/
+          retention-days: 7
 
       # ---------------------------
       # SHUTDOWN STACK
