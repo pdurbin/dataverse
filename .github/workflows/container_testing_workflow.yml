@@ -82,7 +82,11 @@ jobs:
       - name: Build Dataverse containers via Maven
         run: |
           set -euo pipefail
-          mvn -Pct clean package
+          # Force unit tests to run and generate coverage during the build
+          mvn clean package -Pct -P all-unit-tests -DskipTests=false -Djacoco.skip=false
+          
+          # Backup the unit test coverage file so the integration tests don't overwrite it
+          cp target/jacoco.exec target/jacoco-unit.exec
           
       # ---------------------------
       # START CONTAINERS (BACKGROUND)
@@ -214,6 +218,28 @@ jobs:
             -DthreadCount=1 \
             -Dparallel=none \
             -P all-unit-tests
+
+      # ---------------------------
+      # MERGE JACOCO REPORTS
+      # ---------------------------
+      - name: Merge JaCoCo Reports
+        if: always()
+        run: |
+          set -euo pipefail
+          echo "Downloading JaCoCo CLI..."
+          # Using 0.8.11 to match the version in your Maven logs
+          wget https://repo1.maven.org/maven2/org/jacoco/org.jacoco.cli/0.8.11/org.jacoco.cli-0.8.11-nodeps.jar -O jacococli.jar
+          
+          echo "Merging unit and integration exec files..."
+          # target/jacoco.exec is the integration test coverage
+          # target/jacoco-unit.exec is the unit test coverage we backed up earlier
+          java -jar jacococli.jar merge target/jacoco-unit.exec target/jacoco.exec --destfile target/jacoco_merged.exec
+          
+          echo "Generating combined XML report..."
+          java -jar jacococli.jar report target/jacoco_merged.exec \
+            --classfiles target/classes \
+            --sourcefiles src/main/java \
+            --xml target/site/jacoco/jacoco.xml
 
       # ---------------------------
       # GENERATE REPORTS & DEPOSIT TO COVERALLS
