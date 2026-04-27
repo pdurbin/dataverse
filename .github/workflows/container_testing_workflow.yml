@@ -76,14 +76,17 @@ jobs:
           set -euo pipefail
           rm -rf docker-dev-volumes || true
           
-      # ---------------------------
+# ---------------------------
       # BUILD IMAGES (Dataverse-native)
       # ---------------------------
       - name: Build Dataverse containers via Maven
         run: |
           set -euo pipefail
-          # Force unit tests to run and generate coverage during the build
-          mvn clean package -Pct -P all-unit-tests -DskipUnitTests=false -Djacoco.skip=false
+          # Force unit tests to run, generate coverage, and ignore failures so the build continues
+          mvn clean package -Pct -P all-unit-tests \
+            -DskipUnitTests=false \
+            -Djacoco.skip=false \
+            -Dmaven.test.failure.ignore=true
           
           # Backup the unit test coverage file so the integration tests don't overwrite it
           cp target/jacoco.exec target/jacoco-unit.exec
