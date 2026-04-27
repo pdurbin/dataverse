@@ -83,7 +83,7 @@ jobs:
         run: |
           set -euo pipefail
           # Force unit tests to run and generate coverage during the build
-          mvn clean package -Pct -P all-unit-tests -DskipTests=false -Djacoco.skip=false
+          mvn clean package -Pct -P all-unit-tests -DskipUnitTests=false -Djacoco.skip=false
           
           # Backup the unit test coverage file so the integration tests don't overwrite it
           cp target/jacoco.exec target/jacoco-unit.exec
@@ -253,7 +253,7 @@ jobs:
           set -euo pipefail
           echo "Generating JaCoCo XML and pushing to Coveralls..."
           
-          mvn jacoco:report jacoco:report-integration coveralls:report \
+          mvn coveralls:report \
             -P all-unit-tests \
             -DrepoToken=$COVERALLS_REPO_TOKEN \
             -DjacocoReports=target/site/jacoco/jacoco.xml
