@@ -36,6 +36,7 @@ import edu.harvard.iq.dataverse.engine.command.exception.PermissionException;
 import edu.harvard.iq.dataverse.engine.command.exception.UnforcedCommandException;
 import edu.harvard.iq.dataverse.engine.command.impl.*;
 import edu.harvard.iq.dataverse.export.ExportService;
+import edu.harvard.iq.dataverse.export.croissant.CroissantExportUtil;
 import edu.harvard.iq.dataverse.externaltools.ExternalTool;
 import edu.harvard.iq.dataverse.externaltools.ExternalToolHandler;
 import edu.harvard.iq.dataverse.globus.GlobusServiceBean;
@@ -87,9 +88,11 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -275,6 +278,17 @@ public class Datasets extends AbstractApiBean {
             ExportService instance = ExportService.getInstance();
 
             InputStream is = instance.getExport(datasetVersion, exporter);
+            if (exporter.equals("croissant") || exporter.equals("croissantSlim")) {
+                JsonObjectBuilder reviews = getReviewsForCroissant(dataset, req);
+                String content = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                JsonObject croissantJson = JsonUtil.getJsonObject(content);
+                String updatedContent = Json.createObjectBuilder(croissantJson)
+                        .add("reviews", Json.createArrayBuilder()
+                                .add(reviews.build().getJsonArray("reviews")))
+                        .build()
+                        .toString();
+                is = new ByteArrayInputStream(updatedContent.getBytes(StandardCharsets.UTF_8));
+            }
 
             String mediaType = instance.getMediaType(exporter);
 
@@ -291,6 +305,11 @@ public class Datasets extends AbstractApiBean {
             logger.warning(wr.getMessage());
             return error(Response.Status.FORBIDDEN, "Export Failed");
         }
+    }
+
+    private JsonObjectBuilder getReviewsForCroissant(Dataset dataset, DataverseRequest req) throws CommandException {
+        String title = "foo";
+        return CroissantExportUtil.getReviews(commandEngine.submit(new GetDatasetReviewsCommand(req, dataset)), title);
     }
 
     @DELETE

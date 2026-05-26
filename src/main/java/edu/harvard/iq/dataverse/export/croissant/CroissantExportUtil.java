@@ -563,4 +563,69 @@ public class CroissantExportUtil {
             default -> "sc:Text";
         };
     }
+
+    public static JsonObjectBuilder getReviews(JsonObjectBuilder reviewsIn, String title) {
+        JsonObjectBuilder reviewsOut = Json.createObjectBuilder();
+        JsonArrayBuilder jab = Json.createArrayBuilder();
+        JsonArray reviews = reviewsIn.build().getJsonArray("reviews");
+        for (JsonValue jsonValue : reviews) {
+            JsonObject jsonObject = (JsonObject) jsonValue;
+            jab.add(
+                    Json.createObjectBuilder()
+                            .add("@context", "https://schema.org/")
+                            .add("@type", "CriticReview")
+                            .add(
+                                    "itemReviewed",
+                                    Json.createObjectBuilder()
+                                            // TODO don't hard code this to "Dataset"
+                                            .add("@type", "Dataset")
+                                            .add("name", title))
+                            .add("id", jsonObject.getJsonNumber("id")));
+        }
+        reviewsOut.add("reviews", jab);
+        return reviewsOut;
+    }
+    /*
+        "reviews": [
+            {
+                "@context": "https://schema.org/",
+                "@type": "CriticReview",
+                "itemReviewed": {
+                    "@type": "Dataset",
+                    "name": "Dataset"
+                },
+                "author": {
+                    "@type": "Organization",
+                    "name": "Association of Data Reusers"
+                },
+                "positiveNotes":
+                {
+                    "@type": "ItemList",
+                    "itemListElement": [
+                        {
+                            "@type": "ListItem",
+                            "position": 1,
+                            "name": "The dataset is well-documented and easy to understand.",
+                            "value":"10"
+                        },
+                        {
+                            "@type": "ListItem",
+                            "position": 2,
+                            "name": "The dataset follows standard formats and conventions.",
+                            "value":"5"
+                        },
+                        {
+                            "@type": "ListItem",
+                            "position": 3,
+                            "name": "The dataset is complete and contains all necessary information.",
+                            "value":"9"
+                        }
+                    ]
+                },
+                "reviewBody": "An in-depth, professional review of the dataset.",
+                "datePublished": "2025-01-01"
+            }
+
+        ],
+    */
 }
