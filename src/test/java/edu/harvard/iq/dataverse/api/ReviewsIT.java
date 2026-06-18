@@ -60,7 +60,7 @@ public class ReviewsIT {
         }
 
         // See warnings above. If you enable this, don't forget to update Solr.
-        boolean loadReviewTsv = false;
+        boolean loadReviewTsv = true;
         if (loadReviewTsv) {
             Response response = UtilIT.loadMetadataBlock(apiTokenSuperuser, reviewTsv);
             response.prettyPrint();
@@ -75,9 +75,39 @@ public class ReviewsIT {
         }
 
         // See warnings above. If you enable this, don't forget to update Solr.
-        boolean loadRubric1Tsv = false;
+        boolean loadRubric1Tsv = true;
         if (loadRubric1Tsv) {
             Response response = UtilIT.loadMetadataBlock(apiTokenSuperuser, rubric1Tsv);
+            response.prettyPrint();
+            assertEquals(200, response.getStatusCode());
+            response.then().assertThat().statusCode(OK.getStatusCode());
+        }
+
+        byte[] rubric2Tsv = null;
+        try {
+            rubric2Tsv = Files.readAllBytes(Paths.get("/tmp/rubric_customuncdatareview.tsv"));
+        } catch (IOException e) {
+        }
+
+        // See warnings above. If you enable this, don't forget to update Solr.
+        boolean loadRubric2Tsv = false;
+        if (loadRubric2Tsv) {
+            Response response = UtilIT.loadMetadataBlock(apiTokenSuperuser, rubric2Tsv);
+            response.prettyPrint();
+            assertEquals(200, response.getStatusCode());
+            response.then().assertThat().statusCode(OK.getStatusCode());
+        }
+
+        byte[] rubric3Tsv = null;
+        try {
+            rubric3Tsv = Files.readAllBytes(Paths.get("/tmp/rubric_customnyuproducerquality.tsv"));
+        } catch (IOException e) {
+        }
+
+        // See warnings above. If you enable this, don't forget to update Solr.
+        boolean loadRubric3Tsv = false;
+        if (loadRubric3Tsv) {
+            Response response = UtilIT.loadMetadataBlock(apiTokenSuperuser, rubric3Tsv);
             response.prettyPrint();
             assertEquals(200, response.getStatusCode());
             response.then().assertThat().statusCode(OK.getStatusCode());
@@ -465,7 +495,13 @@ public class ReviewsIT {
                 .body("data.allowedDatasetTypes[0].description",
                         is("A review of a dataset compiled by the expert community."));
 
-        Response setMetadataBlocks = UtilIT.setMetadataBlocks(collectionAliasReviews, Json.createArrayBuilder().add("citation").add("rubric_trusteddatadimensionsintensities"), apiTokenReviewer);
+        // Response setMetadataBlocks = UtilIT.setMetadataBlocks(collectionAliasReviews, Json.createArrayBuilder().add("citation").add("rubric_trusteddatadimensionsintensities"), apiTokenReviewer);
+        Response setMetadataBlocks = UtilIT.setMetadataBlocks(collectionAliasReviews, Json.createArrayBuilder()
+                .add("citation")
+                .add("rubric_trusteddatadimensionsintensities")
+                .add("rubric_customUNCDataReview")
+                .add("rubric_customNYUProducerQuality"),
+                apiTokenReviewer);
         setMetadataBlocks.prettyPrint();
         setMetadataBlocks.then().assertThat().statusCode(OK.getStatusCode());
 
