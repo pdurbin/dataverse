@@ -8706,20 +8706,32 @@ Example: List permissions a user (based on API Token used) has on a dataset whos
 
   curl -H "X-Dataverse-key:$API_TOKEN" "$SERVER_URL/api/admin/permissions/:persistentId?persistentId=$PERSISTENT_IDENTIFIER"
 
-List Dataverse collections a user can act on based on their permissions
+List Dataverse Collections a User Can Act on Based on Their Permissions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-List Dataverse collections a user can act on based on a particular permission ::
-
-    GET http://$SERVER/api/users/$identifier/allowedCollections/$permission
+List Dataverse collections a user can act on based on a particular permission.
 
 .. note:: This API can only be called by an Administrator or by a User requesting their own list of accessible collections.
 
-The ``$identifier`` is the username of the requested user.
-The ``$permission`` is the permission (tied to the roles) that gives the user access to the collection.
-Passing ``$permission`` as 'any' will return the collection as long as the user has any access/permission on the collection
+Pass the permission (tied to the roles) that gives the user access to the collection.
+Passing "any" as the permission will return the collection as long as the user has any access/permission on the collection
 
-**For filtering and pagination these query parameters can be used:**
+.. code-block:: bash
+
+  export SERVER_URL=https://demo.dataverse.org
+  export USERNAME=jsmith
+  export PERMISSION=PublishDataverse
+
+  curl -H "X-Dataverse-key:$API_TOKEN" "$SERVER_URL/api/users/$USERNAME/allowedCollections/$PERMISSION"
+  curl -H "X-Dataverse-key:$API_TOKEN" "$SERVER_URL/api/users/$USERNAME/allowedCollections/$PERMISSION?limit=10&offset=0&searchTerm=bio"
+
+The fully expanded example above (without environment variables) looks like this:
+
+.. code-block:: bash
+
+  curl -H "X-Dataverse-key:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" https://demo.dataverse.org/api/users/jsmith/allowedCollections/PublishDataverse
+
+**For filtering and pagination, optional these query parameters can be used:**
 
 - ``searchTerm``: To filter the results.
 - ``offset``: Starting row.
@@ -8727,11 +8739,6 @@ Passing ``$permission`` as 'any' will return the collection as long as the user 
 
 .. code-block:: bash
 
-  export SERVER_URL=https://demo.dataverse.org
-  export $USERNAME=jsmith
-  export PERMISSION=PublishDataverse
-
-  curl -H "X-Dataverse-key:$API_TOKEN" "$SERVER_URL/api/users/$USERNAME/allowedCollections/$PERMISSION"
   curl -H "X-Dataverse-key:$API_TOKEN" "$SERVER_URL/api/users/$USERNAME/allowedCollections/$PERMISSION?limit=10&offset=0&searchTerm=bio"
 
 Show Role Assignee
