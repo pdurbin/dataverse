@@ -1278,10 +1278,14 @@
                 <conf.image.base>ubuntu:${conf.image.flavor}</conf.image.base>
                 <conf.skipBuild>false</conf.skipBuild>
     
+                <keycloak.image>gdcc/keycloak:${conf.image.tag}</keycloak.image>
+                <keycloak.skipBuild>false</keycloak.skipBuild>
+
                 <docker.platforms></docker.platforms>
             
                 <!-- Variables as used in docker-compose.yml -->
                 <APP_IMAGE>${app.image}</APP_IMAGE>
+                <KEYCLOAK_IMAGE>${keycloak.image}</KEYCLOAK_IMAGE>
                 <POSTGRES_VERSION>${postgresql.server.version}</POSTGRES_VERSION>
                 <SOLR_VERSION>${solr.version}</SOLR_VERSION>
                 <DATAVERSE_DB_USER>dataverse</DATAVERSE_DB_USER>
@@ -1386,6 +1390,30 @@
                                         above for the main image via the docker-compose file. Even if using
                                         -Ddocker.filter=dev_bootstrap, the run config from above is still enforced.
                                     -->
+                                    <run>
+                                        <skip>true</skip>
+                                    </run>
+                                </image>
+
+                                <image>
+                                    <alias>dev_keycloak</alias>
+                                    <name>${keycloak.image}</name>
+                                    <build>
+                                        <skip>${keycloak.skipBuild}</skip>
+                                        <skipPush>${keycloak.skipBuild}</skipPush>
+                                        <skipTag>${keycloak.skipBuild}</skipTag>
+                                        <buildx>
+                                            <platforms>
+                                                <platform>${docker.platforms}</platform>
+                                            </platforms>
+                                        </buildx>
+                                        <!-- Custom image with the Dataverse builtin users SPI; imports test-realm-include-spi.json -->
+                                        <contextDir>${project.basedir}/conf/keycloak</contextDir>
+                                        <!-- Don't let Maven replace ${ORACLE_JDBC_VERSION} etc. in the Dockerfile -->
+                                        <filter>false</filter>
+                                    </build>
+                                    
+                                    <!-- Same as dev_bootstrap: run config comes from the docker-compose file. -->
                                     <run>
                                         <skip>true</skip>
                                     </run>

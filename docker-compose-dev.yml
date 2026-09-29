@@ -210,11 +210,8 @@ services:
 
   dev_keycloak:
     container_name: "dev_keycloak"
-    # Custom image with the Dataverse builtin users SPI; imports test-realm-include-spi.json
-    build:
-      context: ./conf/keycloak
-      dockerfile: Dockerfile
-    image: gdcc/keycloak
+    # Built by Maven (-Pct), see dev_keycloak in pom.xml
+    image: ${KEYCLOAK_IMAGE}
     hostname: keycloak
     depends_on:
       - dev_postgres
