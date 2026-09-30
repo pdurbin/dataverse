@@ -144,7 +144,7 @@ for BRANCH in "$@"; do
       # Build the application image, but skip the configbaker image (that's a different job)!
       # shellcheck disable=SC2046
       mvn -Pct -f . deploy -Ddocker.noCache -Ddocker.platforms="${PLATFORMS}" \
-        -Dapp.skipBuild -Dconf.image.base="${BASE_IMAGE_REF}" \
+        -Dapp.skipBuild -Ddocker.filter=dev_dataverse,dev_bootstrap -Dconf.image.base="${BASE_IMAGE_REF}" \
         -Dmaven.main.skip -Dmaven.test.skip -Dmaven.war.skip $TAG_OPTIONS \
         $( if (( DAMP_RUN )); then echo "-Ddocker.skip.push"; fi )
     else

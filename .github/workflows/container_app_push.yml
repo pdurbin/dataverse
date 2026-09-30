@@ -139,6 +139,7 @@ jobs:
                   -Dapp.image.tag=${{ env.IMAGE_TAG }} ${{ env.ADDITIONAL_TAGS }}
                   $( [[ -n "${{ inputs.base-image-ref }}" ]] && echo "-Dbase.image=${{ inputs.base-image-ref }}" )
                   ${{ env.REGISTRY }} -Ddocker.platforms=${{ env.PLATFORMS }}
+                  -Ddocker.filter=dev_dataverse,dev_bootstrap
                   -P ct deploy
 
             - uses: marocchino/sticky-pull-request-comment@v3
