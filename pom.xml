@@ -1349,6 +1349,12 @@
                                         <type>compose</type>
                                         <basedir>${project.basedir}</basedir>
                                         <composeFile>docker-compose-dev.yml</composeFile>
+                                        <!--
+                                            Don't let Maven build (and push!) images from "build:" sections in the
+                                            compose file, such as dev_keycloak. Those are only built locally by
+                                            "docker compose". The dev_dataverse image still uses the <build> above.
+                                        -->
+                                        <ignoreBuild>true</ignoreBuild>
                                     </external>
                                 </image>
                                 
